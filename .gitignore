@@ -1,0 +1,51 @@
+# Root .gitignore for GNN repository
+
+# Python Virtual Environments
+.venv311/
+.venv/
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing & Caches
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+.env
+
+# Raw Datasets, Caches and Phase 1 Scratch
+data/
+"Phase 1/"
+Phase 1/
+crystal_gnn/data/cache/
+crystal_gnn/data/raw/
+
+# Temporary logs and scratch execution outputs
+*.log
+scratch/
+comformer_check_structures/
+crystal_gnn/comformer_check_structures/
+
+# Checkpoint rules:
+# Ignore large scratch checkpoints, preserve baseline paper checkpoint
+checkpoints/
+crystal_gnn/checkpoints/*
+!crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
+crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/last.pt
+
+# Ignore large raw results dumps except summary CSVs
+results/
+crystal_gnn/results/*
+!crystal_gnn/results/*.csv

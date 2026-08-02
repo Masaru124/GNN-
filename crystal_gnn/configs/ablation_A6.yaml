@@ -1,0 +1,7 @@
+defaults:
+  - default
+model:
+  use_attention_fusion: true
+  use_der: true
+uncertainty:
+  mc_dropout_T: 1

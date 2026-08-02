@@ -1,0 +1,6 @@
+defaults:
+  - default
+model:
+  radii: [4.0]
+  use_attention_fusion: false
+  use_der: false

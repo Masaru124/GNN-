@@ -1,0 +1,5 @@
+defaults:
+  - default
+model:
+  use_attention_fusion: true
+  use_der: false

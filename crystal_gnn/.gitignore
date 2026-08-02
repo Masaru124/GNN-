@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches and Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.venv311/
+# System and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+.env
+
+# Large raw datasets and graph caches
+data/raw/*.gz
+data/raw/*.json
+data/cache/*.pt
+
+# Temporary logs and scratch execution outputs
+*.log
+scratch/
+comformer_check_structures/
+
+# Checkpoint rules:
+# Ignore all temporary/large checkpoint files by default
+checkpoints/*
+!checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
+checkpoints/paper_A7_soap_loco_formation_energy_per_atom/last.pt
+
+# Ignore raw results data dumps except key CSV summaries
+results/*
+!results/*.csv

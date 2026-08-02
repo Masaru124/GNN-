@@ -1,0 +1,36 @@
+model:
+  hidden_dim: 128
+  num_encoder_layers: 3
+  dropout_rate: 0.1
+  use_attention_fusion: true
+  use_der: true
+  radii: [4.0, 6.0, 8.0]
+
+data:
+  max_structures: null
+  max_neighbors: 64
+  target: formation_energy_per_atom
+  cache_dir: ./data/cache
+
+training:
+  batch_size: 32
+  accumulate_grad_batches: 4
+  max_epochs: 150
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  patience: 20
+  warm_up_epochs: 20
+  evidential_lambda: 0.1
+  seed: 42
+
+uncertainty:
+  mc_dropout_T: 30
+  conformal_coverage: 0.90
+
+splits:
+  type: random
+  soap_n_clusters: 10
+  random_ratios: [0.8, 0.1, 0.1]
+
+evaluation:
+  ece_n_bins: 15

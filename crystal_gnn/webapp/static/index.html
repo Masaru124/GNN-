@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crystal GNN 3D Predictor</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/3d-force-graph@1.75.1/dist/3d-force-graph.min.js"></script>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+    <main class="page">
+        <header class="hero">
+            <h1>Crystal GNN 3D Predictor</h1>
+            <p>Paste a crystal structure, run inference, and inspect both the 3D crystal and converted graph.</p>
+        </header>
+
+        <section class="panel input-panel">
+            <div class="controls-row">
+                <label>
+                    Checkpoint
+                    <input id="checkpoint" type="text" placeholder="checkpoints/.../best.pt" />
+                </label>
+                <label>
+                    Format
+                    <select id="fmt">
+                        <option value="auto">Auto detect</option>
+                        <option value="cif">CIF</option>
+                        <option value="poscar">POSCAR</option>
+                    </select>
+                </label>
+                <label>
+                    MC Samples
+                    <input id="mc" type="number" min="1" max="100" value="10" />
+                </label>
+            </div>
+            <label class="full-width">
+                Crystal input
+                <textarea id="structure-input" spellcheck="false"></textarea>
+            </label>
+            <div class="button-row">
+                <button id="predict-btn">Predict and Render 3D</button>
+                <button id="sample-btn" class="secondary">Load Sample CIF</button>
+            </div>
+            <p id="status" class="status">Ready.</p>
+        </section>
+
+        <section class="panel metrics">
+            <div class="metric"><span>Prediction</span><strong id="pred">-</strong></div>
+            <div class="metric"><span>90% Interval</span><strong id="interval">-</strong></div>
+            <div class="metric"><span>Aleatoric</span><strong id="ale">-</strong></div>
+            <div class="metric"><span>Epistemic</span><strong id="epi">-</strong></div>
+            <div class="metric"><span>Total Uncertainty</span><strong id="tot">-</strong></div>
+        </section>
+
+        <section class="visuals">
+            <div class="panel viz-card">
+                <h2>3D Crystal</h2>
+                <div id="crystal-view" class="viz"></div>
+            </div>
+            <div class="panel viz-card">
+                <h2>3D Graph Conversion</h2>
+                <div id="graph-view" class="viz"></div>
+            </div>
+        </section>
+    </main>
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

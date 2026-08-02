@@ -1,0 +1,65 @@
+"""Deep Evidential Regression output head."""
+
+from __future__ import annotations
+
+import logging
+
+import torch
+from torch import nn
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+class DERHead(nn.Module):
+    """Predict NIG parameters for evidential regression."""
+
+    def __init__(self, hidden_dim: int = 128) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(hidden_dim, 64),
+            nn.SiLU(),
+            nn.Linear(64, 4),
+        )
+        self._warned_non_finite = False
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return (mu, v, alpha, beta) each shaped [B, 1]."""
+        x = torch.nan_to_num(x, nan=0.0, posinf=1e4, neginf=-1e4)
+        out = self.net(x)
+        mu, v_raw, alpha_raw, beta_raw = torch.chunk(out, 4, dim=-1)
+
+        v = torch.nn.functional.softplus(v_raw) + 1e-6
+        alpha = torch.nn.functional.softplus(alpha_raw) + 1.0
+        alpha = torch.clamp(alpha, min=1.01, max=1e6)
+        beta = torch.nn.functional.softplus(beta_raw) + 1e-6
+        beta = torch.clamp(beta, min=1e-6, max=1e6)
+
+        has_non_finite = any(torch.isfinite(t).logical_not().any() for t in [mu, v, alpha, beta])
+        mu = torch.nan_to_num(mu, nan=0.0, posinf=1e4, neginf=-1e4)
+        v = torch.nan_to_num(v, nan=1.0, posinf=1e6, neginf=1e-6)
+        alpha = torch.nan_to_num(alpha, nan=1.01, posinf=1e6, neginf=1.01)
+        beta = torch.nan_to_num(beta, nan=1.0, posinf=1e6, neginf=1e-6)
+
+        if (not self._warned_non_finite) and has_non_finite:
+            LOGGER.warning("Non-finite DERHead outputs were sanitized; continuing training.")
+            self._warned_non_finite = True
+
+        return mu, v, alpha, beta
+
+    @staticmethod
+    def aleatoric(v: torch.Tensor, alpha: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
+        """Return aleatoric uncertainty and clamp to finite range."""
+        alpha = torch.clamp(alpha, min=1.01, max=1e6)
+        v = torch.clamp(v, min=1e-6, max=1e6)
+        beta = torch.clamp(beta, min=1e-6, max=1e6)
+        out = beta / (v * (alpha - 1.0))
+        return torch.clamp(out, min=0.0, max=1e6)
+
+    @staticmethod
+    def epistemic(v: torch.Tensor, alpha: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
+        """Return epistemic uncertainty and clamp to finite range."""
+        ale = DERHead.aleatoric(v, alpha, beta)
+        v = torch.clamp(v, min=1e-6, max=1e6)
+        out = ale / v
+        return torch.clamp(out, min=0.0, max=1e6)

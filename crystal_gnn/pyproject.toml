@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crystal_gnn"
+version = "0.1.0"
+description = "Structure-aware multi-scale crystal GNN with calibrated uncertainty"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Crystal GNN Authors"}]
+dependencies = []
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["crystal_gnn*"]

@@ -1,4 +1,8 @@
-# Root .gitignore for GNN repository
+# Node.js & Frontend
+node_modules/
+dist/
+.vite/
+*.local
 
 # Python Virtual Environments
 .venv311/

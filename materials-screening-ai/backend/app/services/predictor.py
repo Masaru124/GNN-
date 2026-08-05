@@ -13,9 +13,22 @@ import torch
 from torch.utils.data import DataLoader
 from pymatgen.core import Structure
 
-# Add crystal_gnn directory to python path for model imports
-WORK_ROOT = Path(__file__).resolve().parents[3]  # c:/Users/User/Desktop/GNN/materials-screening-ai -> c:/Users/User/Desktop/GNN
-GNN_PACKAGE_DIR = WORK_ROOT / "crystal_gnn"
+# Search candidate directories for crystal_gnn package and checkpoints
+CURRENT_FILE = Path(__file__).resolve()
+CANDIDATE_ROOTS = [
+    CURRENT_FILE.parents[4],  # c:/Users/User/Desktop/GNN
+    CURRENT_FILE.parents[3],  # c:/Users/User/Desktop/GNN/materials-screening-ai
+    CURRENT_FILE.parents[2],
+]
+
+GNN_PACKAGE_DIR = None
+for root in CANDIDATE_ROOTS:
+    if (root / "crystal_gnn").exists():
+        GNN_PACKAGE_DIR = root / "crystal_gnn"
+        break
+if GNN_PACKAGE_DIR is None:
+    GNN_PACKAGE_DIR = CANDIDATE_ROOTS[0] / "crystal_gnn"
+
 if str(GNN_PACKAGE_DIR) not in sys.path:
     sys.path.insert(0, str(GNN_PACKAGE_DIR))
 
@@ -23,9 +36,21 @@ from crystal_gnn.models.ms_gnn import MultiScaleGNN, SingleScaleGNN
 from crystal_gnn.data.preprocessing import build_node_features, rbf_encode_distance
 from torch_geometric.data import Data, Batch
 
-DEFAULT_CHECKPOINT_PATH = (
-    GNN_PACKAGE_DIR / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt"
-)
+CHECKPOINT_REL = Path("checkpoints") / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt"
+
+
+def _find_checkpoint() -> Path:
+    candidates = [
+        GNN_PACKAGE_DIR / CHECKPOINT_REL,
+        GNN_PACKAGE_DIR.parent / CHECKPOINT_REL,
+    ] + [root / "crystal_gnn" / CHECKPOINT_REL for root in CANDIDATE_ROOTS]
+    for cand in candidates:
+        if cand.exists():
+            return cand
+    return candidates[0]
+
+
+DEFAULT_CHECKPOINT_PATH = _find_checkpoint()
 
 
 class GNNPredictorService:
@@ -34,10 +59,8 @@ class GNNPredictorService:
     def __init__(self, checkpoint_path: Path | str | None = None, device: str | None = None):
         self.ckpt_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_CHECKPOINT_PATH
         if not self.ckpt_path.exists():
-            alt_path = WORK_ROOT / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt"
-            if alt_path.exists():
-                self.ckpt_path = alt_path
-            else:
+            self.ckpt_path = _find_checkpoint()
+            if not self.ckpt_path.exists():
                 raise FileNotFoundError(f"A7 Model Checkpoint not found at {self.ckpt_path}")
 
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")

@@ -25,12 +25,16 @@ Thumbs.db
 *.swp
 .env
 
-# Raw Datasets, Caches and Phase 1 Scratch
-data/
-"Phase 1/"
+# Raw Datasets & Cache Dumps (root level only, do NOT ignore crystal_gnn/crystal_gnn/data source code!)
+/data/
+/Phase 1/
 Phase 1/
 crystal_gnn/data/cache/
 crystal_gnn/data/raw/
+
+# Explicitly track crystal_gnn Python package data module
+!crystal_gnn/crystal_gnn/data/
+!crystal_gnn/crystal_gnn/data/*.py
 
 # Temporary logs and scratch execution outputs
 *.log

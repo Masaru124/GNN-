@@ -1,14 +1,21 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-type BadgeVariant = "default" | "success" | "warning" | "destructive" | "outline";
+type BadgeVariant =
+  | "default"
+  | "secondary"
+  | "success"
+  | "warning"
+  | "destructive"
+  | "outline";
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-primary/10 text-primary border-primary/30",
-  success: "bg-success/10 text-success border-success/30",
-  warning: "bg-warning/10 text-warning border-warning/30",
-  destructive: "bg-destructive/10 text-destructive border-destructive/30",
-  outline: "bg-transparent text-muted-foreground border-border",
+  default: "border-primary/20 bg-primary-muted text-primary",
+  secondary: "border-border bg-muted text-muted-foreground",
+  success: "border-success/20 bg-success-muted text-success",
+  warning: "border-warning/25 bg-warning-muted text-warning",
+  destructive: "border-destructive/20 bg-destructive-muted text-destructive",
+  outline: "border-border bg-transparent text-muted-foreground",
 };
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -20,7 +27,7 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     <span
       ref={ref}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-semibold leading-4",
         variantClasses[variant],
         className,
       )}

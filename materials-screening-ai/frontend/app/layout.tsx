@@ -1,25 +1,22 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Fraunces } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AuthGate } from "@/components/auth-gate";
 import { Navbar } from "@/components/layout/Navbar";
 
 const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-sans",
+  display: "swap",
 });
 
 const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -38,26 +35,25 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plexSans.variable} ${plexMono.variable} ${fraunces.variable}`}
+      className={`${plexSans.variable} ${plexMono.variable}`}
     >
       <body className="min-h-screen bg-background font-sans antialiased">
+        <a
+          href="#main-content"
+          className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        >
+          Skip to main content
+        </a>
         <Providers>
           <AuthGate>
             <div className="flex min-h-screen flex-col">
               <Navbar />
-              <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+              <main
+                id="main-content"
+                className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12"
+              >
                 {children}
               </main>
-              <footer className="border-t border-border">
-                <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-4 py-4 text-[11px] text-muted-foreground sm:px-6 lg:px-8">
-                  <span className="font-mono uppercase tracking-[0.18em]">
-                    MatScreen AI · v2.0
-                  </span>
-                  <span className="font-mono uppercase tracking-[0.18em]">
-                    Multi-Scale GNN + Conformal 90%
-                  </span>
-                </div>
-              </footer>
             </div>
           </AuthGate>
         </Providers>

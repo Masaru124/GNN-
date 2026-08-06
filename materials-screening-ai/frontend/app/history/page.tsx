@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { History, ArrowRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { HistoryLog } from "@/lib/types";
 import {
@@ -10,9 +12,14 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TableCaption,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 function confidenceVariant(confidence: string) {
   if (confidence === "High") return "success" as const;
@@ -39,60 +46,80 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1.5">
-        <p className="micro-label">Activity Log</p>
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          Prediction & Screening History
-        </h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Log of past material property predictions and evidential uncertainty assessments.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Activity Log"
+        title="Prediction & Screening History"
+        description="Log of past material property predictions and evidential uncertainty assessments."
+      />
 
-      <Card className="p-5">
+      <Card className="overflow-hidden">
         {isLoading ? (
-          <div className="space-y-3 py-10 text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <p className="text-sm text-muted-foreground">Loading history logs...</p>
+          <div className="space-y-4 p-6">
+            <Skeleton className="h-8 w-full" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+            <p className="text-xs text-muted-foreground">Loading history…</p>
           </div>
         ) : historyLogs.length === 0 ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">
-            No predictions recorded yet. Run a single prediction or batch screening task!
-          </div>
+          <EmptyState
+            icon={History}
+            title="No predictions recorded yet"
+            description="Run a single prediction or batch screening task to start building your history."
+            action={
+              <Link href="/predict">
+                <Button>
+                  <ArrowRight className="h-4 w-4" />
+                  Run a Prediction
+                </Button>
+              </Link>
+            }
+          />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Filename</TableHead>
-                <TableHead>Formula</TableHead>
-                <TableHead className="text-right">Predicted E_f</TableHead>
-                <TableHead className="text-right">Evidential Std</TableHead>
-                <TableHead className="text-center">Confidence</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {historyLogs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="font-mono text-[11px] text-muted-foreground">
-                    {log.created_at}
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">{log.filename}</TableCell>
-                  <TableCell className="font-bold text-primary">{log.formula}</TableCell>
-                  <TableCell className="text-right font-mono font-bold text-foreground">
-                    {log.predicted_energy_eV} eV/atom
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
-                    ±{log.evidential_std_eV} eV
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={confidenceVariant(log.confidence)}>{log.confidence}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="p-2">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Filename</TableHead>
+                    <TableHead>Formula</TableHead>
+                    <TableHead className="text-right">Predicted E_f</TableHead>
+                    <TableHead className="text-right">Evidential Std</TableHead>
+                    <TableHead className="text-center">Confidence</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historyLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                        {log.created_at}
+                      </TableCell>
+                      <TableCell className="font-medium text-foreground">
+                        {log.filename}
+                      </TableCell>
+                      <TableCell className="font-semibold text-primary">
+                        {log.formula}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-foreground">
+                        {log.predicted_energy_eV} eV/atom
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-muted-foreground">
+                        ±{log.evidential_std_eV} eV
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={confidenceVariant(log.confidence)}>
+                          {log.confidence}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableCaption>Most recent predictions appear first.</TableCaption>
+              </Table>
+            </div>
+          </div>
         )}
       </Card>
     </div>

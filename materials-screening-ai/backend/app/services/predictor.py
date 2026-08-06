@@ -36,14 +36,13 @@ from crystal_gnn.models.ms_gnn import MultiScaleGNN, SingleScaleGNN
 from crystal_gnn.data.preprocessing import build_node_features, rbf_encode_distance
 from torch_geometric.data import Data, Batch
 
-CHECKPOINT_REL = Path("checkpoints") / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt"
-
-
 def _find_checkpoint() -> Path:
     candidates = [
-        GNN_PACKAGE_DIR / CHECKPOINT_REL,
-        GNN_PACKAGE_DIR.parent / CHECKPOINT_REL,
-    ] + [root / "crystal_gnn" / CHECKPOINT_REL for root in CANDIDATE_ROOTS]
+        GNN_PACKAGE_DIR / "model_inference.pt",
+        GNN_PACKAGE_DIR / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "model_inference.pt",
+        GNN_PACKAGE_DIR / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt",
+        GNN_PACKAGE_DIR.parent / "model_inference.pt",
+    ] + [root / "crystal_gnn" / "model_inference.pt" for root in CANDIDATE_ROOTS]
     for cand in candidates:
         if cand.exists():
             return cand

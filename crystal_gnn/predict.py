@@ -31,7 +31,19 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "script
 from train import _build_model, MultiScaleDataset, MultiScaleCollate
 from torch.utils.data import DataLoader
 
-DEFAULT_CKPT = Path(__file__).parent / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt"
+def _find_default_ckpt() -> Path:
+    candidates = [
+        Path(__file__).parent / "model_inference.pt",
+        Path(__file__).parent / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "model_inference.pt",
+        Path(__file__).parent / "checkpoints" / "paper_A7_soap_loco_formation_energy_per_atom" / "best.pt",
+    ]
+    for cand in candidates:
+        if cand.exists():
+            return cand
+    return candidates[0]
+
+
+DEFAULT_CKPT = _find_default_ckpt()
 
 
 class CrystalPredictor:

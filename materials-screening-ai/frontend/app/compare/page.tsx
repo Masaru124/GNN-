@@ -1,0 +1,142 @@
+"use client";
+
+import { useState } from "react";
+import { GitCompare } from "lucide-react";
+import { api } from "@/lib/api";
+import { ModelComparison } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+
+const DEFAULT_CIF = `data_TiO2
+_symmetry_space_group_name_H-M   'P 42/m n m'
+_cell_length_a   4.593
+_cell_length_b   4.593
+_cell_length_c   2.959
+_cell_angle_alpha   90.0
+_cell_angle_beta    90.0
+_cell_angle_gamma   90.0
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Ti1 Ti 0.0000 0.0000 0.0000
+Ti2 Ti 0.5000 0.5000 0.5000
+O1 O 0.3050 0.3050 0.0000
+O2 O 0.6950 0.6950 0.0000
+O3 O 0.8050 0.1950 0.5000
+O4 O 0.1950 0.8050 0.5000`;
+
+export default function Page() {
+  const [cifText, setCifText] = useState(DEFAULT_CIF);
+  const [isLoading, setIsLoading] = useState(false);
+  const [comparison, setComparison] = useState<ModelComparison | null>(null);
+
+  const handleRunComparison = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.compareModels(cifText);
+      setComparison(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1.5">
+        <p className="micro-label">Architecture Ablation</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          Multi-Scale GNN vs Single-Scale GNN
+        </h1>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Evaluate model explainability by comparing multi-scale fusion predictions against
+          single-scale (4.0Å) baseline graph predictions.
+        </p>
+      </div>
+
+      <Card className="space-y-4 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label htmlFor="cif-input" className="text-xs font-semibold text-foreground">
+            Input CIF Crystal Structure Text:
+          </label>
+          <Button onClick={handleRunComparison} disabled={isLoading}>
+            <GitCompare className="h-4 w-4" />
+            {isLoading ? "Running..." : "Run Model Comparison"}
+          </Button>
+        </div>
+
+        <Textarea
+          id="cif-input"
+          rows={8}
+          value={cifText}
+          onChange={(e) => setCifText(e.target.value)}
+          className="font-mono text-xs"
+        />
+      </Card>
+
+      {comparison && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Card className="space-y-3 border-primary/30 bg-primary/5 p-6">
+              <p className="micro-label text-primary">Proposed Architecture</p>
+              <h3 className="font-display text-xl font-bold tracking-tight">Multi-Scale GNN (A7)</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Incorporates 4.0Å, 6.0Å & 8.0Å coordination graph fusion with DER Uncertainty.
+              </p>
+
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground">Predicted E_f</p>
+                <p className="font-mono text-3xl font-black text-primary">
+                  {comparison.comparison.multi_scale.predicted_formation_energy_per_atom_eV}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">eV/atom</span>
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/60 p-3 text-xs text-muted-foreground">
+                Evidential Std:{" "}
+                <strong className="font-mono text-foreground">
+                  ±{comparison.comparison.multi_scale.evidential_std_eV} eV
+                </strong>
+              </div>
+            </Card>
+
+            <Card className="space-y-3 p-6">
+              <p className="micro-label">Baseline Architecture</p>
+              <h3 className="font-display text-xl font-bold tracking-tight">
+                Single-Scale GNN (4.0Å)
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Restricted to immediate 4.0Å nearest neighbor coordination sphere.
+              </p>
+
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground">Predicted E_f</p>
+                <p className="font-mono text-3xl font-black text-foreground">
+                  {comparison.comparison.single_scale.predicted_formation_energy_per_atom_eV}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">eV/atom</span>
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/60 p-3 text-xs text-muted-foreground">
+                Refinement Difference:{" "}
+                <strong className="font-mono text-accent">
+                  {comparison.comparison.difference_eV} eV/atom
+                </strong>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="space-y-1 p-5 text-sm text-muted-foreground">
+            <p className="font-semibold text-foreground">Explainability Summary:</p>
+            <p className="leading-relaxed">{comparison.comparison.explanation}</p>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}

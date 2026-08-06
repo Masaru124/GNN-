@@ -38,11 +38,13 @@ scratch/
 comformer_check_structures/
 crystal_gnn/comformer_check_structures/
 
-# Checkpoint binaries (ignored for Git to stay below GitHub's 100MB file limit)
+# Checkpoint binaries (ignore large training checkpoints, allow lightweight inference weights)
 checkpoints/
 crystal_gnn/checkpoints/
 *.pt
 *.pth
+!crystal_gnn/model_inference.pt
+!model_inference.pt
 
 # Results
 results/*

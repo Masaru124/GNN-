@@ -24,13 +24,15 @@ scratch/
 comformer_check_structures/
 crystal_gnn/comformer_check_structures/
 
-# Checkpoint rules: preserve ONLY paper_A7 best.pt
+# Checkpoint rules: preserve ONLY lightweight inference weights
 checkpoints/*
 crystal_gnn/checkpoints/*
 !checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
 !checkpoints/paper_A7_soap_loco_formation_energy_per_atom/best.pt
 !crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
 !crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/best.pt
+!model_inference.pt
+!crystal_gnn/model_inference.pt
 
 # Ignore raw results dumps except summary CSVs
 results/*

@@ -1,8 +1,4 @@
-# Node.js & Frontend
-node_modules/
-dist/
-.vite/
-*.local
+# Root .gitignore for GNN repository
 
 # Python Virtual Environments
 .venv311/
@@ -42,14 +38,14 @@ scratch/
 comformer_check_structures/
 crystal_gnn/comformer_check_structures/
 
-# Checkpoint rules:
-# Ignore large scratch checkpoints, preserve baseline paper checkpoint
+# Checkpoint binaries (ignored for Git to stay below GitHub's 100MB file limit)
 checkpoints/
-crystal_gnn/checkpoints/*
-!crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
-crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/last.pt
+crystal_gnn/checkpoints/
+*.pt
+*.pth
 
-# Ignore large raw results dumps except summary CSVs
-results/
+# Results
+results/*
 crystal_gnn/results/*
+!results/*.csv
 !crystal_gnn/results/*.csv

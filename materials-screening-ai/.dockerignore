@@ -1,0 +1,39 @@
+# Docker build context ignore file
+
+# Python Virtual Environments
+.venv311/
+.venv/
+venv/
+ENV/
+env/
+
+# Git history
+.git/
+.gitignore
+
+# Raw Datasets and Large Graph Caches
+data/
+crystal_gnn/data/cache/
+crystal_gnn/data/raw/
+
+# Phase 1 scratch and temporary logs
+Phase 1/
+"Phase 1/"
+*.log
+scratch/
+comformer_check_structures/
+crystal_gnn/comformer_check_structures/
+
+# Checkpoint rules: preserve ONLY paper_A7 best.pt
+checkpoints/*
+crystal_gnn/checkpoints/*
+!checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
+!checkpoints/paper_A7_soap_loco_formation_energy_per_atom/best.pt
+!crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/
+!crystal_gnn/checkpoints/paper_A7_soap_loco_formation_energy_per_atom/best.pt
+
+# Ignore raw results dumps except summary CSVs
+results/*
+crystal_gnn/results/*
+!results/*.csv
+!crystal_gnn/results/*.csv

@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: materials-screening-ai/backend/Dockerfile
+    container_name: matscreen-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend/data:/app/backend/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

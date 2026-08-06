@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { UploadCloud, FileText, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 interface UploadBoxProps {
   onFileSelected: (file: File) => void;
@@ -91,7 +90,7 @@ _atom_site_fract_y
 _atom_site_fract_z
 Mo1 Mo 0.3333 0.6667 0.2500
 S1 S 0.3333 0.6667 0.6210
-S2 S 0.3333 0.6667 0.8790`
+S2 S 0.3333 0.6667 0.8790`,
 };
 
 export const UploadBox: React.FC<UploadBoxProps> = ({
@@ -105,9 +104,9 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   };
@@ -132,17 +131,19 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <Card
+    <div className="space-y-5">
+      <div
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
         className={cn(
-          "relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed p-8 text-center transition-colors group",
+          "group relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed transition-all duration-200",
           dragActive
-            ? "border-primary bg-primary/10"
-            : "border-border bg-card hover:border-primary/40",
+            ? "border-primary bg-primary-muted"
+            : selectedFileName
+              ? "border-success/40 bg-success-muted/40"
+              : "border-border bg-card hover:border-primary/40 hover:bg-muted/40",
         )}
       >
         <input
@@ -151,35 +152,47 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
           onChange={handleChange}
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
           disabled={isLoading}
+          aria-label="Upload a CIF structure file"
         />
 
-        <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary transition-transform group-hover:scale-110">
-            <UploadCloud className="h-7 w-7" />
+        <div className="flex flex-col items-center justify-center gap-4 px-6 py-12 text-center sm:py-14">
+          <div
+            className={cn(
+              "flex h-14 w-14 items-center justify-center rounded-2xl border transition-all duration-200 group-hover:scale-105",
+              selectedFileName
+                ? "border-success/25 bg-success-muted text-success"
+                : dragActive
+                  ? "border-primary/30 bg-primary-muted text-primary"
+                  : "border-border bg-muted/70 text-primary",
+            )}
+          >
+            {selectedFileName ? (
+              <CheckCircle2 className="h-7 w-7" />
+            ) : (
+              <UploadCloud className="h-7 w-7" />
+            )}
           </div>
 
           <div>
-            <p className="flex items-center justify-center gap-2 font-display text-base font-semibold tracking-tight text-foreground">
-              {selectedFileName && (
-                <CheckCircle2 className="h-4 w-4 text-success" />
-              )}
+            <p className="text-[15px] font-semibold tracking-tight text-foreground">
               {selectedFileName
-                ? `Selected: ${selectedFileName}`
-                : 'Drag & Drop CIF File Here'}
+                ? `Ready: ${selectedFileName}`
+                : "Drag & drop a CIF structure"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Supports Crystallographic Information Files (.cif) & POSCAR format
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              {selectedFileName
+                ? "File selected — inference will run automatically"
+                : "or click to browse · .cif, .poscar supported"}
             </p>
           </div>
-
-          <Button type="button" size="sm" disabled={isLoading}>
-            Browse Computer
-          </Button>
         </div>
-      </Card>
+      </div>
 
-      <Card className="space-y-2 p-4">
-        <p className="micro-label">Or load a sample crystal structure</p>
+      <Card className="space-y-3 p-5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="micro-label">Or load a sample structure</p>
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        </div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(SAMPLE_CIFS).map(([formula, cifText]) => (
             <button
@@ -189,10 +202,10 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
                 onSampleSelected(cifText, formula);
               }}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-3 py-1.5 font-mono text-xs font-medium text-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-primary-muted hover:text-primary focus-ring disabled:pointer-events-none disabled:opacity-50"
             >
-              <FileText className="h-3.5 w-3.5 text-accent" />
-              <span>{formula}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
+              {formula}
             </button>
           ))}
         </div>

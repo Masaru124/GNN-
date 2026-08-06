@@ -21,7 +21,7 @@ export const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("[&_tr]:border-b", className)}
+    className={cn("[&_tr]:border-b [&_tr]:border-border/70", className)}
     {...props}
   />
 ));
@@ -46,7 +46,7 @@ export const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-border transition-colors hover:bg-muted/50",
+      "border-b border-border/70 transition-colors duration-150 hover:bg-muted/50",
       className,
     )}
     {...props}
@@ -61,7 +61,7 @@ export const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-11 px-4 text-left align-middle font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground",
+      "h-11 px-4 text-left align-middle font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground",
       className,
     )}
     {...props}

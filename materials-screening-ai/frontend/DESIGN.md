@@ -1,16 +1,16 @@
 # Design System
 
-This project uses a dark-first "founder war-room / blueprint desk" visual system. Interfaces should feel like an editorial planning surface: dramatic, tactical, precise, and highly usable.
+A premium, enterprise-grade visual system inspired by Cloudflare's design language: warm, technical, precise, and highly usable. Think software built by Cloudflare — not a clone, but the same level of refinement and craft.
 
 ---
 
 ## Stack
 
 - **Framework:** Next.js App Router + React + TypeScript
-- **Styling:** Tailwind CSS v4 via `@theme inline` in `app/globals.css`
+- **Styling:** Tailwind CSS v4 via `@theme` / `@theme inline` in `app/globals.css`
 - **Components:** shadcn-style primitives in `components/ui`
 - **Icons:** Lucide React
-- **Fonts:** IBM Plex Sans for UI, Fraunces for display headings, IBM Plex Mono for technical labels/code
+- **Fonts:** IBM Plex Sans for UI + headings, IBM Plex Mono for numbers, labels, and code (loaded via `next/font/google` in `app/layout.tsx`)
 - **Dark mode:** `next-themes`, class-based, dark default
 - **Utilities:** `cn()` from `@/lib/utils`
 
@@ -18,35 +18,38 @@ This project uses a dark-first "founder war-room / blueprint desk" visual system
 
 ## Visual Direction
 
-The app is a live AI planning desk, not a generic SaaS dashboard.
+The app is a modern enterprise AI platform — clean, confident, fast-feeling.
 
-- Use dark ink backgrounds, warm paper overlays, amber command accents, teal graph highlights, and occasional violet depth.
-- Use glassy panels over a visible blueprint grid texture.
-- Prefer large editorial display headings with tight tracking.
-- Make controls feel tactile: rounded pills, inner shadows, subtle lift on hover, and visible focus rings.
-- Avoid generic purple/white gradients, flat gray panels, and default-looking dashboards.
+- Warm off-white canvas (`#FAF9F7`-style) in light mode; rich charcoal (never pure black) in dark mode.
+- Warm Cloudflare-orange primary, neutral slate secondary, subtle blue accent used sparingly.
+- Thin, low-contrast borders; slight card elevation; generous whitespace.
+- Technical but approachable: mono labels, mono numerics, tight-tracked bold headings.
+- **Avoid:** random gradients, neon colors, glassmorphism, heavy shadows, oversaturated palettes.
 
 ---
 
 ## Tokens
 
-All semantic tokens live in `app/globals.css` and are bridged to Tailwind with `@theme inline`.
+All semantic tokens live in `app/globals.css` and are bridged to Tailwind with `@theme inline`. Every color is defined in **OKLCH**.
 
-| Token | Light | Dark | Usage |
+| Token | Light (approx.) | Dark | Usage |
 | --- | --- | --- | --- |
-| `background` | `oklch(0.94 0.032 86)` | `oklch(0.15 0.038 252)` | Page canvas |
-| `foreground` | `oklch(0.19 0.029 252)` | `oklch(0.94 0.034 88)` | Primary text |
-| `card` | `oklch(0.985 0.026 92 / 84%)` | `oklch(0.205 0.044 252 / 78%)` | Glass/paper panels |
-| `primary` | `oklch(0.68 0.165 55)` | `oklch(0.78 0.16 61)` | Amber command actions |
-| `accent` | `oklch(0.78 0.122 174)` | `oklch(0.77 0.134 178)` | Teal highlights and graph energy |
-| `secondary` | `oklch(0.86 0.055 184 / 80%)` | `oklch(0.25 0.06 244 / 74%)` | Secondary surfaces |
-| `muted` | `oklch(0.88 0.03 84 / 68%)` | `oklch(0.26 0.052 252 / 64%)` | Subtle surfaces |
-| `muted-foreground` | `oklch(0.42 0.036 252)` | `oklch(0.73 0.042 88)` | Supporting copy |
-| `border` | `oklch(0.24 0.035 252 / 18%)` | `oklch(0.98 0.02 88 / 14%)` | Panel and input borders |
-| `ring` | `oklch(0.76 0.14 174)` | `oklch(0.8 0.15 178)` | Focus rings |
-| `destructive` | `oklch(0.58 0.21 31)` | `oklch(0.68 0.21 31)` | Delete/error actions |
+| `background` | `oklch(0.982 0.003 85)` | `oklch(0.16 0.006 85)` | Page canvas |
+| `foreground` | `oklch(0.22 0.01 260)` | `oklch(0.95 0.005 85)` | Primary text |
+| `card` | `oklch(1 0 0)` | `oklch(0.205 0.007 85)` | Card surfaces |
+| `primary` | `oklch(0.723 0.172 54)` | `oklch(0.78 0.16 55)` | Warm orange — primary actions |
+| `primary-foreground` | dark brown `oklch(0.2 0.03 45)` | dark `oklch(0.17 0.03 45)` | Text on orange (accessible) |
+| `secondary` | `oklch(0.95 0.005 260)` | `oklch(0.255 0.008 260)` | Secondary surfaces |
+| `muted` | `oklch(0.952 0.003 106)` | `oklch(0.245 0.007 85)` | Subtle surfaces |
+| `muted-foreground` | `oklch(0.5 0.02 260)` | `oklch(0.72 0.01 260)` | Supporting copy |
+| `accent` | `oklch(0.6 0.12 255)` | `oklch(0.76 0.1 245)` | Subtle blue, used sparingly |
+| `border` | `oklch(0.91 0.008 260)` | `oklch(0.3 0.008 85)` | Thin, low-contrast borders |
+| `ring` | `oklch(0.723 0.172 54)` | `oklch(0.78 0.16 55)` | Focus rings |
+| `success` | `oklch(0.62 0.14 155)` | `oklch(0.72 0.14 155)` | Confident green |
+| `warning` | `oklch(0.72 0.15 72)` | `oklch(0.82 0.14 75)` | Amber |
+| `destructive` | `oklch(0.55 0.18 27)` | `oklch(0.64 0.17 27)` | Muted red |
 
-Chart colors use amber, teal, violet, coral, and green variants from `chart-1` through `chart-5`.
+Derived surface tints for badges/tags: `primary-muted`, `accent-muted`, `success-muted`, `warning-muted`, `destructive-muted` (the base color at ~10% alpha). Chart colors use `chart-1` (orange) through `chart-5`.
 
 ---
 
@@ -54,16 +57,16 @@ Chart colors use amber, teal, violet, coral, and green variants from `chart-1` t
 
 | Token | Font | Usage |
 | --- | --- | --- |
-| `--font-body` | IBM Plex Sans | Body text, controls, forms |
-| `--font-display-family` | Fraunces | Hero headings, card titles, empty states |
-| `--font-code` | IBM Plex Mono | Model names, labels, code blocks, technical metadata |
+| `--font-sans` | IBM Plex Sans | Body, controls, forms, headings |
+| `--font-display` | IBM Plex Sans | Aliased to sans (tight-tracked bold headings) |
+| `--font-mono` | IBM Plex Mono | Numbers, technical values, labels, code |
 
 Guidelines:
 
-- Hero headings use `font-display`, very tight tracking, and large scale (`text-5xl` to `text-8xl`).
-- Card titles use `font-display text-xl font-bold tracking-tight`.
-- Technical eyebrows use `.micro-label`: mono, uppercase, wide tracking.
-- Body copy should stay readable with `leading-7` or `leading-8`.
+- Page headings: `text-2xl` → `text-4xl`, `font-bold tracking-tight`. The shared `PageHeader` component standardizes the eyebrow + title + description pattern.
+- Eyebrows, table headers, and metadata use `.micro-label`: mono, uppercase, 11px, `tracking-[0.14em]`.
+- **All numbers and technical values use `font-mono`.**
+- Body copy: `text-[15px]`, `leading-relaxed`, `text-muted-foreground` for supporting text.
 
 ---
 
@@ -71,12 +74,14 @@ Guidelines:
 
 Defined in `app/globals.css`:
 
-- `.planner-bg`: layered blueprint grid, amber orb, teal orb, violet depth glow.
-- `.glass-panel`: high-impact translucent hero/header panel with inner highlight.
-- `.paper-card`: default card treatment with translucent surface and deep shadow.
-- `.blueprint-surface`: compact grid surface for graphs and empty states.
-- `.command-strip`: amber-to-teal-to-violet strip used for command moments.
-- `.micro-label`: technical uppercase label style.
+- `.micro-label` — mono uppercase technical eyebrow.
+- `.focus-ring` — consistent visible focus ring (`ring-[3px] ring-ring/30`) for links/buttons.
+- `.field-ring` — focus ring + border tint for inputs/textarea.
+- `.card-hover` — gentle lift + shadow on interactive cards.
+- `.skeleton` — shimmer placeholder (use via `Skeleton` in `components/ui/skeleton`).
+- `.code-canvas` — monospace technical surface for raw data.
+
+Motion: `animate-fade-in`, `animate-fade-up`, `animate-scale-in` (150–250 ms, ease-out). Subtle only — no decorative loops. `prefers-reduced-motion` is respected globally.
 
 ---
 
@@ -84,66 +89,41 @@ Defined in `app/globals.css`:
 
 ### Cards
 
-Cards are rounded, translucent, and tactile.
-
-Use:
-
-```tsx
-<Card className="overflow-hidden">
-```
-
-Avoid plain white/gray cards. Nested item cards should use `bg-background/30`, borders, backdrop blur, and inner shadow.
+`rounded-xl border border-border bg-card shadow-xs`. Do not stack heavy shadows or hover-elevate nested cards. Interactive cards add `card-hover`. Shared building blocks: `StatCard`, `EmptyState`, `Skeleton`.
 
 ### Buttons
 
-Primary buttons use `.command-strip`, pill radius, bold type, and hover lift. Outline buttons are translucent and should reveal amber/teal on hover.
+Primary: orange fill, dark text (`bg-primary text-primary-foreground hover:bg-primary-hover`), `rounded-lg`, `shadow-xs`, `active:translate-y-px`. Variants: `primary | secondary | outline | ghost | destructive | success`. Sizes: `default | sm | lg | icon`.
 
 ### Inputs
 
-Inputs and textareas use rounded-xl, translucent backgrounds, inner shadows, and strong teal focus rings. They should feel embedded in the planning surface.
+`rounded-lg`, thin `border-input`, subtle shadow, hover border tint, orange focus ring via `field-ring`. Placeholder at `text-muted-foreground/70`.
 
 ### Badges
 
-Badges are mono, uppercase, wide-tracked pills. Use them for system state, streaming mode, and model metadata.
+Tinted pill: `rounded-full border`, `~10%` background tint + matching text (`default | secondary | success | warning | destructive | outline`). Use mono for confidence/state badges.
 
-### Graphs
+### Tables
 
-Graph containers use `.blueprint-surface`. React Flow nodes should look like mini glass cards, with teal edge strokes and compact mono field lists.
+Minimal borders (`border-border/70`), mono uppercase headers, `hover:bg-muted/50` row hover. Numeric cells always `font-mono`.
+
+### Navigation
+
+Premium SaaS: sticky, `backdrop-blur` bar; active items show an orange icon + a 2px orange underline indicator; right-side theme toggle + auth actions; responsive slide-down mobile menu.
 
 ---
 
 ## Layout
 
-Use a wide planning workspace:
-
-```tsx
-<main className="planner-bg min-h-screen flex-1 overflow-hidden">
-  <div className="container mx-auto max-w-[1500px] px-4 py-8 lg:py-12">
-```
-
-The main planner grid uses a sticky left command/graph rail and a wider right editing workspace:
-
-```tsx
-grid gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.35fr)]
-```
-
-Mobile remains single-column with no sticky behavior.
+Page canvas is centered at `max-w-7xl` in `app/layout.tsx` with `px-4 sm:px-6 lg:px-8` and generous vertical rhythm (`py-8 sm:py-10 lg:py-12`). Every page uses `space-y-8` and the shared `PageHeader`. Results and loading states animate in with `animate-fade-up`. Loading states use `Skeleton` shimmers instead of bare spinners.
 
 ---
 
-## Interaction
+## Interaction & Accessibility
 
-- Hover lift: `hover:-translate-y-0.5`
-- Focus: `focus-visible:ring-ring/50 focus-visible:ring-[3px]`
-- Disabled: `disabled:pointer-events-none disabled:opacity-50`
-- Page entrance: `animate-fade-up` and `animate-scale-in`
-- Keep motion subtle and purposeful; avoid decorative loops that distract from editing.
-
----
-
-## Accessibility
-
-- Preserve visible focus rings on all interactive controls.
-- Keep text contrast high on translucent panels.
-- Provide text representations for graphs and generated data.
-- Controls must remain usable on mobile, especially add/remove/edit actions.
+- Hover lift: `card-hover` (`hover:-translate-y-0.5`, 200 ms ease-out).
+- Focus: `focus-ring` on all interactive elements; never remove outlines.
+- Disabled: `disabled:pointer-events-none disabled:opacity-50`.
+- Contrast: dark text on the orange primary to satisfy WCAG; muted copy stays readable on all surfaces.
+- ARIA: `role="alert"` on error banners, `role="progressbar"` with value on gauges, `aria-expanded`/`aria-controls` on the mobile menu, skip-to-content link in the layout.
+- Touch targets: minimum `h-9`/`h-10` controls, padded mobile nav items.

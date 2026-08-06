@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Sparkles, X } from "lucide-react";
+import { Search, Sparkles, X, SearchX } from "lucide-react";
 import { api } from "@/lib/api";
 import { PredictionCard } from "@/components/PredictionCard";
 import { ConfidenceGauge } from "@/components/ConfidenceGauge";
@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Page() {
   const [formulaQuery, setFormulaQuery] = useState("");
@@ -62,97 +65,127 @@ export default function Page() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1.5">
-        <p className="micro-label">Structure Database</p>
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          Search Materials Database
-        </h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Search materials by formula (e.g. TiO2, LiFePO4, BaTiO3) or element with single-click GNN
-          property screening.
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Structure Database"
+        title="Search Materials Database"
+        description="Search materials by formula (e.g. TiO2, LiFePO4, BaTiO3) or element with single-click GNN property screening."
+      />
+
+      <Card className="p-4">
+        <form
+          onSubmit={handleSearch}
+          className="flex flex-col gap-3 lg:flex-row lg:items-center"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Chemical Formula (e.g. TiO2, LiFePO4, Si, MoS2)"
+              value={formulaQuery}
+              onChange={(e) => setFormulaQuery(e.target.value)}
+              className="pl-10 flex-1"
+            />
+          </div>
+
+          <div className="lg:w-48">
+            <Input
+              type="text"
+              placeholder="Element (e.g. Ti, Fe)"
+              value={elementQuery}
+              onChange={(e) => setElementQuery(e.target.value)}
+            />
+          </div>
+
+          <Button type="submit" disabled={isLoading}>
+            <Search className="h-4 w-4" />
+            Search
+          </Button>
+        </form>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Query the 150,000+ structure database · results are re-screened on demand
         </p>
-      </div>
+      </Card>
 
-      <form
-        onSubmit={handleSearch}
-        className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row"
-      >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Chemical Formula (e.g. TiO2, LiFePO4, Si, MoS2)"
-            value={formulaQuery}
-            onChange={(e) => setFormulaQuery(e.target.value)}
-            className="pl-9"
-          />
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="space-y-4 p-5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-7 w-40" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-24 w-full" />
+            </Card>
+          ))}
         </div>
-
-        <div className="w-full sm:w-48">
-          <Input
-            type="text"
-            placeholder="Element (e.g. Ti, Fe)"
-            value={elementQuery}
-            onChange={(e) => setElementQuery(e.target.value)}
+      ) : results.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={SearchX}
+            title="No materials found"
+            description="No structures matched your query. Try adjusting the chemical formula or element, or clear the filters to browse the full database."
           />
-        </div>
-
-        <Button type="submit" disabled={isLoading}>
-          <Search className="h-4 w-4" />
-          Search
-        </Button>
-      </form>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {results.map((mat) => (
-          <Card key={mat.material_id} className="flex flex-col gap-3 p-5">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-semibold text-accent">
-                {mat.material_id}
-              </span>
-              <Badge variant="outline">{mat.crystal_system}</Badge>
-            </div>
-
-            <div>
-              <h3 className="font-display text-xl font-bold tracking-tight">
-                {mat.formula_pretty || mat.formula}
-              </h3>
-              <p className="text-xs text-muted-foreground">{mat.name}</p>
-            </div>
-
-            <div className="space-y-1.5 rounded-lg border border-border bg-muted/60 p-3 text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Spacegroup:</span>
-                <strong className="text-foreground">{mat.spacegroup}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span>Volume:</span>
-                <strong className="text-foreground">{mat.volume_A3} Å³</strong>
-              </div>
-              <div className="flex justify-between">
-                <span>Density:</span>
-                <strong className="text-foreground">{mat.density_g_cm3} g/cm³</strong>
-              </div>
-            </div>
-
-            <Button
-              variant="secondary"
-              onClick={() => handleScreenMaterial(mat.material_id)}
-              disabled={screeningId === mat.material_id}
-              className="w-full"
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {results.map((mat) => (
+            <Card
+              key={mat.material_id}
+              className="card-hover flex flex-col gap-4 p-5"
             >
-              <Sparkles className="h-4 w-4 text-primary" />
-              {screeningId === mat.material_id ? "Screening..." : "1-Click Screen Material"}
-            </Button>
-          </Card>
-        ))}
-      </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono text-xs font-semibold text-accent">
+                  {mat.material_id}
+                </span>
+                <Badge variant="outline">{mat.crystal_system}</Badge>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {mat.formula_pretty || mat.formula}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{mat.name}</p>
+              </div>
+
+              <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground">
+                <div className="flex justify-between gap-3">
+                  <span>Spacegroup</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {mat.spacegroup}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span>Volume</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {mat.volume_A3} Å³
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span>Density</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {mat.density_g_cm3} g/cm³
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => handleScreenMaterial(mat.material_id)}
+                disabled={screeningId === mat.material_id}
+                className="mt-auto w-full"
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+                {screeningId === mat.material_id ? "Screening…" : "1-Click Screen Material"}
+              </Button>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {screenedResult && (
-        <div className="space-y-6 border-t border-border pt-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold tracking-tight">
+        <div className="animate-fade-up space-y-6 border-t border-border pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-bold tracking-tight">
               Screening Result for {screenedResult.material_info.formula}
             </h2>
             <Button variant="ghost" size="sm" onClick={() => setScreenedResult(null)}>

@@ -15,12 +15,10 @@ import {
   History,
   LogOut,
   LogIn,
-  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { isAuthenticated, setAuthenticated } from "@/lib/auth";
 
 const NAV_ITEMS = [
@@ -38,6 +36,9 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const authed = isAuthenticated();
 
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
   const handleLogout = () => {
     setAuthenticated(false);
     setOpen(false);
@@ -45,54 +46,63 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <Atom className="h-5 w-5" />
-          </div>
-          <div className="leading-tight">
-            <p className="font-display text-lg font-bold tracking-tight">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="group flex shrink-0 items-center gap-2.5 focus-ring rounded-lg"
+          aria-label="MatScreen AI — Home"
+        >
+          <span className="leading-tight">
+            <span className="block text-[15px] font-bold tracking-tight text-foreground">
               MatScreen AI
-            </p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              A7 GNN · Calibrated
-            </p>
-          </div>
+            </span>
+          </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 focus-ring",
                   active
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon
+                  className={cn(
+                    "h-4 w-4 transition-colors",
+                    active ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
                 {item.label}
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary"
+                  />
+                )}
               </Link>
             );
           })}
         </nav>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <Badge variant="success" className="hidden md:inline-flex">
-            <Activity className="h-3 w-3" />
-            A7 Online
-          </Badge>
           <ThemeToggle />
           {authed ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleLogout}
+              className="hidden sm:inline-flex"
+            >
+              Logout
             </Button>
           ) : (
             <Button
@@ -108,7 +118,9 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             className="lg:hidden"
-            aria-label="Toggle menu"
+            aria-label="Toggle navigation menu"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -117,27 +129,56 @@ export function Navbar() {
       </div>
 
       {open && (
-        <nav className="border-t border-border px-4 py-2 lg:hidden">
+        <nav
+          id="mobile-nav"
+          aria-label="Primary"
+          className="animate-fade-in border-t border-border/80 px-4 py-3 lg:hidden"
+        >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors focus-ring",
                   active
                     ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon
+                  className={cn(
+                    "h-4.5 w-4.5",
+                    active ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
                 {item.label}
               </Link>
             );
           })}
+          <div className="mt-2 border-t border-border/80 pt-3 lg:hidden">
+            {authed ? (
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => router.push("/login")}
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </Button>
+            )}
+          </div>
         </nav>
       )}
     </header>

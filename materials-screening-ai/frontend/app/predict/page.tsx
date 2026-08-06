@@ -10,6 +10,8 @@ import { PredictResponsePayload } from "@/lib/types";
 import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
@@ -43,16 +45,12 @@ export default function Page() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1.5">
-        <p className="micro-label">Single Structure Prediction</p>
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          Single Crystal Structure Prediction
-        </h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Upload a CIF structure file to calculate formation energy (E_f) and calibrated confidence.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Single Structure Prediction"
+        title="Single Crystal Structure Prediction"
+        description="Upload a CIF structure file to calculate formation energy (E_f) and calibrated confidence."
+      />
 
       <UploadBox
         onFileSelected={handleFileSelected}
@@ -61,27 +59,37 @@ export default function Page() {
       />
 
       {isLoading && (
-        <Card className="space-y-4 p-10">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <div className="space-y-1 text-center">
-            <p className="text-sm font-semibold text-foreground">
-              Running Multi-Scale GNN Inference...
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Constructing 4Å, 6Å, 8Å graphs & DER uncertainty estimation
-            </p>
+        <Card className="p-8">
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-6 shrink-0 animate-spin rounded-full border-2 border-border border-t-primary" />
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-foreground">
+                Running Multi-Scale GNN Inference...
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Constructing 4Å, 6Å, 8Å graphs & DER uncertainty estimation
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-3/5" />
           </div>
         </Card>
       )}
 
       {errorMsg && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/25 bg-destructive-muted px-4 py-3 text-sm text-destructive"
+        >
           <strong>Error:</strong> {errorMsg}
         </div>
       )}
 
       {result && !isLoading && (
-        <div className="grid grid-cols-1 gap-6 pt-2 lg:grid-cols-3">
+        <div className="grid animate-fade-up grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <PredictionCard materialInfo={result.material_info} prediction={result.prediction} />
 

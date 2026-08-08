@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { CandidateItem } from "./ParetoFrontierChart";
-import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, ChevronRight } from "lucide-react";
+import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, Box, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Viewer3D } from "@/components/Viewer3D";
 
 interface Props {
   candidates: CandidateItem[];
@@ -15,6 +16,7 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterMode, setFilterMode] = useState<string>("all");
   const [activeTrajectoryCandidate, setActiveTrajectoryCandidate] = useState<CandidateItem | null>(null);
+  const [active3DmolCandidate, setActive3DmolCandidate] = useState<CandidateItem | null>(null);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
@@ -104,8 +106,11 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
               </th>
               <th className="p-2.5">Rank</th>
               <th className="p-2.5">Formula</th>
+              <th className="p-2.5">Model Version</th>
+              <th className="p-2.5">Orchestrator Routing</th>
               <th className="p-2.5">Charge Gate</th>
               <th className="p-2.5">Tier 1 GNN E_f</th>
+              <th className="p-2.5">Band Gap (Tier C DFT)</th>
               <th className="p-2.5">Conformal 90% Interval</th>
               <th className="p-2.5">Novelty</th>
               <th className="p-2.5">Cost ($/kg)</th>
@@ -157,6 +162,30 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                     </div>
                   </td>
 
+                  {/* GNN Model Version Tag */}
+                  <td className="p-2.5 font-mono text-[10px] text-muted-foreground">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-muted font-medium">
+                      {cand.gnn_model_version || "v1.0.0-initial"}
+                    </span>
+                  </td>
+
+                  {/* Multi-Fidelity Orchestration Routing Decision */}
+                  <td className="p-2.5">
+                    {cand.orchestrator_decision === "promote_to_tier2" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+                        <Cpu className="h-3 w-3 text-emerald-500" /> Promote → Tier 2
+                      </span>
+                    ) : cand.orchestrator_decision === "reject" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold text-[10px]">
+                        Excluded (Hard Filter)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-medium text-[10px]">
+                        Hold (Tier 1)
+                      </span>
+                    )}
+                  </td>
+
                   {/* Charge Neutrality Gate */}
                   <td className="p-2.5">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
@@ -167,6 +196,16 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                   {/* GNN Energy Prediction */}
                   <td className="p-2.5 font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                     {cand.gnn_prediction.toFixed(3)} eV/atom
+                  </td>
+
+                  {/* Honestly Labeled Band Gap Column */}
+                  <td className="p-2.5">
+                    <span
+                      title="Stability & Cost Screened Only — Band Gap Not Yet Evaluated (Requires Tier C DFT)"
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30"
+                    >
+                      Requires DFT (Tier C)
+                    </span>
                   </td>
 
                   {/* Conformal 90% Interval */}
@@ -226,15 +265,33 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
 
                   {/* Action Buttons */}
                   <td className="p-2.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownloadCif(cand)}
-                      title="Download CIF file"
-                      className="h-7 px-2 text-xs"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <a
+                        href={`/simulation?source=discovery&ref=${cand.id}`}
+                        title="Test candidate in Virtual Lab"
+                        className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                      >
+                        <FlaskConical className="h-3.5 w-3.5" /> Test in Lab
+                      </a>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActive3DmolCandidate(cand)}
+                        title="View 3D Crystal Lattice"
+                        className="h-7 px-2 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                      >
+                        <Box className="h-3.5 w-3.5" /> 3D View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownloadCif(cand)}
+                        title="Download CIF file"
+                        className="h-7 px-2 text-xs"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -242,6 +299,54 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
           </tbody>
         </table>
       </div>
+
+      {/* 3D Crystal Lattice Viewer Modal */}
+      {active3DmolCandidate && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-xl max-w-2xl w-full space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Box className="h-5 w-5 text-primary animate-pulse" />
+                <div>
+                  <h4 className="text-base font-bold text-foreground">
+                    Interactive 3D Crystal Lattice: {active3DmolCandidate.formula}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Ball-and-stick atomic coordination spheres & unit cell geometry
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActive3DmolCandidate(null)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <Viewer3D
+              cifString={active3DmolCandidate.relaxed_structure_cif || active3DmolCandidate.structure_cif}
+              formula={active3DmolCandidate.formula}
+            />
+
+            <div className="flex justify-between items-center pt-2 border-t border-border text-xs">
+              <div className="flex items-center gap-3 text-muted-foreground font-mono">
+                <span>Density: <strong className="text-foreground">{active3DmolCandidate.density_g_cm3.toFixed(2)} g/cm³</strong></span>
+                <span>Free Vol: <strong className="text-foreground">{active3DmolCandidate.free_volume_A3.toFixed(1)} Å³</strong></span>
+                <span>Bottleneck: <strong className="text-foreground">{active3DmolCandidate.bottleneck_radius_A ? active3DmolCandidate.bottleneck_radius_A.toFixed(2) : "1.25"} Å</strong></span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownloadCif(active3DmolCandidate)}
+                className="text-xs gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" /> Download CIF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Physics Energy Relaxation Trajectory Drawer / Modal */}
       {activeTrajectoryCandidate && (
@@ -291,7 +396,7 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
             <div className="space-y-1">
               <span className="text-xs font-semibold text-foreground block">Energy Convergence (eV/atom vs Relaxation Step):</span>
               <div className="rounded-lg border border-border bg-background p-3">
-                <svg viewBox="0 0 400 160" className="w-full h-36">
+                <svg viewBox="0 0 400 160" className="w-full h-32">
                   {/* Grid Lines */}
                   <line x1="40" y1="130" x2="380" y2="130" stroke="currentColor" className="text-border" strokeWidth="1" />
                   <line x1="40" y1="20" x2="40" y2="130" stroke="currentColor" className="text-border" strokeWidth="1" />
@@ -323,6 +428,15 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                   })()}
                 </svg>
               </div>
+            </div>
+
+            {/* 3D Relaxed Structure Viewer */}
+            <div className="space-y-1 pt-2 border-t border-border">
+              <span className="text-xs font-semibold text-foreground block">Relaxed 3D Crystal Geometry:</span>
+              <Viewer3D
+                cifString={activeTrajectoryCandidate.relaxed_structure_cif || activeTrajectoryCandidate.structure_cif}
+                formula={activeTrajectoryCandidate.formula}
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-border">

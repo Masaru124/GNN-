@@ -198,10 +198,11 @@ export function DiscoveryQueryBuilder({ onSubmit, isSubmitting }: Props) {
             <select
               value={scaffold}
               onChange={(e) => setScaffold(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 font-semibold"
             >
               <option value="layered_oxide">Layered Oxide AxMO2 (Trigonal Cathode)</option>
-              <option value="perovskite">Perovskite ABX3 (Cubic/Orthorhombic)</option>
+              <option value="perovskite">Perovskite ABX3 (Cubic Oxide)</option>
+              <option value="perovskite_solar_halide">CsSnI3 Lead-Free Halide Perovskite (Solar Absorber)</option>
               <option value="spinel">Spinel AB2X4 (Cubic Cathode/Electrolyte)</option>
               <option value="olivine">Olivine AxMPO4 (Orthorhombic Cathode)</option>
             </select>
@@ -233,19 +234,26 @@ export function DiscoveryQueryBuilder({ onSubmit, isSubmitting }: Props) {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Mobile Ion Species</label>
-            <select
-              value={targetIon}
-              onChange={(e) => setTargetIon(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="Li">Lithium (Li+)</option>
-              <option value="Na">Sodium (Na+)</option>
-              <option value="Mg">Magnesium (Mg2+)</option>
-              <option value="K">Potassium (K+)</option>
-            </select>
-          </div>
+          {scaffold !== "perovskite_solar_halide" ? (
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Mobile Ion Species</label>
+              <select
+                value={targetIon}
+                onChange={(e) => setTargetIon(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="Li">Lithium (Li+)</option>
+                <option value="Na">Sodium (Na+)</option>
+                <option value="Mg">Magnesium (Mg2+)</option>
+                <option value="K">Potassium (K+)</option>
+              </select>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-center flex flex-col justify-center">
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Solar Absorber Mode</span>
+              <span className="text-[9px] text-muted-foreground">Mobile Ion N/A (Halide Scaffold)</span>
+            </div>
+          )}
         </div>
 
         {/* Hard Constraint Sliders / Thresholds */}

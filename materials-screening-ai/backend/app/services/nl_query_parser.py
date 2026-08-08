@@ -56,6 +56,12 @@ class NaturalLanguageQueryParser:
             scaffold = "perovskite"
             target_ion = "Li"
             parsed_constraints.append({"term": "solid electrolyte", "mapped_to": "Scaffold: Perovskite (ABX3), Fast Ion Transport"})
+        elif any(kw in p_lower for kw in ["solar", "photovoltaic", "solar absorber", "pv absorber"]):
+            scaffold = "perovskite_solar_halide"
+            target_ion = "None"
+            min_band_gap_eV = 1.1
+            max_band_gap_eV = 1.7
+            parsed_constraints.append({"term": "solar absorber", "mapped_to": "Scaffold: Lead-Free Halide Perovskite (CsSnI3), Target Band Gap: 1.1–1.7 eV (Shockley-Queisser Limit)"})
 
         # 2. Density / Weight Recognition
         if any(kw in p_lower for kw in ["lightweight", "light weight", "low density"]):

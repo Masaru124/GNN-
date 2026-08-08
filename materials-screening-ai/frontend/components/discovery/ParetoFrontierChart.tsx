@@ -27,6 +27,8 @@ export interface CandidateItem {
   mlip_trajectory?: { step: number; energy_per_atom: number }[];
   relaxed_structure_cif?: string;
   mean_displacement_A?: number;
+  gnn_model_version?: string;
+  orchestrator_decision?: string;
 }
 
 interface Props {

@@ -35,6 +35,10 @@ from app.services.physics_validation import PhysicsValidationLayer
 DISCOVERY_EXECUTOR = ThreadPoolExecutor(max_workers=4)
 
 
+from app.services.multi_fidelity_orchestrator import MultiFidelityOrchestrator
+from app.services.active_learning import ActiveLearningService
+
+
 class DiscoveryJobOrchestrator:
     """Orchestrates multi-stage materials discovery pipelines and Tier 2 validation."""
 
@@ -43,6 +47,8 @@ class DiscoveryJobOrchestrator:
         self.generator = StructureGenerationEngine()
         self.novelty_checker = NoveltyChecker()
         self.physics_validator = PhysicsValidationLayer()
+        self.mf_orchestrator = MultiFidelityOrchestrator()
+        self.al_service = ActiveLearningService()
 
     def run_discovery_pipeline(self, job_id: str, query: Dict[str, Any], user_id: Optional[int] = None):
         """Execute full discovery pipeline in background worker."""
@@ -91,9 +97,12 @@ class DiscoveryJobOrchestrator:
             for idx, cand in enumerate(raw_candidates):
                 struct: Structure = cand["structure"]
 
-                # GNN Property Prediction
+                # GNN Formation Energy Prediction & Tier C Band Gap Flagging
                 pred_res = self.predictor.predict(struct)
                 pred_val = float(pred_res.get("predicted_formation_energy_per_atom_eV", pred_res.get("predicted_formation_energy_eV", 0.0)))
+                # Band Gap requires DFT (Tier C) — explicitly set to None (Uncalculated)
+                pred_bg = None
+                is_solar_opt = False
                 ev_std = float(pred_res.get("evidential_std_eV", 0.1))
                 conf_int = pred_res.get("conformal_90_interval_eV", pred_res.get("conformal_90_interval", [pred_val - 0.2, pred_val + 0.2]))
                 q_low = float(conf_int[0])
@@ -102,11 +111,26 @@ class DiscoveryJobOrchestrator:
                 # Hard Filter Evaluation
                 pass_filter, reasons, metrics = parser.evaluate_structure(struct, predicted_property=pred_val)
 
+                # HARD FILTER ENFORCEMENT: Disqualify candidates that fail hard cost / toxicity filters
+                if not pass_filter:
+                    print(f"[HardFilter] Rejected {cand['formula']}: {', '.join(reasons)}")
+                    continue
+
                 # Transport Property Proxy
                 transport_res = transport_analyzer.analyze_structure(struct)
 
                 # WL Novelty Verification
                 novelty_status, match_id = self.novelty_checker.verify_novelty(struct)
+
+                # Multi-Fidelity Information Gain Decision Routing
+                decision = self.mf_orchestrator.decide_next_action(
+                    gnn_prediction=pred_val,
+                    uncertainty_low=q_low,
+                    uncertainty_high=q_high,
+                    hard_filter_pass=pass_filter,
+                    target_threshold=float(query.get("target_property_max")) if query.get("target_property_max") else -0.20,
+                    is_solar_optimal=is_solar_opt
+                )
 
                 processed_candidates.append({
                     "candidate_index": idx + 1,
@@ -114,9 +138,12 @@ class DiscoveryJobOrchestrator:
                     "structure_cif": cand["cif_content"],
                     "generation_method": cand["generation_method"],
                     "gnn_prediction": pred_val,
+                    "predicted_band_gap_eV": None,
+                    "is_solar_optimal": False,
                     "gnn_uncertainty_low": q_low,
                     "gnn_uncertainty_high": q_high,
                     "evidential_std_eV": ev_std,
+                    "gnn_model_version": self.al_service.current_version,
                     "novelty_status": novelty_status,
                     "known_match_id": match_id,
                     "hard_filter_pass": pass_filter,
@@ -125,7 +152,8 @@ class DiscoveryJobOrchestrator:
                     "estimated_cost_usd_kg": metrics["cost_usd_kg"],
                     "free_volume_A3": transport_res["free_volume_A3"],
                     "bottleneck_radius_A": transport_res["bottleneck_radius_A"],
-                    "confidence_tier": "Tier 1 (GNN Screen)",
+                    "orchestrator_decision": decision,
+                    "confidence_tier": "Tier 1 (Stability & Cost Screened)",
                 })
 
             # 5. Stage 6: Multi-Objective Pareto Optimization Ranking
@@ -149,9 +177,12 @@ class DiscoveryJobOrchestrator:
                     structure_cif=item["structure_cif"],
                     generation_method=item["generation_method"],
                     gnn_prediction=item["gnn_prediction"],
+                    predicted_band_gap_eV=item["predicted_band_gap_eV"],
+                    is_solar_optimal=item["is_solar_optimal"],
                     gnn_uncertainty_low=item["gnn_uncertainty_low"],
                     gnn_uncertainty_high=item["gnn_uncertainty_high"],
                     evidential_std_eV=item["evidential_std_eV"],
+                    gnn_model_version=item.get("gnn_model_version", "v1.0.0-initial"),
                     novelty_status=item["novelty_status"],
                     known_match_id=item["known_match_id"],
                     hard_filter_pass=item["hard_filter_pass"],
@@ -160,6 +191,7 @@ class DiscoveryJobOrchestrator:
                     estimated_cost_usd_kg=item["estimated_cost_usd_kg"],
                     free_volume_A3=item["free_volume_A3"],
                     bottleneck_radius_A=item["bottleneck_radius_A"],
+                    orchestrator_decision=item.get("orchestrator_decision", "promote_to_tier2"),
                     confidence_tier=item["confidence_tier"],
                     pareto_rank=item.get("pareto_rank", 1),
                 )

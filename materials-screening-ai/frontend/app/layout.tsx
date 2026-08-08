@@ -37,7 +37,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plexSans.variable} ${plexMono.variable}`}
     >
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-background font-sans antialiased"
+      >
         <a
           href="#main-content"
           className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"

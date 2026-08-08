@@ -22,10 +22,11 @@ from app.api.screen import router as screen_router
 from app.api.compare import router as compare_router
 from app.api.history import router as history_router
 from app.api.reports import router as reports_router
+from app.api.discovery import router as discovery_router
 
 app = FastAPI(
     title="MatScreen AI API",
-    description="AI-powered Materials Screening Assistant with Reliable Property Prediction & Uncertainty Quantification",
+    description="AI-powered Materials Screening & Autonomous Discovery Platform with Reliable Property Prediction & Uncertainty Quantification",
     version="1.0.0"
 )
 
@@ -53,6 +54,7 @@ app.include_router(screen_router)
 app.include_router(compare_router)
 app.include_router(history_router)
 app.include_router(reports_router)
+app.include_router(discovery_router)
 
 
 @app.get("/")

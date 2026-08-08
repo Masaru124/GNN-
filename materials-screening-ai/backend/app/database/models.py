@@ -1,6 +1,6 @@
 """
 SQLAlchemy Database Models for MatScreen AI.
-Defines User, PredictionRecord, ScreeningJob, and Report entities.
+Defines User, PredictionRecord, ScreeningJob, DiscoveryRun, and DiscoveryCandidate entities.
 """
 
 from datetime import datetime
@@ -21,6 +21,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     predictions = relationship("PredictionRecord", back_populates="user")
+    discovery_runs = relationship("DiscoveryRun", back_populates="user")
 
 
 class PredictionRecord(Base):
@@ -53,3 +54,67 @@ class ScreeningJob(Base):
     high_confidence_count = Column(Integer, default=0)
     runtime_seconds = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DiscoveryRun(Base):
+    __tablename__ = "discovery_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String(100), unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    title = Column(String(200), nullable=False)
+    query_json = Column(Text, nullable=False)
+    status = Column(String(50), default="queued")  # queued / running / complete / failed
+    total_generated = Column(Integer, default=0)
+    novel_count = Column(Integer, default=0)
+    tier2_validated_count = Column(Integer, default=0)
+    runtime_seconds = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="discovery_runs")
+    candidates = relationship("DiscoveryCandidate", back_populates="discovery_run", cascade="all, delete-orphan")
+
+
+class DiscoveryCandidate(Base):
+    __tablename__ = "discovery_candidates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    discovery_run_id = Column(Integer, ForeignKey("discovery_runs.id"), nullable=False)
+    candidate_index = Column(Integer, nullable=False)
+    formula = Column(String(100), nullable=False)
+    structure_cif = Column(Text, nullable=False)
+    generation_method = Column(String(50), nullable=False)  # 'pymatgen_substitution' | 'mattergen_conditioned'
+    
+    # Tier 1 GNN Predictions & UQ
+    gnn_prediction = Column(Float, nullable=False)
+    gnn_uncertainty_low = Column(Float, nullable=False)
+    gnn_uncertainty_high = Column(Float, nullable=False)
+    evidential_std_eV = Column(Float, nullable=False)
+    
+    # Novelty Verification
+    novelty_status = Column(String(50), nullable=False)  # 'novel' | 'known_match'
+    known_match_id = Column(String(100), nullable=True)
+    
+    # Hard Filters & Structural Metrics
+    hard_filter_pass = Column(Boolean, default=True)
+    charge_neutral_pass = Column(Boolean, default=True)
+    filter_reasons_json = Column(Text, default="[]")
+    density_g_cm3 = Column(Float, nullable=False)
+    estimated_cost_usd_kg = Column(Float, nullable=False)
+    free_volume_A3 = Column(Float, nullable=False)
+    bottleneck_radius_A = Column(Float, nullable=False)
+    
+    # Tier 2 Physics Validation (MLIP)
+    mlip_relaxed_energy_eV = Column(Float, nullable=True)
+    mlip_stability_flag = Column(Boolean, nullable=True)
+    mlip_trajectory_json = Column(Text, nullable=True)
+    relaxed_structure_cif = Column(Text, nullable=True)
+    mean_displacement_A = Column(Float, nullable=True)
+    confidence_tier = Column(String(50), default="Tier 1 (GNN Screen)")
+    
+    # Multi-Objective Optimization Ranking
+    pareto_rank = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    discovery_run = relationship("DiscoveryRun", back_populates="candidates")

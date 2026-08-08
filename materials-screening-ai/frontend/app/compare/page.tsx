@@ -9,39 +9,52 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/PageHeader";
 
-const DEFAULT_CIF = `data_TiO2
-_symmetry_space_group_name_H-M   'P 42/m n m'
-_cell_length_a   4.593
-_cell_length_b   4.593
-_cell_length_c   2.959
-_cell_angle_alpha   90.0
-_cell_angle_beta    90.0
-_cell_angle_gamma   90.0
+const DEFAULT_CIF = `# generated using pymatgen
+data_TiO2
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   4.59300000
+_cell_length_b   4.59300000
+_cell_length_c   2.95900000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   TiO2
+_chemical_formula_sum   'Ti2 O4'
 loop_
-_atom_site_label
-_atom_site_type_symbol
-_atom_site_fract_x
-_atom_site_fract_y
-_atom_site_fract_z
-Ti1 Ti 0.0000 0.0000 0.0000
-Ti2 Ti 0.5000 0.5000 0.5000
-O1 O 0.3050 0.3050 0.0000
-O2 O 0.6950 0.6950 0.0000
-O3 O 0.8050 0.1950 0.5000
-O4 O 0.1950 0.8050 0.5000`;
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  1  0.00000000  0.00000000  0.00000000  1
+  Ti  Ti1  1  0.50000000  0.50000000  0.50000000  1
+  O  O2  1  0.30500000  0.30500000  0.00000000  1
+  O  O3  1  0.69500000  0.69500000  0.00000000  1
+  O  O4  1  0.80500000  0.19500000  0.50000000  1
+  O  O5  1  0.19500000  0.80500000  0.50000000  1`;
 
 export default function Page() {
   const [cifText, setCifText] = useState(DEFAULT_CIF);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [comparison, setComparison] = useState<ModelComparison | null>(null);
 
   const handleRunComparison = async () => {
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const res = await api.compareModels(cifText);
       setComparison(res);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || "Model comparison failed.";
+      setErrorMsg(detail);
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +73,12 @@ export default function Page() {
           </Button>
         }
       />
+
+      {errorMsg && (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-600 dark:text-rose-400 font-semibold">
+          {errorMsg}
+        </div>
+      )}
 
       <Card className="space-y-4 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

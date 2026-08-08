@@ -50,12 +50,26 @@ SCAFFOLD_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "lattice": Lattice.orthorhombic(10.33, 6.01, 4.69),
         "species": ["Li", "Fe", "P", "O", "O", "O", "O"],
         "coords": [[0, 0, 0], [0.28, 0.25, 0.97], [0.09, 0.25, 0.42],
-                   [0.09, 0.25, 0.74], [0.45, 0.25, 0.21], [0.16, 0.05, 0.28], [0.34, 0.05, 0.78]]
+                   [0.09, 0.25, 0.74], [0.45, 0.25, 0.21], [0.16, 0.05, 0.28], [0.34, 0.05, 0.78]],
+        "requires_mobile_ion": True,
+    },
+    "perovskite_solar_halide": {
+        "formula": "CsSnI3",
+        "description": "Lead-Free Halide Perovskite ABX3 Solar Absorber Scaffold",
+        "sites": {"A": "Cs", "B": "Sn", "X": "I"},
+        "lattice": Lattice.cubic(6.20),
+        "species": ["Cs", "Sn", "I", "I", "I"],
+        "coords": [[0, 0, 0], [0.5, 0.5, 0.5], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]],
+        "requires_mobile_ion": False,
     }
 }
 
-# Transition metal candidates for substitution
+# Substitution pools for cations and halides
 TRANSITION_METALS = ["Co", "Ni", "Mn", "Fe", "V", "Cr", "Ti", "Al", "Zr", "Nb", "Mo"]
+HALIDE_B_METALS = ["Sn", "Ge", "Bi", "Sb", "Ag", "Cu", "Ti", "Zr"]
+HALIDE_ANIONS = ["I", "Br", "Cl"]
+HALIDE_A_CATIONS = ["Cs", "Rb", "K"]
+
 
 def passes_charge_neutrality(structure: Structure) -> bool:
     """
@@ -93,7 +107,7 @@ class StructureGenerationEngine:
         excluded_elements: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """
-        Generate candidate structures preserving target mobile ion (Li/Na) and anion (O),
+        Generate candidate structures preserving target mobile ion (Li/Na) or halide anion,
         substituting transition metals and enforcing charge neutrality.
         """
         base_struct = self._build_scaffold_structure(scaffold_type)
@@ -106,24 +120,28 @@ class StructureGenerationEngine:
         candidates = []
         generated_formulas = set()
 
-        # Build substitution map combinations for transition metal & mobile ion sites
+        # Build substitution map combinations for site pools
         site_pools = {}
         for role, orig_el in site_roles.items():
-            if role in ["A"]:
-                # Mobile ion site: preserve target ion (e.g. Li or Na)
-                site_pools[role] = [target_ion]
-            elif role in ["X"]:
-                # Anion site: preserve oxide / anion
-                site_pools[role] = ["O"]
-            elif role in ["P"]:
-                # Polyanion center: preserve P
-                site_pools[role] = ["P"]
+            if scaffold_type == "perovskite_solar_halide":
+                if role == "A":
+                    site_pools[role] = [el for el in HALIDE_A_CATIONS if el not in excluded]
+                elif role == "X":
+                    site_pools[role] = [el for el in HALIDE_ANIONS if el not in excluded]
+                else:  # B site
+                    site_pools[role] = [el for el in HALIDE_B_METALS if el not in excluded]
             else:
-                # Transition metal site (B or M): substitute transition metals
-                pool = [el for el in TRANSITION_METALS if el not in excluded]
-                if allowed:
-                    pool = [el for el in pool if el in allowed]
-                site_pools[role] = pool if pool else [orig_el]
+                if role in ["A"]:
+                    site_pools[role] = [target_ion]
+                elif role in ["X"]:
+                    site_pools[role] = ["O"]
+                elif role in ["P"]:
+                    site_pools[role] = ["P"]
+                else:
+                    pool = [el for el in TRANSITION_METALS if el not in excluded]
+                    if allowed:
+                        pool = [el for el in pool if el in allowed]
+                    site_pools[role] = pool if pool else [orig_el]
 
         # Generate site combinations
         combo_keys = list(site_pools.keys())

@@ -91,6 +91,7 @@ class DiscoveryCandidate(Base):
     gnn_uncertainty_low = Column(Float, nullable=False)
     gnn_uncertainty_high = Column(Float, nullable=False)
     evidential_std_eV = Column(Float, nullable=False)
+    gnn_model_version = Column(String(50), default="v1.0.0-initial")
     
     # Novelty Verification
     novelty_status = Column(String(50), nullable=False)  # 'novel' | 'known_match'
@@ -104,6 +105,11 @@ class DiscoveryCandidate(Base):
     estimated_cost_usd_kg = Column(Float, nullable=False)
     free_volume_A3 = Column(Float, nullable=False)
     bottleneck_radius_A = Column(Float, nullable=False)
+    predicted_band_gap_eV = Column(Float, nullable=True, default=None)
+    is_solar_optimal = Column(Boolean, default=False)
+    
+    # Multi-Fidelity Orchestration Decision
+    orchestrator_decision = Column(String(50), default="promote_to_tier2")  # 'promote_to_tier2' | 'hold_for_more_data' | 'reject'
     
     # Tier 2 Physics Validation (MLIP)
     mlip_relaxed_energy_eV = Column(Float, nullable=True)
@@ -113,8 +119,24 @@ class DiscoveryCandidate(Base):
     mean_displacement_A = Column(Float, nullable=True)
     confidence_tier = Column(String(50), default="Tier 1 (GNN Screen)")
     
+    # Tier 3 Virtual Lab Validation Write-Back
+    virtuallab_validated = Column(Boolean, default=False)
+    virtuallab_results_json = Column(Text, nullable=True)
+
     # Multi-Objective Optimization Ranking
     pareto_rank = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     discovery_run = relationship("DiscoveryRun", back_populates="candidates")
+
+
+class RetrainEvent(Base):
+    __tablename__ = "retrain_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    triggered_at = Column(DateTime, default=datetime.utcnow)
+    n_samples = Column(Integer, nullable=False)
+    model_version_before = Column(String(50), nullable=False)
+    model_version_after = Column(String(50), nullable=False)
+    val_loss_after = Column(Float, nullable=False)
+

@@ -16,6 +16,7 @@ import {
   LogOut,
   LogIn,
   Sparkles,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -25,6 +26,7 @@ import { isAuthenticated, setAuthenticated } from "@/lib/auth";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/discovery", label: "Discovery", icon: Sparkles },
+  { href: "/simulation", label: "Virtual Lab", icon: FlaskConical },
   { href: "/predict", label: "Predict", icon: Upload },
   { href: "/batch", label: "Batch", icon: Layers },
   { href: "/search", label: "Search", icon: Search },

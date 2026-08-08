@@ -103,6 +103,8 @@ def get_discovery_job_status(job_id: str, db: Session = Depends(get_db)):
             "mlip_trajectory": json.loads(c.mlip_trajectory_json or "[]"),
             "relaxed_structure_cif": c.relaxed_structure_cif,
             "mean_displacement_A": c.mean_displacement_A,
+            "gnn_model_version": c.gnn_model_version or "v1.0.0-initial",
+            "orchestrator_decision": c.orchestrator_decision or "promote_to_tier2",
             "confidence_tier": c.confidence_tier,
             "pareto_rank": c.pareto_rank,
         })
@@ -192,3 +194,20 @@ def list_discovery_history(db: Session = Depends(get_db)):
             "created_at": r.created_at.isoformat() if r.created_at else None,
         })
     return out
+
+
+from app.services.active_learning import ActiveLearningService
+al_service = ActiveLearningService()
+
+
+@router.post("/retrain")
+def trigger_active_learning_retrain():
+    """Trigger Active Learning fine-tuning loop on newly Tier 2 validated candidates."""
+    res = al_service.trigger_retrain_loop()
+    return res
+
+
+@router.get("/retrain/history")
+def get_retrain_history():
+    """Fetch Active Learning retraining event history."""
+    return al_service.get_retrain_history()

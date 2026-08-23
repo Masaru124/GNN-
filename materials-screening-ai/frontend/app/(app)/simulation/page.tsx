@@ -211,7 +211,6 @@ function VirtualLabContent() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Virtual Lab Sandbox"
         title="Interactive Physics Simulation & Feasibility Tiered Lab"
         description="Run strain sweeps, NEB ion migration barriers, NVT MD annealing, Phonon dynamical stability checks, and charge-gated mutations."
       />
@@ -300,7 +299,7 @@ function VirtualLabContent() {
       )}
 
       {/* Main Grid: Left Structure & Editor, Right Simulation Suite */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Left Column: 3D Crystal Viewer with Trajectory Scrubber */}
         <div className="space-y-6">
           <Viewer3D
@@ -364,7 +363,7 @@ function VirtualLabContent() {
             </div>
 
             {/* Test Selection Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-2 xl:grid-cols-5 gap-1.5">
               <button
                 onClick={() => setSelectedTest("strain")}
                 className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${

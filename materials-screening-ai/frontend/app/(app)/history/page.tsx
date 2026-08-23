@@ -48,7 +48,6 @@ export default function Page() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Activity Log"
         title="Prediction & Screening History"
         description="Log of past material property predictions and evidential uncertainty assessments."
       />

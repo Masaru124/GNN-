@@ -47,7 +47,6 @@ export default function Page() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Single Structure Prediction"
         title="Single Crystal Structure Prediction"
         description="Upload a CIF structure file to calculate formation energy (E_f) and calibrated confidence."
       />
@@ -89,19 +88,27 @@ export default function Page() {
       )}
 
       {result && !isLoading && (
-        <div className="grid animate-fade-up grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <PredictionCard materialInfo={result.material_info} prediction={result.prediction} />
+        <div className="grid animate-fade-up grid-cols-1 gap-6 pt-4 xl:grid-cols-3">
+          <div className="space-y-6 xl:col-span-2">
+            <PredictionCard
+              materialInfo={result.material_info}
+              prediction={result.prediction}
+            />
 
             <Viewer3D
               cifString={result.material_info.cif_string}
-              formula={result.material_info.formula_pretty || result.material_info.formula}
+              formula={
+                result.material_info.formula_pretty ||
+                result.material_info.formula
+              }
             />
           </div>
 
           <div className="space-y-6">
             <ConfidenceGauge prediction={result.prediction} />
-            <AttentionChart scaleAttention={result.prediction.scale_attention} />
+            <AttentionChart
+              scaleAttention={result.prediction.scale_attention}
+            />
           </div>
         </div>
       )}

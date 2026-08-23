@@ -26,8 +26,8 @@ export default function Page() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md p-2">
+    <div className="w-full max-w-md">
+      <Card className="w-full p-2">
         <CardHeader className="p-8 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-muted text-primary">
             <Atom className="h-7 w-7" />

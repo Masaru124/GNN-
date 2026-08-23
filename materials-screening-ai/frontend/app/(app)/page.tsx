@@ -91,8 +91,6 @@ export default function Page() {
     <div className="space-y-10 sm:space-y-12">
       <section className="animate-fade-up">
         <div className="max-w-3xl space-y-5">
-          <p className="micro-label">Overview</p>
-
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Accelerate Materials Discovery with{" "}
             <span className="text-primary">Calibrated GNN Confidence</span>
@@ -100,9 +98,11 @@ export default function Page() {
 
           <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
             Screen promising crystal structures{" "}
-            <strong className="text-foreground">before expensive DFT simulations</strong>. Get
-            predicted formation energy (E_f) coupled with 90% Conformal Calibration intervals and
-            Evidential Uncertainty decomposition.
+            <strong className="text-foreground">
+              before expensive DFT simulations
+            </strong>
+            . Get predicted formation energy (E_f) coupled with 90% Conformal
+            Calibration intervals and Evidential Uncertainty decomposition.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -124,7 +124,7 @@ export default function Page() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {kpis.map((kpi) => (
           <StatCard
             key={kpi.label}
@@ -140,7 +140,9 @@ export default function Page() {
       <section className="space-y-6">
         <div>
           <p className="micro-label">Workspace</p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">Quick Actions</h2>
+          <h2 className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
+            Quick Actions
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -160,8 +162,12 @@ export default function Page() {
                 >
                   <Icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-base font-bold tracking-tight">{action.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{action.description}</p>
+                <h3 className="text-base font-bold tracking-tight">
+                  {action.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {action.description}
+                </p>
                 <div className="mt-auto flex items-center gap-1.5 pt-1 text-sm font-medium text-foreground">
                   {action.cta}
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />

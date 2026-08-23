@@ -34,8 +34,7 @@ declare global {
   }
 }
 
-const VIEWPORT_BG = "#12141a";
-
+const VIEWPORT_BG = "#ffffff";
 const ELEMENT_NAMES: Record<string, { name: string; color: string }> = {
   H: { name: "Hydrogen", color: "#FFFFFF" },
   Li: { name: "Lithium", color: "#CC80FF" },
@@ -247,7 +246,9 @@ export const Viewer3D: React.FC<Viewer3DProps> = ({
             size="sm"
             className={`h-8 px-2 text-xs gap-1 font-semibold ${isSpinning ? "border-primary text-primary bg-primary/10" : ""}`}
           >
-            <RotateCw className={`h-3.5 w-3.5 ${isSpinning ? "animate-spin" : ""}`} />
+            <RotateCw
+              className={`h-3.5 w-3.5 ${isSpinning ? "animate-spin" : ""}`}
+            />
             {isSpinning ? "Spinning" : "Auto Spin"}
           </Button>
 
@@ -274,26 +275,37 @@ export const Viewer3D: React.FC<Viewer3DProps> = ({
           </div>
         )}
 
-        {/* Live Lattice Parameter Overlay Badge */}
         {latticeParams && (
-          <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md border border-white/10 rounded-lg p-2.5 text-[10px] font-mono text-white/90 space-y-1 z-10 pointer-events-none">
+          <div className="absolute top-3 left-3 bg-white backdrop-blur-md border border-white/10 rounded-lg p-2.5 text-[10px] font-mono text-white/90 space-y-1 z-10 pointer-events-none">
             <div className="font-bold text-primary flex items-center gap-1">
               <Layers className="h-3 w-3" /> Unit Cell Geometry ({formula})
             </div>
             <div>
-              a: <span className="text-emerald-400 font-bold">{latticeParams.a} Å</span> | b: <span className="text-emerald-400 font-bold">{latticeParams.b} Å</span> | c: <span className="text-emerald-400 font-bold">{latticeParams.c} Å</span>
+              a:{" "}
+              <span className="text-emerald-400 font-bold">
+                {latticeParams.a} Å
+              </span>{" "}
+              | b:{" "}
+              <span className="text-emerald-400 font-bold">
+                {latticeParams.b} Å
+              </span>{" "}
+              | c:{" "}
+              <span className="text-emerald-400 font-bold">
+                {latticeParams.c} Å
+              </span>
             </div>
             <div>
-              α: {latticeParams.alpha}° | β: {latticeParams.beta}° | γ: {latticeParams.gamma}°
+              α: {latticeParams.alpha}° | β: {latticeParams.beta}° | γ:{" "}
+              {latticeParams.gamma}°
             </div>
           </div>
         )}
 
-        {/* Interactive Elemental CPK Color Legend Overlay Badge */}
         {elementLegend.length > 0 && (
-          <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white/90 z-10 space-y-1">
+          <div className="absolute bottom-3 left-3 bg-white backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white/90 z-10 space-y-1">
             <span className="font-bold text-muted-foreground block text-[9px] uppercase tracking-wider flex items-center gap-1">
-              <Tag className="h-2.5 w-2.5 text-primary" /> Elemental CPK Color Legend:
+              <Tag className="h-2.5 w-2.5 text-primary" /> Elemental CPK Color
+              Legend:
             </span>
             <div className="flex flex-wrap gap-2.5 items-center font-mono">
               {elementLegend.map((item) => (
@@ -303,7 +315,9 @@ export const Viewer3D: React.FC<Viewer3DProps> = ({
                     style={{ backgroundColor: item.color }}
                   />
                   <span className="font-bold text-white">{item.symbol}</span>
-                  <span className="text-muted-foreground text-[9px]">({item.name})</span>
+                  <span className="text-muted-foreground text-[9px]">
+                    ({item.name})
+                  </span>
                 </div>
               ))}
             </div>
@@ -320,7 +334,11 @@ export const Viewer3D: React.FC<Viewer3DProps> = ({
             onClick={() => setIsPlaying(!isPlaying)}
             className="h-8 px-3 gap-1.5 font-bold"
           >
-            {isPlaying ? <Pause className="h-3.5 w-3.5 text-amber-500" /> : <Play className="h-3.5 w-3.5 text-emerald-500" />}
+            {isPlaying ? (
+              <Pause className="h-3.5 w-3.5 text-amber-500" />
+            ) : (
+              <Play className="h-3.5 w-3.5 text-emerald-500" />
+            )}
             {isPlaying ? "Pause MD" : "Play MD Trajectory"}
           </Button>
 

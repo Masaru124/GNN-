@@ -43,7 +43,6 @@ export default function Page() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="High-Throughput Screening"
         title="Batch Candidate Screening"
         description="Upload multiple CIF files to rank candidate materials by predicted stability and filter by confidence thresholds."
         actions={
@@ -130,7 +129,7 @@ export default function Page() {
 
       {batchResult && !isLoading && (
         <div className="animate-fade-up space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Job ID"
               value={batchResult.job_id}

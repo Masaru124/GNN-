@@ -29,6 +29,20 @@ export interface CandidateItem {
   mean_displacement_A?: number;
   gnn_model_version?: string;
   orchestrator_decision?: string;
+  // Item 1: Energy Above Hull / Stability
+  e_above_hull_eV?: number | null;
+  hull_classification?: string | null;
+  decomposition_products?: string[];
+  // Item 3: Tier B Band Gap
+  estimated_band_gap_eV?: number | null;
+  bandgap_estimate_source?: string | null;
+  bandgap_estimate_tier?: string | null;
+  is_solar_optimal?: boolean;
+  // Ensemble Disagreement Gate (CHGNet + MACE)
+  mace_relaxed_energy_eV?: number | null;
+  energy_disagreement_eV_per_atom?: number | null;
+  structural_rmsd_between_mlips_A?: number | null;
+  ensemble_status?: string | null;  // high_confidence_agreement / moderate_agreement / requires_independent_validation / single_model_only
 }
 
 interface Props {

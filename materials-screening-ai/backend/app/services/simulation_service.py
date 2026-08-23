@@ -136,6 +136,7 @@ loop_
         lat = structure.lattice
         results = []
         frame_cifs = []
+        strained_structures = []
 
         for s_val in strains:
             scale = 1.0 + s_val
@@ -149,12 +150,14 @@ loop_
 
             new_lat = Lattice.from_parameters(a, b, c, lat.alpha, lat.beta, lat.gamma)
             strained_struct = Structure(new_lat, [st.specie for st in structure], [st.frac_coords for st in structure])
-
-            pred = self.predictor.predict(strained_struct)
-            e_val = pred["predicted_formation_energy_per_atom_eV"]
-
-            results.append({"strain": s_val, "strain_pct": round(s_val * 100, 1), "energy_per_atom": round(e_val, 4)})
+            strained_structures.append(strained_struct)
             frame_cifs.append(strained_struct.to(fmt="cif"))
+
+        # Batched GNN prediction across all strain points in ONE forward pass
+        batch_preds = self.predictor.predict_batch(strained_structures)
+        for s_val, pred in zip(strains, batch_preds):
+            e_val = pred["predicted_formation_energy_per_atom_eV"]
+            results.append({"strain": s_val, "strain_pct": round(s_val * 100, 1), "energy_per_atom": round(e_val, 4)})
 
         # Fit parabola E(s) = E0 + 0.5 * K * s^2
         s_arr = np.array(strains)
@@ -438,23 +441,32 @@ loop_
         base_pred = self.predictor.predict(structure)["predicted_formation_energy_per_atom_eV"] * n_atoms
 
         coords = structure.cart_coords.copy()
+        displaced_structures = []
+        index_map = []  # (atom_index, cartesian_axis, sign)
+
+        for i in range(n_atoms):
+            for alpha in range(3):
+                for sign in (+1, -1):
+                    coords_perturbed = coords.copy()
+                    coords_perturbed[i, alpha] += sign * delta
+                    struct_perturbed = structure.copy()
+                    for k in range(n_atoms):
+                        struct_perturbed.replace(k, struct_perturbed[k].specie, coords=coords_perturbed[k], coords_are_cartesian=True)
+                    displaced_structures.append(struct_perturbed)
+                    index_map.append((i, alpha, sign))
+
+        # Batched GNN forward pass for all 2*3N displacement configurations at once
+        batch_preds = self.predictor.predict_batch(displaced_structures)
+
+        energies = {}
+        for (i, alpha, sign), pred_res in zip(index_map, batch_preds):
+            energies[(i, alpha, sign)] = pred_res["predicted_formation_energy_per_atom_eV"] * n_atoms
+
         for i in range(n_atoms):
             for alpha in range(3):
                 idx1 = i * 3 + alpha
-                coords_pos = coords.copy()
-                coords_pos[i, alpha] += delta
-                struct_pos = structure.copy()
-                for k in range(n_atoms):
-                    struct_pos.replace(k, struct_pos[k].specie, coords=coords_pos[k], coords_are_cartesian=True)
-                e_pos = self.predictor.predict(struct_pos)["predicted_formation_energy_per_atom_eV"] * n_atoms
-
-                coords_neg = coords.copy()
-                coords_neg[i, alpha] -= delta
-                struct_neg = structure.copy()
-                for k in range(n_atoms):
-                    struct_neg.replace(k, struct_neg[k].specie, coords=coords_neg[k], coords_are_cartesian=True)
-                e_neg = self.predictor.predict(struct_neg)["predicted_formation_energy_per_atom_eV"] * n_atoms
-
+                e_pos = energies[(i, alpha, +1)]
+                e_neg = energies[(i, alpha, -1)]
                 hessian[idx1, idx1] = (e_pos - 2 * base_pred + e_neg) / (delta ** 2)
 
         dyn_matrix = np.zeros((dim, dim))

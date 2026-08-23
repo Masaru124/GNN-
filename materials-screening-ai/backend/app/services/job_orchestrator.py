@@ -30,6 +30,9 @@ from app.services.transport_proxy import TransportPropertyProxy
 from app.services.novelty_checker import NoveltyChecker
 from app.services.pareto_ranker import ParetoRanker
 from app.services.physics_validation import PhysicsValidationLayer
+from app.services.stability_analysis import StabilityAnalysisService, DiscoveryRunReportService
+from app.services.bandgap_estimator import BandGapEstimatorService
+from app.services.generation_engine import SCAFFOLD_TEMPLATES
 
 # Thread pool executor for async background discovery tasks
 DISCOVERY_EXECUTOR = ThreadPoolExecutor(max_workers=4)
@@ -49,6 +52,8 @@ class DiscoveryJobOrchestrator:
         self.physics_validator = PhysicsValidationLayer()
         self.mf_orchestrator = MultiFidelityOrchestrator()
         self.al_service = ActiveLearningService()
+        self.stability_service = StabilityAnalysisService()
+        self.bandgap_estimator = BandGapEstimatorService.get_instance()
 
     def run_discovery_pipeline(self, job_id: str, query: Dict[str, Any], user_id: Optional[int] = None):
         """Execute full discovery pipeline in background worker."""
@@ -156,7 +161,48 @@ class DiscoveryJobOrchestrator:
                     "confidence_tier": "Tier 1 (Stability & Cost Screened)",
                 })
 
-            # 5. Stage 6: Multi-Objective Pareto Optimization Ranking
+            # 5. Stage 6.5: Energy Above Hull / Decomposition Stability Check
+            for item in processed_candidates:
+                try:
+                    struct = Structure.from_str(item["structure_cif"], fmt="cif")
+                    hull_result = self.stability_service.compute_e_above_hull(
+                        composition=struct.composition,
+                        predicted_formation_energy_per_atom=item["gnn_prediction"],
+                    )
+                    item["e_above_hull_eV"] = hull_result.get("e_above_hull_eV")
+                    item["hull_classification"] = hull_result.get("hull_classification", "insufficient_reference_data")
+                    item["decomposition_products_json"] = json.dumps(hull_result.get("decomposition_products", []))
+                except Exception as e:
+                    print(f"[HullCheck] Error computing hull for {item['formula']}: {e}")
+                    item["e_above_hull_eV"] = None
+                    item["hull_classification"] = "hull_construction_failed"
+                    item["decomposition_products_json"] = "[]"
+
+            # 5.6. Stage 6.6: Tier B Band Gap Estimation (optical-relevant scaffolds only)
+            scaffold_meta = SCAFFOLD_TEMPLATES.get(scaffold, {})
+            is_optical_scaffold = scaffold_meta.get("optical_relevant", False)
+
+            if is_optical_scaffold:
+                print(f"[BandGapTierB] Scaffold '{scaffold}' is optical-relevant — running Tier B band gap estimation.")
+                for item in processed_candidates:
+                    try:
+                        struct = Structure.from_str(item["structure_cif"], fmt="cif")
+                        bg_result = self.bandgap_estimator.estimate_band_gap(struct)
+                        item["estimated_band_gap_eV"] = bg_result.get("estimated_band_gap_eV")
+                        item["bandgap_estimate_source"] = bg_result.get("source_model")
+                        item["bandgap_estimate_tier"] = bg_result.get("tier")
+                        item["is_solar_optimal"] = bg_result.get("is_solar_optimal", False)
+                        item["predicted_band_gap_eV"] = bg_result.get("estimated_band_gap_eV")
+                    except Exception as e:
+                        print(f"[BandGapTierB] Error estimating band gap for {item['formula']}: {e}")
+                        item["estimated_band_gap_eV"] = None
+                        item["bandgap_estimate_source"] = None
+                        item["bandgap_estimate_tier"] = None
+
+            # 5.7. Compute S.U.N. Rate for this discovery run
+            sun_report = DiscoveryRunReportService.compute_sun_rate(processed_candidates)
+
+            # 6. Stage 7: Multi-Objective Pareto Optimization Ranking
             ranker = ParetoRanker(
                 minimize_property=True,
                 minimize_cost=True,
@@ -164,7 +210,7 @@ class DiscoveryJobOrchestrator:
             )
             ranked_candidates = ranker.rank_candidates(processed_candidates)
 
-            # 6. Save Candidates to DB
+            # 7. Save Candidates to DB
             novel_count = 0
             for item in ranked_candidates:
                 if item["novelty_status"] == "novel":
@@ -194,6 +240,14 @@ class DiscoveryJobOrchestrator:
                     orchestrator_decision=item.get("orchestrator_decision", "promote_to_tier2"),
                     confidence_tier=item["confidence_tier"],
                     pareto_rank=item.get("pareto_rank", 1),
+                    # Item 1: Energy Above Hull
+                    e_above_hull_eV=item.get("e_above_hull_eV"),
+                    hull_classification=item.get("hull_classification"),
+                    decomposition_products_json=item.get("decomposition_products_json", "[]"),
+                    # Item 3: Tier B Band Gap (populated later if optical_relevant scaffold)
+                    estimated_band_gap_eV=item.get("estimated_band_gap_eV"),
+                    bandgap_estimate_source=item.get("bandgap_estimate_source"),
+                    bandgap_estimate_tier=item.get("bandgap_estimate_tier"),
                 )
                 db.add(cand_rec)
 
@@ -203,6 +257,12 @@ class DiscoveryJobOrchestrator:
             run_rec.novel_count = novel_count
             run_rec.runtime_seconds = round(runtime, 2)
             run_rec.completed_at = datetime.utcnow()
+
+            # Store S.U.N. rate metrics on the run record
+            run_rec.sun_rate_pct = sun_report.get("SUN_rate_pct")
+            run_rec.msun_rate_pct = sun_report.get("MSUN_rate_pct")
+            run_rec.sun_count = sun_report.get("SUN_count")
+            run_rec.msun_count = sun_report.get("MSUN_count")
 
             db.commit()
 
@@ -255,7 +315,10 @@ class DiscoveryJobOrchestrator:
         discovery_run_id: int,
         candidate_ids: Optional[List[int]] = None
     ) -> Dict[str, Any]:
-        """Execute Tier 2 Physics Validation (MLIP structure relaxation) on selected candidates."""
+        """Execute Tier 2 Physics Validation (CHGNet+MACE ensemble relaxation) on selected candidates.
+
+        Candidates where the two MLIPs disagree are held with status
+        'requires_independent_validation' rather than silently promoted."""
         db = next(get_db())
         try:
             query_filter = db.query(DiscoveryCandidate).filter(
@@ -269,22 +332,41 @@ class DiscoveryJobOrchestrator:
                 return {"status": "error", "message": "No matching candidates found for validation."}
 
             validated_count = 0
+            ensemble_agreed = 0
+            ensemble_disagreed = 0
+
             for cand in candidates:
                 # Parse CIF to pymatgen Structure
                 try:
                     struct = Structure.from_str(cand.structure_cif, fmt="cif")
-                    val_res = self.physics_validator.validate_candidate(
+                    val_res = self.physics_validator.validate_with_ensemble(
                         structure=struct,
                         predicted_gnn_energy=cand.gnn_prediction
                     )
 
+                    # Backward-compatible CHGNet fields
                     cand.mlip_relaxed_energy_eV = val_res["mlip_relaxed_energy_eV"]
                     cand.mlip_stability_flag = val_res["mlip_stability_flag"]
                     cand.mlip_trajectory_json = json.dumps(val_res.get("trajectory", []))
                     cand.relaxed_structure_cif = val_res.get("relaxed_cif", cand.structure_cif)
                     cand.mean_displacement_A = val_res.get("mean_displacement_A", 0.0)
-                    cand.confidence_tier = "Tier 2 (Physics Validated)"
+
+                    # Ensemble disagreement gate fields
+                    cand.mace_relaxed_energy_eV = val_res.get("mace_relaxed_energy_eV")
+                    cand.energy_disagreement_eV_per_atom = val_res.get("energy_disagreement_eV_per_atom")
+                    cand.structural_rmsd_between_mlips_A = val_res.get("structural_rmsd_between_mlips_A")
+                    cand.ensemble_status = val_res.get("ensemble_status", "single_model_only")
+
+                    # Confidence tier: do NOT silently promote disagreement candidates
+                    cand.confidence_tier = val_res.get("confidence_tier", "Tier 2 (Physics Validated)")
+
+                    # Track counts
                     validated_count += 1
+                    if cand.ensemble_status == "requires_independent_validation":
+                        ensemble_disagreed += 1
+                    elif cand.ensemble_status in ("high_confidence_agreement", "moderate_agreement"):
+                        ensemble_agreed += 1
+
                 except Exception:
                     continue
 
@@ -298,7 +380,12 @@ class DiscoveryJobOrchestrator:
             return {
                 "status": "success",
                 "validated_count": validated_count,
-                "message": f"Successfully executed Tier 2 Physics Validation on {validated_count} candidates."
+                "ensemble_agreed": ensemble_agreed,
+                "ensemble_disagreed": ensemble_disagreed,
+                "message": (
+                    f"Tier 2 Ensemble Validation complete on {validated_count} candidates: "
+                    f"{ensemble_agreed} agreed, {ensemble_disagreed} held for independent validation."
+                )
             }
         except Exception as e:
             db.rollback()

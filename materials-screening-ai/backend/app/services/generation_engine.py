@@ -24,7 +24,8 @@ SCAFFOLD_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "sites": {"A": "Sr", "B": "Ti", "X": "O"},
         "lattice": Lattice.cubic(3.905),
         "species": ["Sr", "Ti", "O", "O", "O"],
-        "coords": [[0, 0, 0], [0.5, 0.5, 0.5], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
+        "coords": [[0, 0, 0], [0.5, 0.5, 0.5], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]],
+        "optical_relevant": False,
     },
     "spinel": {
         "formula": "MgAl2O4",
@@ -33,7 +34,8 @@ SCAFFOLD_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "lattice": Lattice.cubic(8.08),
         "species": ["Mg", "Al", "Al", "O", "O", "O", "O"],
         "coords": [[0, 0, 0], [0.625, 0.625, 0.625], [0.375, 0.375, 0.375],
-                   [0.387, 0.387, 0.387], [0.863, 0.863, 0.863], [0.113, 0.113, 0.113], [0.637, 0.637, 0.637]]
+                   [0.387, 0.387, 0.387], [0.863, 0.863, 0.863], [0.113, 0.113, 0.113], [0.637, 0.637, 0.637]],
+        "optical_relevant": False,
     },
     "layered_oxide": {
         "formula": "LiCoO2",
@@ -41,7 +43,8 @@ SCAFFOLD_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "sites": {"A": "Li", "M": "Co", "X": "O"},
         "lattice": Lattice.hexagonal(2.81, 14.05),
         "species": ["Li", "Co", "O", "O"],
-        "coords": [[0, 0, 0], [0, 0, 0.5], [0, 0, 0.23], [0, 0, 0.77]]
+        "coords": [[0, 0, 0], [0, 0, 0.5], [0, 0, 0.23], [0, 0, 0.77]],
+        "optical_relevant": False,
     },
     "olivine": {
         "formula": "LiFePO4",
@@ -52,6 +55,7 @@ SCAFFOLD_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "coords": [[0, 0, 0], [0.28, 0.25, 0.97], [0.09, 0.25, 0.42],
                    [0.09, 0.25, 0.74], [0.45, 0.25, 0.21], [0.16, 0.05, 0.28], [0.34, 0.05, 0.78]],
         "requires_mobile_ion": True,
+        "optical_relevant": False,
     },
     "perovskite_solar_halide": {
         "formula": "CsSnI3",
@@ -61,6 +65,8 @@ SCAFFOLD_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "species": ["Cs", "Sn", "I", "I", "I"],
         "coords": [[0, 0, 0], [0.5, 0.5, 0.5], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]],
         "requires_mobile_ion": False,
+        "optical_relevant": True,
+        "target_bandgap_range_eV": (1.1, 1.7),
     }
 }
 

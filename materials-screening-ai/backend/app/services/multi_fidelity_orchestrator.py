@@ -65,3 +65,69 @@ class MultiFidelityOrchestrator:
             return "promote_to_tier2"
 
         return "hold_for_more_data"
+
+    def prioritize_for_dft(
+        self,
+        uncertainty_low: float,
+        uncertainty_high: float,
+        energy_disagreement_eV: Optional[float] = None,
+        ensemble_status: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Compute DFT priority score combining Tier 1 UQ and Tier 2 ensemble disagreement.
+
+        A candidate with high Tier 1 uncertainty AND high Tier 2 ensemble disagreement
+        is the highest-priority DFT candidate — this extends the "spend expensive compute
+        where uncertainty is highest" philosophy one tier further.
+
+        Returns:
+            dict with 'dft_priority_score' (0.0-1.0), 'dft_priority_tier' (str),
+            and 'rationale' (str)
+        """
+        interval_width = float(uncertainty_high - uncertainty_low)
+
+        # Normalize Tier 1 UQ signal (0-1 scale)
+        uq_signal = min(interval_width / 0.5, 1.0)
+
+        # Normalize Tier 2 ensemble disagreement signal (0-1 scale)
+        if energy_disagreement_eV is not None:
+            ensemble_signal = min(energy_disagreement_eV / 0.15, 1.0)
+        elif ensemble_status == "requires_independent_validation":
+            ensemble_signal = 1.0
+        elif ensemble_status == "moderate_agreement":
+            ensemble_signal = 0.4
+        elif ensemble_status == "high_confidence_agreement":
+            ensemble_signal = 0.0
+        else:
+            # No ensemble data yet — use only UQ signal
+            ensemble_signal = 0.0
+
+        # Combined score: weighted average (ensemble disagreement is the stronger signal
+        # since it represents actual physics-level disagreement, not just statistical uncertainty)
+        dft_priority_score = 0.35 * uq_signal + 0.65 * ensemble_signal
+
+        # Tier classification
+        if dft_priority_score >= 0.7:
+            tier = "critical_dft_priority"
+            rationale = "High Tier 1 uncertainty AND high ensemble disagreement — strongest DFT candidate"
+        elif dft_priority_score >= 0.4:
+            tier = "elevated_dft_priority"
+            rationale = "Moderate uncertainty or disagreement signal — DFT recommended"
+        elif dft_priority_score >= 0.15:
+            tier = "low_dft_priority"
+            rationale = "Some uncertainty signal but models mostly agree — DFT optional"
+        else:
+            tier = "no_dft_needed"
+            rationale = "Low uncertainty and strong ensemble agreement — no DFT required"
+
+        logger.info(
+            f"[MultiFidelityOrchestrator] DFT priority: score={dft_priority_score:.3f}, "
+            f"tier={tier}, UQ={uq_signal:.3f}, ensemble={ensemble_signal:.3f}"
+        )
+
+        return {
+            "dft_priority_score": round(dft_priority_score, 4),
+            "dft_priority_tier": tier,
+            "rationale": rationale,
+        }
+

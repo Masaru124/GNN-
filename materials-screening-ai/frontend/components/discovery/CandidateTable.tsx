@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CandidateItem } from "./ParetoFrontierChart";
-import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, Box, FlaskConical } from "lucide-react";
+import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, Box, FlaskConical, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Viewer3D } from "@/components/Viewer3D";
 
@@ -44,6 +44,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
     if (filterMode === "rank1") return c.pareto_rank === 1;
     if (filterMode === "novel") return c.novelty_status === "novel";
     if (filterMode === "tier2") return c.confidence_tier.includes("Tier 2");
+    if (filterMode === "ensemble_disagree") return c.ensemble_status === "requires_independent_validation";
+    if (filterMode === "ensemble_agree") return c.ensemble_status === "high_confidence_agreement" || c.ensemble_status === "moderate_agreement";
     return true;
   });
 
@@ -66,6 +68,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
             <option value="rank1">Rank 1 Pareto Frontier</option>
             <option value="novel">Novel Structures Only</option>
             <option value="tier2">Tier 2 Physics Validated</option>
+            <option value="ensemble_agree">Ensemble Agreed</option>
+            <option value="ensemble_disagree">Ensemble Disagreed (Held)</option>
           </select>
 
           <Button
@@ -89,6 +93,46 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
         </div>
       </div>
 
+      {/* S.U.N. Rate Summary Card (MatterGen / LeMat-GenBench Standard Benchmark) */}
+      {candidates.some((c) => c.e_above_hull_eV !== undefined && c.e_above_hull_eV !== null) && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <div>
+              <span className="font-bold text-foreground">Discovery Funnel S.U.N. Metrics</span>
+              <span className="text-muted-foreground ml-1.5 text-[11px]">
+                (Stable / Unique / Novel standard crystal discovery rate)
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 font-mono text-xs">
+            <div className="bg-background/80 px-2.5 py-1 rounded border border-border">
+              <span className="text-muted-foreground text-[10px] block">Strict S.U.N. (≤0 eV/atom)</span>
+              <strong className="text-emerald-500 text-sm">
+                {(
+                  (candidates.filter((c) => c.e_above_hull_eV !== null && c.e_above_hull_eV !== undefined && c.e_above_hull_eV <= 0.0 && c.novelty_status === "novel").length /
+                    Math.max(1, candidates.length)) *
+                  100
+                ).toFixed(1)}%
+              </strong>
+            </div>
+            <div className="bg-background/80 px-2.5 py-1 rounded border border-border">
+              <span className="text-muted-foreground text-[10px] block">M.S.U.N. (≤0.1 eV/atom)</span>
+              <strong className="text-primary text-sm">
+                {(
+                  (candidates.filter((c) => c.e_above_hull_eV !== null && c.e_above_hull_eV !== undefined && c.e_above_hull_eV <= 0.1 && c.novelty_status === "novel").length /
+                    Math.max(1, candidates.length)) *
+                  100
+                ).toFixed(1)}%
+              </strong>
+            </div>
+            <div className="text-[10px] text-muted-foreground max-w-xs hidden md:block">
+              Thresholds match MatterGen & CrystalGRW benchmark standards.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Candidate Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
@@ -110,13 +154,15 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
               <th className="p-2.5">Orchestrator Routing</th>
               <th className="p-2.5">Charge Gate</th>
               <th className="p-2.5">Tier 1 GNN E_f</th>
-              <th className="p-2.5">Band Gap (Tier C DFT)</th>
+              <th className="p-2.5">E Above Hull</th>
+              <th className="p-2.5">Band Gap (Tier B / C)</th>
               <th className="p-2.5">Conformal 90% Interval</th>
               <th className="p-2.5">Novelty</th>
               <th className="p-2.5">Cost ($/kg)</th>
               <th className="p-2.5">Bottleneck (Å)</th>
               <th className="p-2.5">Free Vol (Å³)</th>
               <th className="p-2.5">Tier 2 Physics MLIP</th>
+              <th className="p-2.5">MLIP Agreement</th>
               <th className="p-2.5 text-right">Actions</th>
             </tr>
           </thead>
@@ -198,14 +244,57 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                     {cand.gnn_prediction.toFixed(3)} eV/atom
                   </td>
 
-                  {/* Honestly Labeled Band Gap Column */}
+                  {/* Energy Above Hull (Item 1) */}
                   <td className="p-2.5">
-                    <span
-                      title="Stability & Cost Screened Only — Band Gap Not Yet Evaluated (Requires Tier C DFT)"
-                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30"
-                    >
-                      Requires DFT (Tier C)
-                    </span>
+                    {cand.e_above_hull_eV !== null && cand.e_above_hull_eV !== undefined ? (
+                      <span
+                        title={`Convex Hull Classification: ${cand.hull_classification || "computed"}`}
+                        className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
+                          cand.e_above_hull_eV <= 0.0001
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            : cand.e_above_hull_eV <= 0.05
+                            ? "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30"
+                            : cand.e_above_hull_eV <= 0.1
+                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                            : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                        }`}
+                      >
+                        {cand.e_above_hull_eV <= 0 ? "0.000" : `+${cand.e_above_hull_eV.toFixed(3)}`} eV
+                      </span>
+                    ) : (
+                      <span
+                        title="Materials Project reference formation energy entries needed for valid hull construction"
+                        className="text-[10px] text-muted-foreground italic"
+                      >
+                        —
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Honestly Labeled Band Gap Column (Item 3 Tier B / C) */}
+                  <td className="p-2.5">
+                    {cand.estimated_band_gap_eV !== null && cand.estimated_band_gap_eV !== undefined ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span
+                          title={`Tier B ML/Heuristic Estimate (${cand.bandgap_estimate_source || "calibrated"}). Disclosed error ~0.3-0.5 eV vs DFT.`}
+                          className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-dashed border-amber-500/40"
+                        >
+                          {cand.estimated_band_gap_eV.toFixed(2)} eV (Tier B)
+                        </span>
+                        {(cand.is_solar_optimal || (cand.estimated_band_gap_eV >= 1.1 && cand.estimated_band_gap_eV <= 1.7)) && (
+                          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                            🌞 Solar Optimal (1.1-1.7 eV)
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span
+                        title="Stability & Cost Screened Only — Band Gap Not Yet Evaluated (Requires Tier C DFT)"
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-muted px-2 py-0.5 rounded border border-border"
+                      >
+                        Requires DFT (Tier C)
+                      </span>
+                    )}
                   </td>
 
                   {/* Conformal 90% Interval */}
@@ -260,6 +349,44 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                       </button>
                     ) : (
                       <span className="text-[10px] text-muted-foreground italic">Tier 1 Only</span>
+                    )}
+                  </td>
+
+                  {/* Ensemble Disagreement Gate Badge */}
+                  <td className="p-2.5">
+                    {cand.ensemble_status ? (
+                      <div
+                        title={
+                          cand.energy_disagreement_eV_per_atom != null
+                            ? `ΔE: ${cand.energy_disagreement_eV_per_atom.toFixed(4)} eV/atom | RMSD: ${cand.structural_rmsd_between_mlips_A != null ? cand.structural_rmsd_between_mlips_A.toFixed(4) + ' Å' : 'N/A'}\n\nNote: Agreement = \"no evidence of blind spot,\" NOT \"confirmed correct.\" This is a triage gate, not a replacement for independent validation.`
+                            : `Status: ${cand.ensemble_status}\n\nNote: Agreement = \"no evidence of blind spot,\" NOT \"confirmed correct.\"` 
+                        }
+                      >
+                        {cand.ensemble_status === "high_confidence_agreement" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+                            <ShieldCheck className="h-3 w-3 text-emerald-500" /> Agreed
+                          </span>
+                        ) : cand.ensemble_status === "moderate_agreement" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-[10px]">
+                            <ShieldCheck className="h-3 w-3 text-amber-500" /> Moderate
+                          </span>
+                        ) : cand.ensemble_status === "requires_independent_validation" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-bold text-[10px]">
+                            <ShieldCheck className="h-3 w-3 text-rose-500" /> Held for DFT
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-500/10 border border-zinc-500/20 text-zinc-500 font-medium text-[10px]">
+                            Single Model
+                          </span>
+                        )}
+                        {cand.energy_disagreement_eV_per_atom != null && (
+                          <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                            ΔE: {cand.energy_disagreement_eV_per_atom.toFixed(3)} eV
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground italic">—</span>
                     )}
                   </td>
 
@@ -359,7 +486,12 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                   <h4 className="text-base font-bold text-foreground">
                     Physics Relaxation Trajectory: {activeTrajectoryCandidate.formula}
                   </h4>
-                  <p className="text-xs text-muted-foreground">CHGNet Universal MLIP Geometry Optimization Trace</p>
+                  <p className="text-xs text-muted-foreground">
+                    CHGNet + MACE Ensemble Relaxation Trace
+                    <span className="block text-[9px] text-muted-foreground/70 mt-0.5">
+                      Note: Ensemble agreement = &quot;no evidence of blind spot,&quot; not &quot;confirmed correct.&quot;
+                    </span>
+                  </p>
                 </div>
               </div>
               <button

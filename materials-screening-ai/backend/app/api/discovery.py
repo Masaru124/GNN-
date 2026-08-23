@@ -107,6 +107,11 @@ def get_discovery_job_status(job_id: str, db: Session = Depends(get_db)):
             "orchestrator_decision": c.orchestrator_decision or "promote_to_tier2",
             "confidence_tier": c.confidence_tier,
             "pareto_rank": c.pareto_rank,
+            # Ensemble Disagreement Gate
+            "mace_relaxed_energy_eV": c.mace_relaxed_energy_eV,
+            "energy_disagreement_eV_per_atom": c.energy_disagreement_eV_per_atom,
+            "structural_rmsd_between_mlips_A": c.structural_rmsd_between_mlips_A,
+            "ensemble_status": c.ensemble_status,
         })
 
     return {
@@ -211,3 +216,61 @@ def trigger_active_learning_retrain():
 def get_retrain_history():
     """Fetch Active Learning retraining event history."""
     return al_service.get_retrain_history()
+
+
+@router.get("/ensemble-report/{run_id}")
+def get_ensemble_disagreement_report(run_id: int, db: Session = Depends(get_db)):
+    """Aggregate ensemble-disagreement statistics for a discovery run.
+
+    Reports what fraction of Tier 2-validated candidates fell into each
+    ensemble_status bucket, useful for assessing how much the disagreement
+    gate changed the overall confidence profile."""
+    run_rec = db.query(DiscoveryRun).filter(DiscoveryRun.id == run_id).first()
+    if not run_rec:
+        raise HTTPException(status_code=404, detail=f"Discovery run {run_id} not found.")
+
+    candidates = db.query(DiscoveryCandidate).filter(
+        DiscoveryCandidate.discovery_run_id == run_id,
+        DiscoveryCandidate.ensemble_status.isnot(None)
+    ).all()
+
+    total = len(candidates)
+    buckets = {
+        "high_confidence_agreement": 0,
+        "moderate_agreement": 0,
+        "requires_independent_validation": 0,
+        "single_model_only": 0,
+    }
+    energy_disagreements = []
+    rmsds = []
+
+    for c in candidates:
+        status = c.ensemble_status or "single_model_only"
+        buckets[status] = buckets.get(status, 0) + 1
+        if c.energy_disagreement_eV_per_atom is not None:
+            energy_disagreements.append(c.energy_disagreement_eV_per_atom)
+        if c.structural_rmsd_between_mlips_A is not None and c.structural_rmsd_between_mlips_A >= 0:
+            rmsds.append(c.structural_rmsd_between_mlips_A)
+
+    return {
+        "run_id": run_id,
+        "title": run_rec.title,
+        "total_ensemble_evaluated": total,
+        "status_distribution": buckets,
+        "status_distribution_pct": {
+            k: round(v / max(total, 1) * 100, 1) for k, v in buckets.items()
+        },
+        "energy_disagreement_stats": {
+            "mean_eV_per_atom": round(float(sum(energy_disagreements) / max(len(energy_disagreements), 1)), 4) if energy_disagreements else None,
+            "max_eV_per_atom": round(max(energy_disagreements), 4) if energy_disagreements else None,
+            "min_eV_per_atom": round(min(energy_disagreements), 4) if energy_disagreements else None,
+        },
+        "structural_rmsd_stats": {
+            "mean_A": round(float(sum(rmsds) / max(len(rmsds), 1)), 4) if rmsds else None,
+            "max_A": round(max(rmsds), 4) if rmsds else None,
+        },
+        "note": (
+            "Thresholds are first-pass calibration based on CHGNet error-floor literature. "
+            "Agreement means 'no evidence of blind spot,' not 'confirmed correct.'"
+        ),
+    }

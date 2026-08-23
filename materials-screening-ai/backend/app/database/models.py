@@ -72,6 +72,12 @@ class DiscoveryRun(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
 
+    # S.U.N. Rate Metrics (Item 1: Energy Above Hull)
+    sun_rate_pct = Column(Float, nullable=True)       # Strict: e_above_hull <= 0
+    msun_rate_pct = Column(Float, nullable=True)      # Relaxed: e_above_hull <= 0.1 eV/atom
+    sun_count = Column(Integer, nullable=True)
+    msun_count = Column(Integer, nullable=True)
+
     user = relationship("User", back_populates="discovery_runs")
     candidates = relationship("DiscoveryCandidate", back_populates="discovery_run", cascade="all, delete-orphan")
 
@@ -107,6 +113,17 @@ class DiscoveryCandidate(Base):
     bottleneck_radius_A = Column(Float, nullable=False)
     predicted_band_gap_eV = Column(Float, nullable=True, default=None)
     is_solar_optimal = Column(Boolean, default=False)
+
+    # Energy Above Hull / Decomposition Stability (Item 1)
+    e_above_hull_eV = Column(Float, nullable=True)
+    hull_classification = Column(String(100), nullable=True)  # on_hull_stable / likely_synthesizable_metastable / borderline_metastable / likely_unstable_decomposes / insufficient_reference_data
+    decomposition_products_json = Column(Text, nullable=True)  # JSON list of predicted decomposition formulas
+    e_above_hull_tier2_eV = Column(Float, nullable=True)       # Filled once Tier 2 MLIP relaxation completes
+
+    # Band Gap Tier B Estimate (Item 3)
+    estimated_band_gap_eV = Column(Float, nullable=True)       # Tier B ML/heuristic estimate
+    bandgap_estimate_source = Column(String(100), nullable=True)  # e.g. "calibrated-electronegativity-heuristic" or "M3GNet-MP-pretrained"
+    bandgap_estimate_tier = Column(String(50), nullable=True)     # "Tier B"
     
     # Multi-Fidelity Orchestration Decision
     orchestrator_decision = Column(String(50), default="promote_to_tier2")  # 'promote_to_tier2' | 'hold_for_more_data' | 'reject'
@@ -118,6 +135,12 @@ class DiscoveryCandidate(Base):
     relaxed_structure_cif = Column(Text, nullable=True)
     mean_displacement_A = Column(Float, nullable=True)
     confidence_tier = Column(String(50), default="Tier 1 (GNN Screen)")
+
+    # Tier 2 Ensemble Disagreement Gate (CHGNet + MACE)
+    mace_relaxed_energy_eV = Column(Float, nullable=True)
+    energy_disagreement_eV_per_atom = Column(Float, nullable=True)
+    structural_rmsd_between_mlips_A = Column(Float, nullable=True)
+    ensemble_status = Column(String(100), nullable=True)  # high_confidence_agreement / moderate_agreement / requires_independent_validation / single_model_only
     
     # Tier 3 Virtual Lab Validation Write-Back
     virtuallab_validated = Column(Boolean, default=False)

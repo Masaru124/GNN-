@@ -19,16 +19,21 @@ class ParetoRanker:
         self,
         minimize_property: bool = True,
         minimize_cost: bool = True,
-        maximize_free_volume: bool = True
+        maximize_free_volume: bool = True,
+        minimize_e_above_hull: bool = True,
     ):
         self.minimize_property = minimize_property
         self.minimize_cost = minimize_cost
         self.maximize_free_volume = maximize_free_volume
+        self.minimize_e_above_hull = minimize_e_above_hull
 
     def _dominates(self, p1: Dict[str, Any], p2: Dict[str, Any]) -> bool:
         """
         Check if candidate p1 strictly dominates candidate p2.
         p1 dominates p2 iff p1 is no worse than p2 in all objectives and strictly better in at least one.
+
+        For e_above_hull: candidates without hull data (None) are treated as
+        non-comparable on this dimension — neither dominating nor dominated.
         """
         # Objective 1: Predicted Formation Energy
         e1 = p1.get("gnn_prediction", 0.0)
@@ -48,8 +53,19 @@ class ParetoRanker:
         obj3_better = (v1 > v2) if self.maximize_free_volume else (v1 < v2)
         obj3_worse = (v1 < v2) if self.maximize_free_volume else (v1 > v2)
 
-        at_least_one_better = obj1_better or obj2_better or obj3_better
-        no_worse = (not obj1_worse) and (not obj2_worse) and (not obj3_worse)
+        # Objective 4: Energy Above Hull (eV/atom) — optional, skip if either is None
+        h1 = p1.get("e_above_hull_eV")
+        h2 = p2.get("e_above_hull_eV")
+        if h1 is not None and h2 is not None and self.minimize_e_above_hull:
+            obj4_better = (h1 < h2)
+            obj4_worse = (h1 > h2)
+        else:
+            # Non-comparable — treat as equal (neither better nor worse)
+            obj4_better = False
+            obj4_worse = False
+
+        at_least_one_better = obj1_better or obj2_better or obj3_better or obj4_better
+        no_worse = (not obj1_worse) and (not obj2_worse) and (not obj3_worse) and (not obj4_worse)
 
         return at_least_one_better and no_worse
 

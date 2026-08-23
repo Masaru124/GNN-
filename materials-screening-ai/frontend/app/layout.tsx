@@ -3,7 +3,6 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AuthGate } from "@/components/auth-gate";
-import { Navbar } from "@/components/layout/Navbar";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -48,17 +47,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Providers>
-          <AuthGate>
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
-              <main
-                id="main-content"
-                className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12"
-              >
-                {children}
-              </main>
-            </div>
-          </AuthGate>
+          <AuthGate>{children}</AuthGate>
         </Providers>
       </body>
     </html>

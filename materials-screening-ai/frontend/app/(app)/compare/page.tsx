@@ -63,7 +63,6 @@ export default function Page() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Architecture Ablation"
         title="Multi-Scale GNN vs Single-Scale GNN"
         description="Evaluate model explainability by comparing multi-scale fusion predictions against single-scale (4.0Å) baseline graph predictions."
         actions={
@@ -100,7 +99,7 @@ export default function Page() {
 
       {comparison && (
         <div className="animate-fade-up space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card className="space-y-4 border-primary/20 bg-primary-muted p-6">
               <p className="micro-label text-primary">Proposed Architecture</p>
               <h3 className="text-xl font-bold tracking-tight">Multi-Scale GNN (A7)</h3>

@@ -67,7 +67,6 @@ export default function Page() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Structure Database"
         title="Search Materials Database"
         description="Search materials by formula (e.g. TiO2, LiFePO4, BaTiO3) or element with single-click GNN property screening."
       />
@@ -194,8 +193,8 @@ export default function Page() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="space-y-6 lg:col-span-2">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <div className="space-y-6 xl:col-span-2">
               <PredictionCard
                 materialInfo={screenedResult.material_info}
                 prediction={screenedResult.prediction}

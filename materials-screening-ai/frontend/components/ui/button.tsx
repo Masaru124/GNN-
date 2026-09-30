@@ -21,8 +21,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
   destructive:
     "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
-  success:
-    "bg-success text-success-foreground shadow-xs hover:bg-success/90",
+  success: "bg-success text-success-foreground shadow-xs hover:bg-success/90",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -32,8 +31,7 @@ const sizeClasses: Record<ButtonSize, string> = {
   icon: "h-9 w-9",
 };
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
 }
@@ -43,7 +41,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all duration-150 ease-out active:translate-y-px focus-ring disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center text-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all duration-150 ease-out active:translate-y-px focus-ring disabled:pointer-events-none disabled:opacity-50",
         variantClasses[variant],
         sizeClasses[size],
         className,

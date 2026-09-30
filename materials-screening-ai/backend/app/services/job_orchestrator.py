@@ -33,6 +33,9 @@ from app.services.physics_validation import PhysicsValidationLayer
 from app.services.stability_analysis import StabilityAnalysisService, DiscoveryRunReportService
 from app.services.bandgap_estimator import BandGapEstimatorService
 from app.services.generation_engine import SCAFFOLD_TEMPLATES
+from app.services.literature_check import get_literature_checker
+from app.services.synthesis_service import get_synthesis_service
+from app.services.retrain_buffer_service import get_retrain_buffer
 
 # Thread pool executor for async background discovery tasks
 DISCOVERY_EXECUTOR = ThreadPoolExecutor(max_workers=4)
@@ -54,6 +57,9 @@ class DiscoveryJobOrchestrator:
         self.al_service = ActiveLearningService()
         self.stability_service = StabilityAnalysisService()
         self.bandgap_estimator = BandGapEstimatorService.get_instance()
+        self.literature_checker = get_literature_checker()
+        self.synthesis_service = get_synthesis_service()
+        self.retrain_buffer = get_retrain_buffer()
 
     def run_discovery_pipeline(self, job_id: str, query: Dict[str, Any], user_id: Optional[int] = None):
         """Execute full discovery pipeline in background worker."""
@@ -202,6 +208,40 @@ class DiscoveryJobOrchestrator:
             # 5.7. Compute S.U.N. Rate for this discovery run
             sun_report = DiscoveryRunReportService.compute_sun_rate(processed_candidates)
 
+            # 5.8. Stage 6.7: Literature Novelty Check (Item 8) — async-safe, cached
+            print(f"[LiteratureCheck] Checking {len(processed_candidates)} candidates...")
+            for item in processed_candidates:
+                try:
+                    lit_result = self.literature_checker.check_formula(item["formula"])
+                    item["literature_known"] = lit_result.get("known_in_literature")
+                    item["literature_confidence"] = lit_result.get("confidence")
+                    item["literature_refs_json"] = json.dumps(lit_result.get("references", []))
+                    item["literature_n_refs"] = lit_result.get("n_references_found", 0)
+                except Exception as e:
+                    print(f"[LiteratureCheck] Error for {item['formula']}: {e}")
+                    item["literature_known"] = None
+                    item["literature_confidence"] = None
+                    item["literature_refs_json"] = "[]"
+                    item["literature_n_refs"] = 0
+
+            # 5.9. Stage 6.8: Synthesis Route Classification (Item 9)
+            print(f"[SynthesisRoute] Classifying synthesis routes...")
+            for item in processed_candidates:
+                try:
+                    syn_result = self.synthesis_service.classify_route(item["formula"])
+                    item["synthesis_route"] = syn_result.get("route")
+                    item["synthesis_feasibility"] = syn_result.get("feasibility")
+                    item["synthesis_temperature_C"] = syn_result.get("temperature_C")
+                    item["synthesis_precursors_json"] = json.dumps(syn_result.get("precursors", []))
+                    item["synthesis_warnings_json"] = json.dumps(syn_result.get("warnings", []))
+                except Exception as e:
+                    print(f"[SynthesisRoute] Error for {item['formula']}: {e}")
+                    item["synthesis_route"] = None
+                    item["synthesis_feasibility"] = None
+                    item["synthesis_temperature_C"] = None
+                    item["synthesis_precursors_json"] = "[]"
+                    item["synthesis_warnings_json"] = "[]"
+
             # 6. Stage 7: Multi-Objective Pareto Optimization Ranking
             ranker = ParetoRanker(
                 minimize_property=True,
@@ -248,8 +288,20 @@ class DiscoveryJobOrchestrator:
                     estimated_band_gap_eV=item.get("estimated_band_gap_eV"),
                     bandgap_estimate_source=item.get("bandgap_estimate_source"),
                     bandgap_estimate_tier=item.get("bandgap_estimate_tier"),
+                    # Item 8: Literature Check
+                    literature_known=item.get("literature_known"),
+                    literature_confidence=item.get("literature_confidence"),
+                    literature_refs_json=item.get("literature_refs_json", "[]"),
+                    literature_n_refs=item.get("literature_n_refs", 0),
+                    # Item 9: Synthesis Route
+                    synthesis_route=item.get("synthesis_route"),
+                    synthesis_feasibility=item.get("synthesis_feasibility"),
+                    synthesis_temperature_C=item.get("synthesis_temperature_C"),
+                    synthesis_precursors_json=item.get("synthesis_precursors_json", "[]"),
+                    synthesis_warnings_json=item.get("synthesis_warnings_json", "[]"),
                 )
                 db.add(cand_rec)
+
 
             runtime = time.time() - t0
             run_rec.status = "complete"

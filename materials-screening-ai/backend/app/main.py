@@ -24,6 +24,7 @@ from app.api.history import router as history_router
 from app.api.reports import router as reports_router
 from app.api.discovery import router as discovery_router
 from app.api.simulation import router as simulation_router
+from app.api.dft import router as dft_router
 
 app = FastAPI(
     title="MatScreen AI API",
@@ -57,6 +58,7 @@ app.include_router(history_router)
 app.include_router(reports_router)
 app.include_router(discovery_router)
 app.include_router(simulation_router)
+app.include_router(dft_router)
 
 
 @app.get("/")

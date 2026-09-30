@@ -43,6 +43,23 @@ export interface CandidateItem {
   energy_disagreement_eV_per_atom?: number | null;
   structural_rmsd_between_mlips_A?: number | null;
   ensemble_status?: string | null;  // high_confidence_agreement / moderate_agreement / requires_independent_validation / single_model_only
+  // Item 8: Synthesis Feasibility & Route
+  synthesis_route?: string | null;
+  synthesis_feasibility?: string | null;
+  synthesis_precursors?: string[] | null;
+  synthesis_estimated_temp_c?: number | null;
+  // Item 9: Literature Check
+  literature_exact_known?: boolean | null;
+  literature_matches_count?: number | null;
+  literature_top_doi?: string | null;
+  literature_top_title?: string | null;
+  // Item 10 / Tier 3: DFT & Δ-ML
+  dft_job_id?: string | null;
+  dft_status?: string | null;
+  dft_pbe_energy_eV?: number | null;
+  dft_delta_ml_bandgap_eV?: number | null;
+  dft_delta_ml_interval_low?: number | null;
+  dft_delta_ml_interval_high?: number | null;
 }
 
 interface Props {

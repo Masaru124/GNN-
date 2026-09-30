@@ -167,8 +167,10 @@ export const Viewer3D: React.FC<Viewer3DProps> = ({
         if (!mol || cancelled || !containerRef.current) return;
 
         containerRef.current.innerHTML = "";
+        const isDark = typeof window !== "undefined" && (document.documentElement.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches);
+        const bgColor = isDark ? "#09090b" : "#ffffff";
         const viewer = mol.createViewer(containerRef.current, {
-          backgroundColor: VIEWPORT_BG,
+          backgroundColor: bgColor,
         });
         viewerRef.current = viewer;
 

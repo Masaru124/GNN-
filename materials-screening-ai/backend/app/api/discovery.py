@@ -112,6 +112,34 @@ def get_discovery_job_status(job_id: str, db: Session = Depends(get_db)):
             "energy_disagreement_eV_per_atom": c.energy_disagreement_eV_per_atom,
             "structural_rmsd_between_mlips_A": c.structural_rmsd_between_mlips_A,
             "ensemble_status": c.ensemble_status,
+            # Item 1: Energy Above Hull
+            "e_above_hull_eV": getattr(c, "e_above_hull_eV", None),
+            "hull_classification": getattr(c, "hull_classification", None),
+            # Item 3: Band Gap (Tier B triage)
+            "estimated_band_gap_eV": getattr(c, "estimated_band_gap_eV", None),
+            "bandgap_estimate_source": getattr(c, "bandgap_estimate_source", None),
+            "is_solar_optimal": getattr(c, "is_solar_optimal", False),
+            # Item 8: Synthesis Feasibility & Route
+            "synthesis_route": getattr(c, "synthesis_route", None),
+            "synthesis_feasibility": getattr(c, "synthesis_feasibility", None),
+            "synthesis_precursors": json.loads(getattr(c, "synthesis_precursors_json", None) or "[]"),
+            "synthesis_estimated_temp_c": getattr(c, "synthesis_estimated_temp_c", None),
+            # Item 9: Literature Novelty Check
+            "literature_exact_known": getattr(c, "literature_exact_known", None),
+            "literature_matches_count": getattr(c, "literature_matches_count", 0),
+            "literature_top_doi": getattr(c, "literature_top_doi", None),
+            "literature_top_title": getattr(c, "literature_top_title", None),
+            # Item 10 / Tier 3: DFT & Δ-ML
+            "dft_job_id": getattr(c, "id", None),
+            "dft_status": getattr(c, "dft_pbe_status", None) or "not_queued",
+            "dft_pbe_status": getattr(c, "dft_pbe_status", None),
+            "dft_pbe_energy_eV": getattr(c, "dft_pbe_gap_eV", None),
+            "dft_pbe_gap_eV": getattr(c, "dft_pbe_gap_eV", None),
+            "dft_pbe_gap_type": getattr(c, "dft_pbe_gap_type", None),
+            "dft_delta_ml_bandgap_eV": getattr(c, "dft_delta_ml_gap_eV", None),
+            "dft_delta_ml_interval_low": getattr(c, "dft_delta_ml_interval_lower", None),
+            "dft_delta_ml_interval_high": getattr(c, "dft_delta_ml_interval_upper", None),
+            "dft_delta_ml_q_hat": getattr(c, "dft_delta_ml_q_hat", None),
         })
 
     return {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Box, Play, Activity, Thermometer, Zap, Cpu, Bot, Send, Sparkles, RefreshCw, FileText, Search, Database, CheckCircle2, ArrowRight, ShieldCheck, AlertTriangle, Layers } from "lucide-react";
+import { Box, Play, Activity, Thermometer, Zap, Cpu, Bot, Send, Sparkles, RefreshCw, FileText, Search, Database, CheckCircle2, ArrowRight, ShieldCheck, AlertTriangle, Layers, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,19 +13,20 @@ const API_BASE_URL = "http://127.0.0.1:8000";
 
 function VirtualLabContent() {
   const searchParams = useSearchParams();
-  const initialSource = searchParams.get("source") || "cif";
+  const initialSource = searchParams.get("source") || "auto";
   const initialRef = searchParams.get("ref") || "";
 
   const [cifText, setCifText] = useState("");
   const [activeFormula, setActiveFormula] = useState("Loaded Crystal");
   const [activeCandidateId, setActiveCandidateId] = useState<number | null>(null);
+  const [loadedMeta, setLoadedMeta] = useState<any>(null);
 
   // Search / Load state
-  const [mpQuery, setMpQuery] = useState("TiO2");
+  const [mpQuery, setMpQuery] = useState("NaCl");
   const [isLoadingStructure, setIsLoadingStructure] = useState(false);
 
   // Test Selection & Sweeps
-  const [selectedTest, setSelectedTest] = useState<"strain" | "neb" | "nvt" | "mutation" | "phonon">("strain");
+  const [selectedTest, setSelectedTest] = useState<"strain" | "neb" | "nvt" | "mutation" | "phonon" | "dft">("strain");
   const [isRunningTest, setIsRunningTest] = useState(false);
   const [simResult, setSimResult] = useState<any>(null);
   const [trajectoryFrames, setTrajectoryFrames] = useState<string[]>([]);
@@ -37,6 +38,8 @@ function VirtualLabContent() {
   const [temperatureK, setTemperatureK] = useState(600);
   const [mutationTargetElement, setMutationTargetElement] = useState("Co");
   const [mutationMatrix, setMutationMatrix] = useState<any>(null);
+  const [dftFastMode, setDftFastMode] = useState(true);
+  const [dftKptDist, setDftKptDist] = useState(0.35);
 
   // Write-Back State
   const [isWritingBack, setIsWritingBack] = useState(false);
@@ -55,14 +58,17 @@ function VirtualLabContent() {
 
   // Load structure on initial query params
   useEffect(() => {
-    if (initialSource && initialRef) {
-      handleLoadStructure(initialSource, initialRef);
+    if (initialRef) {
+      handleLoadStructure(initialSource || "auto", initialRef);
     } else {
-      handleLoadStructure("mp", "LiCoO2");
+      handleLoadStructure("auto", "LiCoO2");
     }
   }, [initialSource, initialRef]);
 
   const handleLoadStructure = async (source: string, ref: string) => {
+    const targetRef = (ref || "").trim();
+    if (!targetRef) return;
+
     setIsLoadingStructure(true);
     setErrorMsg(null);
     setSimResult(null);
@@ -70,16 +76,16 @@ function VirtualLabContent() {
     setWriteBackSuccess(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/simulation/load?source=${source}&ref=${encodeURIComponent(ref)}`);
+      const res = await fetch(`${API_BASE_URL}/api/simulation/load?source=${encodeURIComponent(source || "auto")}&ref=${encodeURIComponent(targetRef)}`);
       if (!res.ok) {
-        throw new Error("Failed to load crystal structure.");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to load crystal structure.");
       }
       const data = await res.json();
       setCifText(data.cif_text);
       setActiveFormula(data.formula);
-      if (data.candidate_id) {
-        setActiveCandidateId(data.candidate_id);
-      }
+      setActiveCandidateId(data.candidate_id || null);
+      setLoadedMeta(data);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to load structure.");
     } finally {
@@ -87,7 +93,8 @@ function VirtualLabContent() {
     }
   };
 
-  const handleRunSimulation = async () => {
+  const handleRunSimulation = async (testOverride?: "strain" | "neb" | "nvt" | "mutation" | "phonon" | "dft") => {
+    const testToRun = testOverride || selectedTest;
     setIsRunningTest(true);
     setErrorMsg(null);
     setWriteBackSuccess(null);
@@ -95,19 +102,23 @@ function VirtualLabContent() {
     let endpoint = "/api/simulation/strain-sweep";
     let body: any = { cif_text: cifText };
 
-    if (selectedTest === "strain") {
+    if (testToRun === "strain") {
       endpoint = "/api/simulation/strain-sweep";
       body.axis = strainAxis;
-    } else if (selectedTest === "neb") {
+    } else if (testToRun === "neb") {
       endpoint = "/api/simulation/neb-barrier";
       body.mobile_ion = mobileIon;
       body.n_images = 5;
-    } else if (selectedTest === "nvt") {
+    } else if (testToRun === "nvt") {
       endpoint = "/api/simulation/nvt-md";
       body.temperature_K = temperatureK;
       body.n_steps = 50;
-    } else if (selectedTest === "phonon") {
+    } else if (testToRun === "phonon") {
       endpoint = "/api/simulation/phonon-check";
+    } else if (testToRun === "dft") {
+      endpoint = "/api/simulation/dft-calculation";
+      body.fast_mode = dftFastMode;
+      body.kpt_dist = dftKptDist;
     }
 
     try {
@@ -217,36 +228,123 @@ function VirtualLabContent() {
 
       {/* Universal Structure Loading Bar */}
       <Card className="p-4 bg-card border-border space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-primary shrink-0" />
-            <span className="text-xs font-bold text-foreground">Load Crystal Structure Source:</span>
+            <span className="text-xs font-bold text-foreground">Load Crystal Structure:</span>
           </div>
 
-          <div className="flex items-center gap-2 flex-1 max-w-md">
+          <div className="flex items-center gap-2 flex-1 max-w-xl">
             <input
               type="text"
               value={mpQuery}
               onChange={(e) => setMpQuery(e.target.value)}
-              placeholder="Enter Formula (e.g. TiO2, LiFePO4) or MP-ID..."
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-mono"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && mpQuery.trim()) {
+                  e.preventDefault();
+                  handleLoadStructure("auto", mpQuery.trim());
+                }
+              }}
+              placeholder="Enter Formula (e.g. NaCl, CsPbI3, LiZrO2), Cand # (e.g. 147), or MP-ID..."
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-mono placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <Button
               size="sm"
-              onClick={() => handleLoadStructure("mp", mpQuery)}
-              disabled={isLoadingStructure}
-              className="text-xs gap-1.5 font-bold"
+              onClick={() => handleLoadStructure("auto", mpQuery.trim())}
+              disabled={isLoadingStructure || !mpQuery.trim()}
+              className="text-xs gap-1.5 font-bold shrink-0"
             >
-              <Search className="h-3.5 w-3.5" /> Load MP
+              {isLoadingStructure ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading...
+                </>
+              ) : (
+                <>
+                  <Search className="h-3.5 w-3.5" /> Load Structure
+                </>
+              )}
             </Button>
           </div>
 
-          {activeCandidateId && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-              <Sparkles className="h-3.5 w-3.5" /> Loaded from Discovery Candidate #{activeCandidateId}
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {activeCandidateId ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                <Sparkles className="h-3.5 w-3.5" /> Candidate #{activeCandidateId}
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                <Layers className="h-3.5 w-3.5" /> {activeFormula}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Quick-Select Presets */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 text-[11px] text-muted-foreground border-t border-border/40">
+          <span className="font-semibold text-foreground/80 mr-1">Quick Load:</span>
+          {[
+            { label: "NaCl (Rocksalt)", query: "NaCl" },
+            { label: "CsPbI3 (Perovskite)", query: "CsPbI3" },
+            { label: "LiCoO2 (Battery)", query: "LiCoO2" },
+            { label: "LiZrO2 (#147)", query: "147" },
+            { label: "TiO2 (Rutile)", query: "TiO2" },
+            { label: "Si (Diamond)", query: "Si" },
+            { label: "GaAs (Zincblende)", query: "GaAs" },
+            { label: "BaTiO3 (Ferroelectric)", query: "BaTiO3" },
+          ].map((item) => (
+            <button
+              key={item.query}
+              type="button"
+              onClick={() => {
+                setMpQuery(item.query);
+                handleLoadStructure("auto", item.query);
+              }}
+              className="px-2 py-0.5 rounded-md bg-muted/60 hover:bg-primary/15 hover:text-primary transition-colors font-mono text-[10px] border border-border/50"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Loaded Structure Metadata & Convex Hull Position */}
+        {loadedMeta && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px] border-t border-border/40 font-mono text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-md">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-foreground/70 mr-1 font-sans">Formula:</span>
+                <span className="font-bold text-foreground">{loadedMeta.formula}</span>
+              </div>
+              {loadedMeta.density_g_cm3 && (
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-foreground/70 mr-1 font-sans">Density:</span>
+                  <span>{loadedMeta.density_g_cm3.toFixed(2)} g/cm³</span>
+                </div>
+              )}
+              {loadedMeta.volume_A3 && (
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-foreground/70 mr-1 font-sans">Volume:</span>
+                  <span>{loadedMeta.volume_A3.toFixed(1)} Å³</span>
+                </div>
+              )}
+              <div>
+                <span className="text-[10px] uppercase font-bold text-foreground/70 mr-1 font-sans">Convex Hull (E_hull):</span>
+                {loadedMeta.e_above_hull_eV !== null && loadedMeta.e_above_hull_eV !== undefined ? (
+                  <span className={loadedMeta.e_above_hull_eV <= 0.001 ? "text-emerald-500 font-bold" : loadedMeta.e_above_hull_eV <= 0.1 ? "text-amber-500 font-bold" : "text-rose-500 font-bold"}>
+                    {loadedMeta.e_above_hull_eV.toFixed(3)} eV/atom {loadedMeta.e_above_hull_eV <= 0.001 ? "(On-Hull Stable)" : loadedMeta.e_above_hull_eV <= 0.1 ? "(Metastable)" : "(Unstable)"}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/80 italic font-sans text-[10px]">Reference hull data required</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-foreground/70 mr-1 font-sans">Provenance:</span>
+              <span className="px-1.5 py-0.5 rounded bg-muted text-foreground text-[10px] font-bold">
+                {loadedMeta.confidence_tier || "Loaded"}
+              </span>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Explicit Feasibility Tier System Badge Bar */}
@@ -271,14 +369,14 @@ function VirtualLabContent() {
           <p className="text-[11px] text-muted-foreground">NEB Ion Migration Path, Surface Energy, NVT Molecular Dynamics Annealing, Defect Supercell</p>
         </Card>
 
-        <Card className="p-3.5 border-amber-500/30 bg-amber-500/5 space-y-1">
+        <Card className="p-3.5 border-cyan-500/30 bg-cyan-500/5 space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5" /> Tier C — DFT Required (External)
+            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+              <Cpu className="h-3.5 w-3.5" /> Tier C / Tier 3 — Quantum ESPRESSO DFT
             </span>
-            <span className="text-[10px] font-mono uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">Needs DFT</span>
+            <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 px-1.5 py-0.5 rounded font-bold">QE DFT Active (~25s)</span>
           </div>
-          <p className="text-[11px] text-muted-foreground">Band Gap, Dielectric Constant, Carrier Mobility, Optical Spectra (Explicitly labeled uncalculated)</p>
+          <p className="text-[11px] text-muted-foreground">PBE Electronic SCF, Band Gap (Direct/Indirect/Metallic), VBM/CBM, and Δ-ML Conformal Gap Prediction.</p>
         </Card>
       </div>
 
@@ -308,28 +406,77 @@ function VirtualLabContent() {
             trajectoryFrames={trajectoryFrames}
           />
 
-          {/* Tier C Uncalculated Properties Panel */}
-          <Card className="p-4 border-amber-500/30 bg-amber-500/5 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-amber-700 dark:text-amber-300 font-bold">
+          {/* Tier C Electronic Structure Properties Panel */}
+          <Card className="p-4 border-cyan-500/30 bg-cyan-500/5 space-y-3 text-xs">
+            <div className="flex items-center justify-between text-cyan-700 dark:text-cyan-300 font-bold">
               <span className="flex items-center gap-1.5">
-                <Layers className="h-4 w-4" /> Tier C Electronic Structure Properties:
+                <Cpu className="h-4 w-4" /> Tier C / Tier 3 Electronic Structure:
               </span>
-              <span className="text-[10px] font-mono uppercase">Requires DFT</span>
+              <span className="text-[10px] font-mono uppercase bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                {simResult?.simulation_result?.pbe_gap_eV !== undefined ? "DFT Computed" : "Quantum ESPRESSO Ready"}
+              </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-[11px]">
-              <div className="rounded-md border border-amber-500/20 bg-background p-2">
-                <span className="text-muted-foreground block text-[10px]">Band Gap:</span>
-                <span className="font-bold italic text-amber-600 dark:text-amber-400">Requires DFT Job</span>
+
+            {simResult?.simulation_result?.pbe_gap_eV !== undefined ? (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div className="rounded-md border border-cyan-500/20 bg-background p-2">
+                    <span className="text-muted-foreground block text-[10px]">PBE Band Gap:</span>
+                    <span className="font-bold text-foreground font-mono">
+                      {simResult.simulation_result.pbe_gap_eV.toFixed(2)} eV
+                    </span>
+                    <span className="text-[9px] text-muted-foreground block capitalize">{simResult.simulation_result.gap_type}</span>
+                  </div>
+                  <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2">
+                    <span className="text-muted-foreground block text-[10px]">Δ-ML High-Fid Gap:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                      {simResult.simulation_result.delta_ml_gap_eV?.toFixed(2)} eV
+                    </span>
+                    <span className="text-[9px] text-muted-foreground block font-mono">
+                      [{simResult.simulation_result.delta_ml_interval_lower?.toFixed(2)}, {simResult.simulation_result.delta_ml_interval_upper?.toFixed(2)}]
+                    </span>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-background p-2">
+                    <span className="text-muted-foreground block text-[10px]">Band Edges:</span>
+                    <span className="font-bold text-foreground block font-mono text-[10px]">
+                      VBM: {simResult.simulation_result.vbm_eV?.toFixed(2)}
+                    </span>
+                    <span className="font-bold text-foreground block font-mono text-[10px]">
+                      CBM: {simResult.simulation_result.cbm_eV?.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-md border border-amber-500/20 bg-background p-2">
-                <span className="text-muted-foreground block text-[10px]">Dielectric Constant:</span>
-                <span className="font-bold italic text-amber-600 dark:text-amber-400">Requires DFPT</span>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div className="rounded-md border border-cyan-500/20 bg-background p-2">
+                    <span className="text-muted-foreground block text-[10px]">Band Gap:</span>
+                    <span className="font-medium text-cyan-600 dark:text-cyan-400 italic">PBE + Δ-ML Calibrated</span>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-background p-2">
+                    <span className="text-muted-foreground block text-[10px]">Dielectric Const:</span>
+                    <span className="font-medium text-cyan-600 dark:text-cyan-400 italic">SSSP ε∞ Proxy</span>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-background p-2">
+                    <span className="text-muted-foreground block text-[10px]">Eigenvalues:</span>
+                    <span className="font-medium text-cyan-600 dark:text-cyan-400 italic">SCF Spectrum</span>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTest("dft");
+                    handleRunSimulation("dft");
+                  }}
+                  disabled={isRunningTest}
+                  className="w-full h-7 text-[11px] gap-1.5 font-bold border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20"
+                >
+                  <Cpu className="h-3.5 w-3.5 text-cyan-500" />
+                  {isRunningTest && selectedTest === "dft" ? "Computing DFT (~25s)..." : "⚡ Run Quantum ESPRESSO DFT (~25s)"}
+                </Button>
               </div>
-              <div className="rounded-md border border-amber-500/20 bg-background p-2">
-                <span className="text-muted-foreground block text-[10px]">Carrier Mobility:</span>
-                <span className="font-bold italic text-amber-600 dark:text-amber-400">Requires DFT Band</span>
-              </div>
-            </div>
+            )}
           </Card>
 
           <Card className="p-5 space-y-3">
@@ -356,14 +503,14 @@ function VirtualLabContent() {
               <span className="text-base font-bold text-foreground flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" /> Parameter Sweeps & Physics Probes
               </span>
-              <Button onClick={handleRunSimulation} disabled={isRunningTest} className="gap-2 font-bold">
+              <Button onClick={() => handleRunSimulation()} disabled={isRunningTest} className="gap-2 font-bold">
                 <Play className={`h-4 w-4 ${isRunningTest ? "animate-spin" : ""}`} />
                 {isRunningTest ? "Running Physics..." : "Execute Simulation"}
               </Button>
             </div>
 
             {/* Test Selection Tabs */}
-            <div className="grid grid-cols-2 xl:grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">
               <button
                 onClick={() => setSelectedTest("strain")}
                 className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${
@@ -412,10 +559,61 @@ function VirtualLabContent() {
                 <Sparkles className="h-4 w-4 mb-1" /> Gated Mutation
                 <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400">Tier A</span>
               </button>
+              <button
+                onClick={() => setSelectedTest("dft")}
+                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${
+                  selectedTest === "dft" ? "border-cyan-500 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold" : "border-border bg-card hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                <Cpu className="h-4 w-4 mb-1 text-cyan-500" /> Quantum ESPRESSO
+                <span className="text-[9px] font-mono text-cyan-600 dark:text-cyan-400 font-bold">Tier C / Tier 3</span>
+              </button>
             </div>
 
             {/* Parameter Controls */}
             <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-4 text-xs">
+              {selectedTest === "dft" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <span className="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+                      <Cpu className="h-4 w-4" /> Tier C / Tier 3: Quantum ESPRESSO DFT & Δ-ML Gap Correction
+                    </span>
+                    <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 px-1.5 py-0.5 rounded font-bold">
+                      Native Windows pw.exe (24 Cores)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-semibold text-foreground block text-[11px]">Execution Speed & Mode:</label>
+                      <select
+                        value={dftFastMode ? "fast" : "precision"}
+                        onChange={(e) => setDftFastMode(e.target.value === "fast")}
+                        className="w-full rounded-lg border border-border bg-background p-2 font-semibold text-xs"
+                      >
+                        <option value="fast">⚡ Fast Mode (~25s) — MLIP Pre-Relaxed SCF</option>
+                        <option value="precision">🔬 Full Precision (10m) — 12-Step vc-relax</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-foreground block text-[11px]">K-Point Sampling Grid:</label>
+                      <select
+                        value={dftKptDist}
+                        onChange={(e) => setDftKptDist(parseFloat(e.target.value))}
+                        className="w-full rounded-lg border border-border bg-background p-2 font-semibold text-xs"
+                      >
+                        <option value={0.35}>0.35 Å⁻¹ (Fast Triage - Recommended)</option>
+                        <option value={0.25}>0.25 Å⁻¹ (Dense Convergence Grid)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Runs self-consistent field (SCF) DFT via native Windows Quantum ESPRESSO 7.5 (24 OpenMP cores). Computes valence band maximum (VBM), conduction band minimum (CBM), exact PBE gap, and applies conformal-calibrated Δ-ML correction for experimental-quality band gaps with 90% uncertainty intervals.
+                  </p>
+                </div>
+              )}
               {selectedTest === "strain" && (
                 <div className="space-y-2">
                   <label className="font-semibold text-foreground block">Lattice Perturbation Axis:</label>
@@ -519,6 +717,139 @@ function VirtualLabContent() {
                   <span>{simResult.simulation_result?.test_name}</span>
                   <span className="px-2 py-0.5 rounded bg-primary/10 text-[10px] font-mono">{simResult.simulation_result?.tier || "Tier A"}</span>
                 </div>
+
+                {/* Quantum ESPRESSO Tier 3 DFT Band Gap & Electronic Structure */}
+                {simResult.simulation_result?.pbe_gap_eV !== undefined && (
+                  <div className="space-y-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+                    <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+                      <span className="font-bold text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+                        <Cpu className="h-4 w-4" /> Quantum ESPRESSO Electronic Structure Results
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold uppercase">
+                        {simResult.simulation_result.is_metallic ? "⚡ Metallic Conductor" : `${simResult.simulation_result.gap_type} Semiconductor`}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="rounded-lg border border-cyan-500/20 bg-background/80 p-2.5 space-y-1">
+                        <span className="text-[10px] text-muted-foreground block font-medium">PBE Band Gap:</span>
+                        <span className="text-base font-bold font-mono text-foreground block">
+                          {simResult.simulation_result.pbe_gap_eV.toFixed(2)} eV
+                        </span>
+                        <span className="text-[9px] text-muted-foreground block capitalize">{simResult.simulation_result.gap_type} gap</span>
+                      </div>
+
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 space-y-1">
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold block">Δ-ML High-Fidelity Target (HSE/GW):</span>
+                        {simResult.simulation_result.delta_ml_gap_eV !== null && simResult.simulation_result.delta_ml_gap_eV !== undefined ? (
+                          <>
+                            <span className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 block">
+                              {simResult.simulation_result.delta_ml_gap_eV.toFixed(2)} eV
+                            </span>
+                            <span className="text-[9px] text-foreground font-mono block">
+                              [{simResult.simulation_result.delta_ml_interval_lower?.toFixed(2)}, {simResult.simulation_result.delta_ml_interval_upper?.toFixed(2)}] eV (90% conf)
+                            </span>
+                            {simResult.simulation_result.delta_ml_chemistry_mae_eV && (
+                              <span className="text-[8px] text-emerald-700/90 dark:text-emerald-300/90 block leading-tight font-sans">
+                                Family LOCO MAE: {simResult.simulation_result.delta_ml_chemistry_mae_eV.toFixed(3)} eV ({simResult.simulation_result.delta_ml_chemistry_class?.replace(/_/g, " ")})
+                              </span>
+                            )}
+                            {simResult.simulation_result.delta_ml_interval_pooled && (
+                              <span className="text-[8px] text-muted-foreground block font-mono">
+                                Pooled: [{simResult.simulation_result.delta_ml_interval_pooled[0]?.toFixed(2)}, {simResult.simulation_result.delta_ml_interval_pooled[1]?.toFixed(2)}] eV
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-xs font-bold text-amber-500 block leading-tight pt-1">
+                              HSE Undetermined
+                            </span>
+                            <span className="text-[9px] text-muted-foreground font-mono block leading-tight">
+                              Out of Δ-ML Domain
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="rounded-lg border border-cyan-500/20 bg-background/80 p-2.5 space-y-1">
+                        <span className="text-[10px] text-muted-foreground block font-medium">Band Extremes:</span>
+                        <span className="text-xs font-bold font-mono text-foreground block">
+                          VBM: {simResult.simulation_result.vbm_eV !== null && simResult.simulation_result.vbm_eV !== undefined ? `${simResult.simulation_result.vbm_eV?.toFixed(2)} eV` : "N/A"}
+                        </span>
+                        <span className="text-xs font-bold font-mono text-foreground block">
+                          CBM: {simResult.simulation_result.cbm_eV !== null && simResult.simulation_result.cbm_eV !== undefined ? `${simResult.simulation_result.cbm_eV?.toFixed(2)} eV` : "N/A"}
+                        </span>
+                      </div>
+
+                      <div className="rounded-lg border border-cyan-500/20 bg-background/80 p-2.5 space-y-1">
+                        <span className="text-[10px] text-muted-foreground block font-medium">SCF Energy & Speed:</span>
+                        <span className="text-xs font-bold font-mono text-foreground block">
+                          {simResult.simulation_result.scf_total_energy_eV ? `${simResult.simulation_result.scf_total_energy_eV.toFixed(2)} eV` : "—"}
+                        </span>
+                        <span className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 block font-bold">
+                          ⚡ {simResult.simulation_result.runtime_seconds}s (24 cores)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Band Edge Visualizer Bar */}
+                    {simResult.simulation_result.is_metallic ? (
+                      <div className="space-y-1 pt-1">
+                        <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                          <span>Partially Filled Valence/Conduction Bands</span>
+                          <span className="font-bold text-amber-500">Fermi Level Crosses Bands (Eg = 0.00 eV)</span>
+                          <span>Continuous States at Ef</span>
+                        </div>
+                        <div className="h-3 w-full rounded-full bg-gradient-to-r from-amber-500/80 via-yellow-400/90 to-amber-500/80 shadow-inner flex items-center justify-center">
+                          <span className="text-[9px] font-bold text-slate-900 tracking-wider uppercase">Continuous Metallic Conduction Band</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1 pt-1">
+                        <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                          <span>Valence Band (Occupied)</span>
+                          <span className="font-bold text-emerald-500">Eg = {simResult.simulation_result.pbe_gap_eV.toFixed(2)} eV</span>
+                          <span>Conduction Band (Virtual)</span>
+                        </div>
+                        <div className="h-3 w-full rounded-full bg-muted/60 overflow-hidden flex">
+                          <div className="h-full bg-blue-500/80 w-[45%]" title="Valence Band" />
+                          <div className="h-full bg-transparent w-[10%]" title="Band Gap Forbidden Zone" />
+                          <div className="h-full bg-emerald-500/80 w-[45%]" title="Conduction Band" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Provenance & Methodology Disclosures */}
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5 space-y-1.5 text-[11px]">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {simResult.simulation_result.fast_mode && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-semibold text-[10px]">
+                            ⚡ Fast Mode (SCF Mesh ~0.35 Å⁻¹, vc-relax dropped)
+                          </span>
+                        )}
+                        {simResult.simulation_result.hubbard_u && Object.keys(simResult.simulation_result.hubbard_u).length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 font-semibold text-[10px]">
+                            🎯 DFT+U: {Object.entries(simResult.simulation_result.hubbard_u).map(([k, v]) => `${k}=${v}eV`).join(", ")}
+                          </span>
+                        )}
+                        {simResult.simulation_result.calibration_dataset && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 font-mono text-[10px]">
+                            📚 {simResult.simulation_result.calibration_dataset}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        <span className="font-semibold text-foreground/80">Fast-Mode Provenance:</span> Geometry relaxed via MLIP (CHGNet); multi-step DFT vc-relax dropped (~35× speedup). Band eigenvalues evaluated across SCF Monkhorst-Pack grid (upper bound on true PBE gap).
+                      </p>
+                    </div>
+
+                    <div className="text-[10px] text-muted-foreground italic flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 pt-1 border-t border-border/40">
+                      <span>Cutoffs: {simResult.simulation_result.convergence_params?.ecutwfc_Ry} Ry (wfc), {simResult.simulation_result.convergence_params?.ecutrho_Ry} Ry (rho) | Spacegroup: {simResult.simulation_result.spacegroup_symbol || "P1"}</span>
+                      <span className="font-mono text-[9px] uppercase bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-500/20">SSSP Efficiency PBE</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Phonon Bandstructure DOS Spectrum Plot */}
                 {simResult.simulation_result?.phonon_dos_spectrum && (

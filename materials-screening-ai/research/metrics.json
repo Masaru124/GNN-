@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
+    "git_commit": "2bd60d8ccc01984ba21fbd3ecd76886e745fccd9",
+    "calibration_records_sha256": "7893affeba49606c546130a80b83be6c0d44f9039a7ed0d74a63292c80e91a5a",
+    "num_evaluated_samples": 10,
+    "num_families": 3,
+    "feature_names": [
+      "pbe_gap",
+      "pbe_gap_sq",
+      "chi_diff",
+      "r_ratio",
+      "Z_avg",
+      "inv_eps_inf",
+      "pbe_div_eps"
+    ],
+    "seed": 42,
+    "deployed_predictor_rule": {
+      "out_of_family": "linear_pbe_scissor",
+      "in_family": "delta_ml_ridge_halide_perovskite_only",
+      "primary_criterion": "nested_loco_mae_paired_delta_bootstrap_95ci"
+    }
+  },
+  "deployed_model_decision": {
+    "cross_family_winner": "linear_pbe_scissor",
+    "cross_family_linear_loco_mae": 0.6596603307581743,
+    "cross_family_nested_ridge_loco_mae": 1.0189964277021786,
+    "paired_delta_mae_eV": 0.3593360969440042,
+    "paired_delta_mae_ci95_eV": [
+      -0.1352144451803232,
+      0.7390238904839138
+    ],
+    "in_family_winner": "delta_ml_ridge",
+    "in_family_perovskite_linear_pbe_loocv_mae": 0.6244903278406392,
+    "in_family_ridge_loocv_mae": 0.26826477512699937,
+    "in_family_family_mean_delta_loocv_mae": 0.46138095238095245,
+    "in_family_ridge_advantage_over_linear_eV": 0.3562255527136398,
+    "in_family_ridge_advantage_over_fam_mean_eV": 0.19311617725395308
+  },
+  "baselines": {
+    "mean_delta_loocv_mae": 0.6086666666666669,
+    "constant_scissor_loocv_mae": 0.6086666666666669,
+    "linear_pbe_loocv_mae": 0.7176368471098746,
+    "family_mean_delta_loocv_mae": 0.5287777777777778,
+    "mean_delta_loco_mae": 0.8955277777777779,
+    "constant_scissor_loco_mae": 0.8955277777777779,
+    "linear_pbe_loco_mae": 0.6596603307581743,
+    "linear_pbe_fit_equation": "E_exp = 1.4840 * PBE + 0.0251"
+  },
+  "production_ridge_alpha_1": {
+    "loocv_mae": 0.4561118959669713,
+    "loocv_rmse": 0.8607499275112035,
+    "q_tilde_in_family": 0.7272887750070427,
+    "loco_pooled_mae": 1.1896370216288217,
+    "loco_family_maes": {
+      "alkaline_earth_oxide": 2.4165409329929473,
+      "halide_perovskite": 1.224178532026974,
+      "transition_metal_perovskite": 0.4552897795532258
+    }
+  },
+  "halide_perovskites_in_family": {
+    "n_family": 7,
+    "ridge_loocv_mae": 0.26826477512699937,
+    "family_mean_delta_loocv_mae": 0.46138095238095245,
+    "linear_pbe_loocv_mae": 0.6244903278406392,
+    "pooled_mean_delta_loocv_mae": 0.5615079365079366,
+    "q_tilde_in_family": 0.7272887750070427
+  },
+  "scissor_plus_ridge_on_residuals": {
+    "loocv_mae": 0.5691733213362916,
+    "nested_loco_mae": 1.2512613497359433,
+    "pure_scissor_loco_mae": 0.6596603307581743
+  },
+  "extended_alpha_grid_and_regularization": {
+    "condition_numbers": {
+      "0.0001": 49680.77015983714,
+      "0.001": 24676.098162819322,
+      "0.01": 4090.9061169640104,
+      "0.1": 438.7744331936862,
+      "0.5": 89.10606019452095,
+      "1.0": 45.08772260239359,
+      "5.0": 9.823103194689264,
+      "10.0": 5.4118992608946135,
+      "50.0": 1.8824354862381887,
+      "100.0": 1.4412212204944372,
+      "1000.0": 1.0441224350179117,
+      "10000.0": 1.0044122466315004,
+      "100000.0": 1.000441224694447
+    },
+    "nested_loco_mae_with_eps": 1.0189964277021786,
+    "nested_loco_mae_without_eps": 0.7587233090329804,
+    "nested_chosen_alphas": [
+      [
+        "alkaline_earth_oxide",
+        0.001
+      ],
+      [
+        "halide_perovskite",
+        100000.0
+      ],
+      [
+        "transition_metal_perovskite",
+        0.0001
+      ]
+    ],
+    "standardized_coefficients": {
+      "1.0": {
+        "pbe_gap": -0.24524762918502854,
+        "pbe_gap_sq": 0.10653150102524772,
+        "chi_diff": 0.23324340798413112,
+        "r_ratio": -0.03786732292511137,
+        "Z_avg": -0.251664360738888,
+        "inv_eps_inf": 0.38234268880877936,
+        "pbe_div_eps": 0.11427332487460123
+      },
+      "10.0": {
+        "pbe_gap": 0.0224895314528547,
+        "pbe_gap_sq": 0.08791598865991519,
+        "chi_diff": 0.13898136096266903,
+        "r_ratio": -0.09141259455773207,
+        "Z_avg": -0.1160197044542609,
+        "inv_eps_inf": 0.15122935901066384,
+        "pbe_div_eps": 0.09293220738618244
+      },
+      "50.0": {
+        "pbe_gap": 0.03924969492923154,
+        "pbe_gap_sq": 0.0546283560754832,
+        "chi_diff": 0.057925778810445624,
+        "r_ratio": -0.050785091616499786,
+        "Z_avg": -0.062132205730782125,
+        "inv_eps_inf": 0.06468282279779197,
+        "pbe_div_eps": 0.05488720907347525
+      },
+      "1000.0": {
+        "pbe_gap": 0.004280239329745666,
+        "pbe_gap_sq": 0.005121442105744984,
+        "chi_diff": 0.004224982537892533,
+        "r_ratio": -0.004167830305278044,
+        "Z_avg": -0.005400906918488708,
+        "inv_eps_inf": 0.005370310809434827,
+        "pbe_div_eps": 0.005083137312687089
+      },
+      "100000.0": {
+        "pbe_gap": 4.511861280325979e-05,
+        "pbe_gap_sq": 5.3592695066595166e-05,
+        "chi_diff": 4.340115186566825e-05,
+        "r_ratio": -4.3144959575979364e-05,
+        "Z_avg": -5.620814583313297e-05,
+        "inv_eps_inf": 5.5827638694158826e-05,
+        "pbe_div_eps": 5.316254297322723e-05
+      }
+    }
+  },
+  "leverage_and_design_matrix_p7": {
+    "num_features_p": 7,
+    "trace_H_ridge": 4.521377382313768,
+    "trace_H_ols": 7.999999999999999,
+    "design_matrix_rank": 8,
+    "high_leverage_cutoff": 0.9042754764627536,
+    "high_leverage_compounds": [
+      "MgO"
+    ],
+    "held_out_query_leverages": {
+      "MgO": 33.33493136533505,
+      "SrTiO3": 0.7329519591749625,
+      "BaTiO3": 0.737112648137644,
+      "CsPbI3": 0.8979867554812777,
+      "CsPbBr3": 0.37339726452854294,
+      "CsPbCl3": 0.32165712635678456,
+      "CsSnCl3": 1.492488604766527,
+      "MAPbI3": 1.0938292127302922,
+      "MAPbBr3": 0.43497792423370435,
+      "MAPbCl3": 0.5223702917015913
+    },
+    "in_sample_leverages": {
+      "MgO": 0.9368302834030734,
+      "SrTiO3": 0.42384502972213445,
+      "BaTiO3": 0.4239833455280586,
+      "CsPbI3": 0.46891570642590363,
+      "CsPbBr3": 0.27321919800549566,
+      "CsPbCl3": 0.24904087618201995,
+      "CsSnCl3": 0.5971940548245843,
+      "MAPbI3": 0.5055856385521101,
+      "MAPbBr3": 0.2994217056022438,
+      "MAPbCl3": 0.3433415440681451
+    }
+  },
+  "held_out_conformal_coverage": {
+    "lofo_ridge_per_family": {
+      "alkaline_earth_oxide": {
+        "n": 1,
+        "covered": 0,
+        "coverage_pct": 0.0,
+        "q_tilde_cal": 0.3583
+      },
+      "halide_perovskite": {
+        "n": 7,
+        "covered": 7,
+        "coverage_pct": 100.0,
+        "q_tilde_cal": 0.196
+      },
+      "transition_metal_perovskite": {
+        "n": 2,
+        "covered": 2,
+        "coverage_pct": 100.0,
+        "q_tilde_cal": 0.6729
+      }
+    },
+    "lofo_scissor_per_family": {
+      "alkaline_earth_oxide": {
+        "n": 1,
+        "covered": 0,
+        "coverage_pct": 0.0,
+        "q_tilde_cal": 1.1076
+      },
+      "halide_perovskite": {
+        "n": 7,
+        "covered": 2,
+        "coverage_pct": 28.6,
+        "q_tilde_cal": 0.0979
+      },
+      "transition_metal_perovskite": {
+        "n": 2,
+        "covered": 2,
+        "coverage_pct": 100.0,
+        "q_tilde_cal": 1.6617
+      }
+    },
+    "lofo_scissor_overall_coverage_pct": 40.0
+  },
+  "family_permutation_test": {
+    "family_mae_nested_ridge": {
+      "alkaline_earth_oxide": 2.3399612671681114,
+      "halide_perovskite": 0.9673924191935058,
+      "transition_metal_perovskite": 0.5391280377495669
+    },
+    "family_mae_linear_scissor": {
+      "alkaline_earth_oxide": 2.67739939689237,
+      "halide_perovskite": 0.542478962603276,
+      "transition_metal_perovskite": 0.06092558623322075
+    },
+    "paired_mean_difference_eV": 0.18855925946077245,
+    "exact_two_sided_permutation_p_value": 0.5,
+    "exact_one_sided_permutation_p_value": 0.25
+  }
+}

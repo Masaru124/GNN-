@@ -22,7 +22,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
       disabled={!mounted}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="gap-2 px-3"
+      className="gap-2 px-3  border border-neutral-300"
     >
       {isDark ? (
         <>

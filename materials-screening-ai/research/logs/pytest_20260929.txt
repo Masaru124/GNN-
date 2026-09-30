@@ -1,0 +1,101 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\User\Desktop\GNN\materials-screening-ai
+plugins: anyio-4.13.0, cov-7.1.0
+collected 33 items
+
+backend\tests\test_band_gap_parser.py ...........                        [ 33%]
+backend\tests\test_cathodes_pipeline.py ....                             [ 45%]
+backend\tests\test_cross_artifact_parity.py ........                     [ 69%]
+backend\tests\test_dft_benchmark_regression.py ..........                [100%]
+
+============================== warnings summary ===============================
+..\.venv311\Lib\site-packages\torch\jit\_script.py:1488: 24 warnings
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\torch\jit\_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+..\.venv311\Lib\site-packages\torch_geometric\llm\utils\backend_utils.py:26
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\torch_geometric\llm\utils\backend_utils.py:26: DeprecationWarning: `torch_geometric.distributed` has been deprecated since 2.7.0 and will no longer be maintained. For distributed training, refer to our tutorials on distributed training at https://pytorch-geometric.readthedocs.io/en/latest/tutorial/distributed.html or cuGraph examples at https://github.com/rapidsai/cugraph-gnn/tree/main/python/cugraph-pyg/cugraph_pyg/examples
+    from torch_geometric.distributed import (
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:20
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\emmet\core\utils.py:20: DeprecationWarning: This module has been moved to the pymatgen.core.elasticity module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.elasticity.strain import Deformation
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:20
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\emmet\core\utils.py:20: DeprecationWarning: This module has been moved to the pymatgen.core.elasticity.strain module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.elasticity.strain import Deformation
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:21
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\emmet\core\utils.py:21: DeprecationWarning: This module has been moved to the pymatgen.core.graphs module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.graphs import MoleculeGraph
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:22
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\emmet\core\utils.py:22: DeprecationWarning: This module has been moved to the pymatgen.core.local_env module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.local_env import OpenBabelNN, metal_edge_extender
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:23
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\emmet\core\utils.py:23: DeprecationWarning: This module has been moved to the pymatgen.core.molecule_matcher module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.molecule_matcher import MoleculeMatcher
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:24
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\emmet\core\utils.py:24: DeprecationWarning: This module has been moved to the pymatgen.core.structure_matcher module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.structure_matcher import (
+
+..\.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27: DeprecationWarning: Entry, ComputedEntry and ComputedStructureEntry have been moved to pymatgen.core.entries module. This stub will be removed v2027.1.
+    from pymatgen.entries.compatibility import MU_H2O
+
+..\.venv311\Lib\site-packages\pymatgen\analysis\compatibility\__init__.py:23
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\pymatgen\analysis\compatibility\__init__.py:23: DeprecationWarning: This module has been moved to the pymatgen.core.structure_analyzer module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.structure_analyzer import oxide_type, sulfide_type
+
+..\.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27: DeprecationWarning: All compatibility have been moved to the pymatgen.analysis.compatibility module. This stub will be removed v2027.1.
+    from pymatgen.entries.compatibility import MU_H2O
+
+..\.venv311\Lib\site-packages\mp_api\client\mprester.py:18
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\mp_api\client\mprester.py:18: DeprecationWarning: Entry, ComputedEntry and ComputedStructureEntry have been moved to pymatgen.core.entries module. This stub will be removed v2027.1.
+    from pymatgen.entries.computed_entries import ComputedStructureEntry
+
+..\.venv311\Lib\site-packages\e3nn\o3\_wigner.py:10
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\e3nn\o3\_wigner.py:10: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+    _Jd, _W3j_flat, _W3j_indices = torch.load(os.path.join(os.path.dirname(__file__), 'constants.pt'))
+
+backend/tests/test_band_gap_parser.py::TestSyntheticOpenShellAndDomainSafety::test_prototype_symmetry_check
+backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_kpoint_symmetry_scope_and_candidate_audit
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\spglib\spg.py:438: DeprecationWarning: Set OLD_ERROR_HANDLING to false and catch the errors directly.
+    _set_no_error(_throw)
+
+backend/tests/test_cathodes_pipeline.py::test_physics_validation_trajectory
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\mace\calculators\mace.py:226: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+    torch.load(f=model_path, map_location=device)
+
+backend/tests/test_cathodes_pipeline.py: 18 warnings
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\torch\jit\_serialization.py:176: DeprecationWarning: `torch.jit.load` is deprecated. Please switch to `torch.export`.
+    warnings.warn(
+
+backend/tests/test_cathodes_pipeline.py::test_physics_validation_trajectory
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\chgnet\model\model.py:898: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    volumes = torch.tensor(volumes, dtype=TORCH_DTYPE, device=atomic_numbers.device)
+
+backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+  C:\Users\User\Desktop\GNN\.venv311\Lib\site-packages\spglib\cell.py:106: DeprecationWarning: Set OLD_ERROR_HANDLING to false and catch the errors directly.
+    _set_no_error()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 33 passed, 72 warnings in 217.35s (0:03:37) =================

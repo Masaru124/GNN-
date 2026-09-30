@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CandidateItem } from "./ParetoFrontierChart";
-import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, Box, FlaskConical, ShieldCheck } from "lucide-react";
+import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, Box, FlaskConical, ShieldCheck, RefreshCw, BookOpen, AlertCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Viewer3D } from "@/components/Viewer3D";
 
@@ -10,13 +10,50 @@ interface Props {
   candidates: CandidateItem[];
   onTriggerValidation: (candidateIds: number[]) => void;
   isValidating: boolean;
+  onCandidatesUpdated?: () => void;
 }
 
-export function CandidateTable({ candidates, onTriggerValidation, isValidating }: Props) {
+export function CandidateTable({ candidates, onTriggerValidation, isValidating, onCandidatesUpdated }: Props) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterMode, setFilterMode] = useState<string>("all");
   const [activeTrajectoryCandidate, setActiveTrajectoryCandidate] = useState<CandidateItem | null>(null);
   const [active3DmolCandidate, setActive3DmolCandidate] = useState<CandidateItem | null>(null);
+  const [dftQueuingId, setDftQueuingId] = useState<number | null>(null);
+  const [dftStatusMsg, setDftStatusMsg] = useState<{ id: number; msg: string; isError?: boolean } | null>(null);
+
+  const handleQueueDft = async (cand: CandidateItem, fastMode: boolean = true) => {
+    setDftQueuingId(cand.id);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/dft/queue/${cand.id}?fast_mode=${fastMode}&kpt_dist=0.35`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.status === "qe_not_installed") {
+        setDftStatusMsg({
+          id: cand.id,
+          msg: `${cand.formula}: Quantum ESPRESSO is not installed. To run natively on Windows without WSL, run 'python backend/scripts/setup_qe_windows.py' to download portable QE 7.5 (pw.exe).`,
+          isError: false,
+        });
+      } else {
+        setDftStatusMsg({
+          id: cand.id,
+          msg: `${cand.formula}: Tier 3 DFT calculation started in ${fastMode ? "⚡ Fast Mode (~25s)" : "Full vc-relax"} (job status: ${data.status || "queued"}).`,
+          isError: false,
+        });
+        if (onCandidatesUpdated) {
+          onCandidatesUpdated();
+        }
+      }
+    } catch (err: any) {
+      setDftStatusMsg({
+        id: cand.id,
+        msg: `Failed to queue DFT for ${cand.formula}: ${err.message}`,
+        isError: true,
+      });
+    } finally {
+      setDftQueuingId(null);
+    }
+  };
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
@@ -133,6 +170,28 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
         </div>
       )}
 
+      {/* DFT Status Notification */}
+      {dftStatusMsg && (
+        <div
+          className={`rounded-lg border p-3 flex items-center justify-between text-xs ${
+            dftStatusMsg.isError
+              ? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300"
+              : "bg-cyan-500/10 border-cyan-500/30 text-cyan-800 dark:text-cyan-200"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 shrink-0" />
+            <span>{dftStatusMsg.msg}</span>
+          </div>
+          <button
+            onClick={() => setDftStatusMsg(null)}
+            className="text-muted-foreground hover:text-foreground text-xs ml-3"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Candidate Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
@@ -163,6 +222,9 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
               <th className="p-2.5">Free Vol (Å³)</th>
               <th className="p-2.5">Tier 2 Physics MLIP</th>
               <th className="p-2.5">MLIP Agreement</th>
+              <th className="p-2.5">Synthesis</th>
+              <th className="p-2.5">Literature</th>
+              <th className="p-2.5">Tier 3 DFT / Δ-ML</th>
               <th className="p-2.5 text-right">Actions</th>
             </tr>
           </thead>
@@ -387,6 +449,98 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating }
                       </div>
                     ) : (
                       <span className="text-[10px] text-muted-foreground italic">—</span>
+                    )}
+                  </td>
+
+                  {/* Synthesis Route & Feasibility */}
+                  <td className="p-2.5">
+                    {cand.synthesis_route ? (
+                      <div title={`Route: ${cand.synthesis_route}\nPrecursors: ${(cand.synthesis_precursors || []).join(', ')}\nEst. Temp: ${cand.synthesis_estimated_temp_c ? cand.synthesis_estimated_temp_c + ' °C' : 'N/A'}`}>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                          cand.synthesis_feasibility === "high"
+                            ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                            : cand.synthesis_feasibility === "medium"
+                            ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300"
+                            : "bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300"
+                        }`}>
+                          {cand.synthesis_route.replace("_", " ")}
+                        </span>
+                        <div className="text-[9px] text-muted-foreground mt-0.5 capitalize">
+                          {cand.synthesis_feasibility || "moderate"} feasibility
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground italic">—</span>
+                    )}
+                  </td>
+
+                  {/* Literature Novelty Check */}
+                  <td className="p-2.5">
+                    {cand.literature_matches_count !== undefined && cand.literature_matches_count !== null ? (
+                      <div title={cand.literature_top_title || "Literature check"}>
+                        {cand.literature_matches_count > 0 ? (
+                          <div>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-[10px] font-medium">
+                              <BookOpen className="h-3 w-3" /> {cand.literature_matches_count} {cand.literature_matches_count === 1 ? "paper" : "papers"}
+                            </span>
+                            {cand.literature_top_doi && (
+                              <div className="text-[9px] text-muted-foreground font-mono truncate max-w-[90px] mt-0.5">
+                                {cand.literature_top_doi}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-[10px] font-semibold">
+                            <Sparkles className="h-3 w-3" /> Unreported
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground italic">—</span>
+                    )}
+                  </td>
+
+                  {/* Tier 3 DFT / Δ-ML Band Gap */}
+                  <td className="p-2.5">
+                    {cand.dft_status === "converged" || cand.dft_status === "done" || cand.dft_status === "success" ? (
+                      <div className="flex flex-col gap-0.5">
+                        {cand.dft_pbe_energy_eV === 0 ? (
+                          <span
+                            title="Calculated PBE band gap is 0.0 eV (Metallic conductor)"
+                            className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
+                          >
+                            ⚡ Metallic (0.0 eV)
+                          </span>
+                        ) : (
+                          <span
+                            title={`Δ-ML Corrected Gap (High-Fidelity Reference): ${cand.dft_delta_ml_bandgap_eV?.toFixed(2)} eV [${cand.dft_delta_ml_interval_low?.toFixed(2)}, ${cand.dft_delta_ml_interval_high?.toFixed(2)}]`}
+                            className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded border border-emerald-500/30"
+                          >
+                            Δ-ML {cand.dft_delta_ml_bandgap_eV?.toFixed(2)} eV
+                          </span>
+                        )}
+                        {cand.dft_pbe_energy_eV !== null && cand.dft_pbe_energy_eV !== undefined && (
+                          <span className="text-[9px] text-muted-foreground font-mono">
+                            PBE: {cand.dft_pbe_energy_eV.toFixed(2)} eV
+                          </span>
+                        )}
+                      </div>
+                    ) : cand.dft_status === "running" || cand.dft_status === "queued" ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                        <RefreshCw className="h-2.5 w-2.5 animate-spin" /> Computing (~25s)
+                      </span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQueueDft(cand, true)}
+                        disabled={dftQueuingId === cand.id}
+                        className="h-6 px-1.5 text-[10px] gap-1 font-semibold border-cyan-500/40 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                        title="⚡ Fast Mode: Electronic SCF + Δ-ML Calibrated Gap on MLIP-relaxed structure (~25s)"
+                      >
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        {dftQueuingId === cand.id ? "Queuing..." : "Fast DFT"}
+                      </Button>
                     )}
                   </td>
 

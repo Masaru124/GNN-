@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field
 
 from app.services.cif_parser import CIFParserService
 from app.services.simulation_service import VirtualLabSimulationService
+from app.services.dft_validation import get_dft_service
+from app.services.delta_ml_corrector import get_delta_ml_corrector
 
 router = APIRouter(prefix="/api/simulation", tags=["Virtual Lab Simulation"])
 
@@ -45,6 +47,12 @@ loop_
   O  O2  0.00000000  0.00000000  0.77000000"""
 
 
+class DFTCalculationRequest(BaseModel):
+    cif_text: Optional[str] = Field(None, description="CIF text")
+    fast_mode: bool = Field(True, description="Fast mode using MLIP-relaxed structure and single-pass electronic SCF (~25s)")
+    kpt_dist: float = Field(0.35, description="K-point mesh spacing in Å⁻¹")
+
+
 class StrainSweepRequest(BaseModel):
     cif_text: Optional[str] = Field(None, description="CIF text")
     axis: str = Field("a", description="a | b | c")
@@ -64,6 +72,8 @@ class NVTMdRequest(BaseModel):
 
 class PhononCheckRequest(BaseModel):
     cif_text: Optional[str] = Field(None, description="CIF text")
+    apply_nac: bool = Field(True, description="Apply Non-Analytical Correction (NAC) via ph.x Born charges")
+    candidate_id: Optional[int] = Field(None, description="Optional Discovery candidate ID for DB write-back")
 
 
 class WriteBackRequest(BaseModel):
@@ -78,10 +88,10 @@ class AIChatRequest(BaseModel):
 
 
 @router.get("/load")
-def load_structure(source: str = Query("cif"), ref: str = Query("")):
-    """Load structure from Discovery candidate DB, Materials Project, or CIF text."""
+def load_structure(source: str = Query("auto"), ref: str = Query("")):
+    """Load structure from Discovery candidate DB, Materials Project, crystallographic prototype, or CIF text."""
     try:
-        res = sim_service.load_structure(source=source, ref=ref if ref else DEFAULT_CIF)
+        res = sim_service.load_structure(source=source, ref=ref)
         return res
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -143,11 +153,15 @@ def run_nvt_md(req: NVTMdRequest):
 
 @router.post("/phonon-check")
 def run_phonon_check(req: PhononCheckRequest):
-    """Tool #6: Run Phonon Dynamical Stability Check to detect imaginary saddle-point frequencies."""
+    """Tool #6: Run Phonon Dynamical Stability Check with optional NAC correction for LO-TO splitting."""
     cif = req.cif_text or DEFAULT_CIF
     try:
         parsed = CIFParserService.parse_cif_text(cif)
-        res = sim_service.run_dynamical_stability_phonon_check(parsed["pymatgen_structure"])
+        struct = parsed["pymatgen_structure"]
+        if req.apply_nac:
+            res = sim_service.run_nac_corrected_phonon(struct, candidate_id=req.candidate_id)
+        else:
+            res = sim_service.run_dynamical_stability_phonon_check(struct)
         mat_info = {
             "formula": parsed["formula"],
             "formula_pretty": parsed["formula_pretty"],
@@ -155,6 +169,93 @@ def run_phonon_check(req: PhononCheckRequest):
             "volume_A3": parsed["volume_A3"]
         }
         return {"material_info": mat_info, "simulation_result": res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/dft-calculation")
+def run_dft_calculation(req: DFTCalculationRequest):
+    """
+    Tier C / Tier 3: Run Quantum ESPRESSO PBE DFT Calculation + Δ-ML Calibrated Band Gap Prediction.
+    
+    fast_mode=True (default): Uses symmetry-standardized geometry and executes single-pass electronic SCF in ~25s.
+    fast_mode=False: Executes full variable-cell ionic relaxation (vc-relax).
+    """
+    cif = req.cif_text or DEFAULT_CIF
+    try:
+        parsed = CIFParserService.parse_cif_text(cif)
+        structure = parsed["pymatgen_structure"]
+        formula = parsed["formula_pretty"]
+
+        dft_svc = get_dft_service()
+        if not dft_svc.qe_available:
+            raise HTTPException(
+                status_code=503,
+                detail=dft_svc.get_install_status().get("install_instructions", "Quantum ESPRESSO not installed.")
+            )
+
+        dft_res = dft_svc.run_pbe_pipeline(
+            structure=structure,
+            formula=formula,
+            kpt_dist=req.kpt_dist,
+            fast_mode=req.fast_mode,
+        )
+
+        if dft_res.get("status") != "success":
+            raise HTTPException(
+                status_code=500,
+                detail=dft_res.get("error", "Quantum ESPRESSO calculation failed.")
+            )
+
+        # Apply Δ-ML HSE06 band gap correction
+        pbe_gap = dft_res.get("pbe_gap_eV", 0.0)
+        corrector = get_delta_ml_corrector()
+        ml_res = corrector.predict_corrected_gap(
+            pbe_gap_ev=pbe_gap,
+            formula=formula,
+        )
+
+        sim_res = {
+            "test_name": "Tier 3: Quantum ESPRESSO DFT & Δ-ML HSE06",
+            "tier": "Tier C / Tier 3 (DFT Electronic Structure)",
+            "fast_mode": req.fast_mode,
+            "pbe_gap_eV": pbe_gap,
+            "gap_type": dft_res.get("gap_type", "unknown"),
+            "vbm_eV": dft_res.get("vbm_eV"),
+            "cbm_eV": dft_res.get("cbm_eV"),
+            "scf_total_energy_eV": dft_res.get("scf_total_energy_eV"),
+            "spacegroup_symbol": dft_res.get("spacegroup_symbol"),
+            "spacegroup_number": dft_res.get("spacegroup_number"),
+            "delta_ml_gap_eV": ml_res.get("corrected_gap_eV"),
+            "delta_ml_interval_lower": ml_res.get("interval_lower"),
+            "delta_ml_interval_upper": ml_res.get("interval_upper"),
+            "delta_ml_interval_pooled": ml_res.get("interval_pooled"),
+            "delta_ml_interval_chemistry_specific": ml_res.get("interval_chemistry_specific"),
+            "delta_ml_chemistry_class": ml_res.get("chemistry_class"),
+            "delta_ml_chemistry_mae_eV": ml_res.get("chemistry_mae_eV"),
+            "delta_ml_disclosure": ml_res.get("disclosure"),
+            "delta_ml_q_hat": ml_res.get("q_hat"),
+            "delta_ml_label": ml_res.get("label"),
+            "delta_ml_status": ml_res.get("status"),
+            "calibration_dataset": ml_res.get("calibration_dataset"),
+            "hubbard_u": dft_res.get("hubbard_u"),
+            "fast_mode_disclosure": dft_res.get("fast_mode_disclosure"),
+            "runtime_seconds": dft_res.get("runtime_seconds"),
+            "convergence_params": dft_res.get("convergence_params"),
+            "trajectory_frames": [dft_res.get("relaxed_structure_cif") or cif],
+            "is_metallic": dft_res.get("gap_type") == "metallic" or (pbe_gap is not None and pbe_gap <= 1e-4),
+            "disclosure": dft_res.get("disclosure", "PBE (DFT) — known to underestimate band gaps by ~30-50%"),
+        }
+
+        mat_info = {
+            "formula": parsed["formula"],
+            "formula_pretty": formula,
+            "density_g_cm3": parsed["density_g_cm3"],
+            "volume_A3": parsed["volume_A3"],
+        }
+        return {"material_info": mat_info, "simulation_result": sim_res}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -228,16 +329,37 @@ def ai_lab_assistant_chat(req: AIChatRequest):
         formula = "Loaded Crystal"
         structure = None
 
-    # STRUCTURAL CONTRACT 1: Tier C Property Refusal Interceptor
+    # STRUCTURAL CONTRACT 1: Tier C Property Handler (DFT-Enabled)
     matched_tier_c = [k for k, v in PROPERTY_KEYWORDS.items() if v is None and k in lower_msg]
     if matched_tier_c:
         tier_c_prop = matched_tier_c[0].title()
+        last_res = req.last_test_result.get("simulation_result", {}) if req.last_test_result else {}
+        
+        # If DFT was run, quote the live physics numbers!
+        if ("dft" in last_res.get("test_name", "").lower() or "quantum espresso" in last_res.get("test_name", "").lower()) and "gap" in lower_msg:
+            pbe_g = last_res.get("pbe_gap_eV", 0.0)
+            dml_g = last_res.get("delta_ml_gap_eV", 0.0)
+            gtype = last_res.get("gap_type", "direct")
+            low = last_res.get("delta_ml_interval_lower", 0.0)
+            high = last_res.get("delta_ml_interval_upper", 0.0)
+            reply = (
+                f"Based on our active **Tier 3 Quantum ESPRESSO DFT calculation** for **{formula}**:\n\n"
+                f"- **PBE Band Gap**: `{pbe_g:.2f} eV` ({gtype.capitalize()})\n"
+                f"- **Δ-ML Corrected HSE06 Gap**: `{dml_g:.2f} eV` (90% Conformal Interval: `[{low:.2f}, {high:.2f}] eV`)\n"
+                f"- **Valence Band Maximum (VBM)**: `{last_res.get('vbm_eV')} eV`\n"
+                f"- **Conduction Band Minimum (CBM)**: `{last_res.get('cbm_eV')} eV`\n"
+                f"- **SCF Total Energy**: `{last_res.get('scf_total_energy_eV')} eV`\n\n"
+                f"*(Verified under Tier C / Tier 3 Quantum ESPRESSO DFT + Δ-ML Conformal Calibration)*"
+            )
+            return {"reply": reply, "context_formula": formula, "tool_grounded": True, "tier": "Tier C / Tier 3 (DFT)"}
+        
+        # If not yet simulated, guide user to run it
         reply = (
-            f"The property **'{tier_c_prop}'** requires DFT (Density Functional Theory) or dedicated electronic structure calculations, "
-            f"which is a **Tier C property** not currently available in this MLIP system.\n\n"
-            f"I can provide general literature context, explicitly labeled as *not simulated for this candidate* — would you like me to run available Tier A/B MLIP parameter sweeps (Strain, Tool #6 Phonon, NEB, NVT MD) instead?"
+            f"The electronic property **'{tier_c_prop}'** is a **Tier C / Tier 3** electronic structure calculation.\n\n"
+            f"**Quantum ESPRESSO is now fully integrated in the Virtual Lab!**\n"
+            f"To calculate it natively on this structure, select the **'Quantum ESPRESSO'** tab above and click **'Execute Simulation'** to run the ~25s fast electronic SCF calculation and obtain the exact PBE gap + Δ-ML HSE06 prediction."
         )
-        return {"reply": reply, "context_formula": formula, "tool_grounded": True, "tier": "Tier C (DFT Required)"}
+        return {"reply": reply, "context_formula": formula, "tool_grounded": True, "tier": "Tier C (DFT Available)"}
 
     # TOOL 1: Fetch GNN formation energy and conformal interval
     def tool_get_formation_energy():

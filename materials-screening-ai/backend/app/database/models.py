@@ -146,6 +146,50 @@ class DiscoveryCandidate(Base):
     virtuallab_validated = Column(Boolean, default=False)
     virtuallab_results_json = Column(Text, nullable=True)
 
+    # Literature Novelty Check (Item 8)
+    literature_known = Column(Boolean, nullable=True)        # True if prior publications found
+    literature_confidence = Column(String(20), nullable=True) # high/medium/low/none
+    literature_refs_json = Column(Text, nullable=True)       # JSON list of {doi, title, year, source}
+    literature_n_refs = Column(Integer, nullable=True)
+
+    # Synthesis Route Classification (Item 9)
+    synthesis_route = Column(String(50), nullable=True)      # wet_chemistry/solid_state/vapor_deposition/mechanochemical
+    synthesis_feasibility = Column(String(20), nullable=True) # high/medium/low/very_low
+    synthesis_temperature_C = Column(Float, nullable=True)
+    synthesis_precursors_json = Column(Text, nullable=True)  # JSON list of precursor dicts
+    synthesis_warnings_json = Column(Text, nullable=True)    # JSON list of warning strings
+
+    # NAC-Corrected Phonon (Item 12)
+    phonon_source = Column(String(40), nullable=True)        # mlip_raw/mlip_nac_corrected/dfpt_full
+    phonon_nac_correction_applied = Column(Boolean, default=False)
+    phonon_instability_flag = Column(Boolean, nullable=True) # True = imaginary modes found
+    phonon_born_charges_json = Column(Text, nullable=True)   # JSON 3×3 tensors per atom
+    phonon_dielectric_tensor_json = Column(Text, nullable=True) # JSON 3×3 dielectric tensor
+
+    # Tier 3a: PBE DFT (Item 10)
+    dft_pbe_gap_eV = Column(Float, nullable=True)
+    dft_pbe_gap_type = Column(String(20), nullable=True)     # direct/indirect
+    dft_pbe_status = Column(String(30), nullable=True)       # queued/running/done/failed
+    dft_pbe_convergence_params = Column(Text, nullable=True) # JSON: cutoffs, k-dist, PP-set+version
+    dft_relaxed_structure_cif = Column(Text, nullable=True)  # post-vc-relax CIF
+
+    # Tier 3b: Δ-ML Calibrated Gap Correction (Item 11)
+    dft_delta_ml_gap_eV = Column(Float, nullable=True)
+    dft_delta_ml_interval_lower = Column(Float, nullable=True)
+    dft_delta_ml_interval_upper = Column(Float, nullable=True)
+    dft_delta_ml_q_hat = Column(Float, nullable=True)
+    dft_delta_ml_training_provenance = Column(String(200), nullable=True)
+    dft_dielectric_const_pbe = Column(Float, nullable=True)  # ε∞ from SCF, feeds Δ-ML feature
+
+    # Tier 3c: r2SCAN Meta-GGA (Item 13)
+    dft_r2scan_gap_eV = Column(Float, nullable=True)
+    dft_r2scan_status = Column(String(30), nullable=True)
+
+    # Tier 3d: HSE06 (Item 10 — manually triggered)
+    dft_hse06_gap_eV = Column(Float, nullable=True)
+    dft_hse06_status = Column(String(30), nullable=True)
+    dft_hse06_convergence_params = Column(Text, nullable=True)
+
     # Multi-Objective Optimization Ranking
     pareto_rank = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

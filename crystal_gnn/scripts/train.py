@@ -1,6 +1,20 @@
 """Training entrypoint for Crystal GNN ablations."""
-
 from __future__ import annotations
+
+# MLflow experiment tracking (Item 7) — gracefully disabled if not installed
+try:
+    import sys as _sys
+    _sys.path.insert(0, str(__import__('pathlib').Path(__file__).parents[2]))
+    from crystal_gnn.mlflow_config import mlflow_context, log_training_params, log_epoch_metrics, log_final_results
+    _HAS_MLFLOW_CONFIG = True
+except ImportError:
+    _HAS_MLFLOW_CONFIG = False
+    def mlflow_context(*a, **kw):
+        import contextlib
+        return contextlib.nullcontext()
+    def log_training_params(*a, **kw): pass
+    def log_epoch_metrics(*a, **kw): pass
+    def log_final_results(*a, **kw): pass
 
 import argparse
 import csv
@@ -471,6 +485,22 @@ def main() -> None:
 
     val_every = max(1, int(args.val_every_epochs))
 
+    # MLflow experiment setup & params (Item 7)
+    try:
+        from crystal_gnn.mlflow_config import setup_mlflow
+        setup_mlflow()
+    except Exception:
+        pass
+    log_training_params(
+        lr=float(cfg["training"]["learning_rate"]),
+        epochs=int(cfg["training"]["max_epochs"]),
+        model_arch=str(cfg["model"]["name"]),
+        batch_size=int(cfg["training"]["batch_size"]),
+        n_train=len(train_ds),
+        n_val=len(val_ds),
+        extra_params={"ablation": args.ablation or "default", "target": args.target, "split": args.split, "run_id": run_id},
+    )
+
     for epoch in range(start_epoch, cfg["training"]["max_epochs"]):
         model.train()
         running = 0.0
@@ -568,6 +598,13 @@ def main() -> None:
             writer.writeheader()
             writer.writerows(history)
 
+        # MLflow per-epoch logging (Item 7)
+        log_epoch_metrics(
+            epoch=epoch,
+            train_loss=train_loss,
+            val_mae=val_mae if do_val and not np.isnan(val_mae) else None,
+        )
+
         if do_val and val_mae < best_val_mae:
             best_val_mae = val_mae
             bad_epochs = 0
@@ -612,7 +649,14 @@ def main() -> None:
             elapsed_hours = (time.time() - start_time) / 3600.0
             if elapsed_hours >= args.max_hours:
                 print(f"Time limit of {args.max_hours} hours reached (elapsed: {elapsed_hours:.2f} hours). Saving last.pt and exiting cleanly.", flush=True)
-                return
+                break
+
+    # MLflow final results logging (Item 7)
+    best_ckpt = str(ckpt_dir / "best.pt") if (ckpt_dir / "best.pt").exists() else str(ckpt_dir / "last.pt")
+    log_final_results(
+        val_mae=best_val_mae,
+        checkpoint_path=best_ckpt if os.path.exists(best_ckpt) else None,
+    )
 
 
 if __name__ == "__main__":

@@ -247,11 +247,11 @@ export function Sidebar() {
           >
             {renderNav()}
           </nav>
-          <div className="shrink-0 border-t border-border/80 p-3">
+          <div className="shrink-0 border-t border-border/80 p-3 text-center">
             {authed ? (
               <Button
                 variant="destructive"
-                className="w-full"
+                className="w-full text-center"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />

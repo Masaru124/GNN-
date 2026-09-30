@@ -1,0 +1,110 @@
+{
+  "NaCl": {
+    "pbe_gap_eV": 5.106,
+    "gap_type": "direct",
+    "runtime_s": 5.5,
+    "status": "success"
+  },
+  "LiF": {
+    "pbe_gap_eV": 9.241,
+    "gap_type": "direct",
+    "runtime_s": 2.9,
+    "status": "success"
+  },
+  "NaF": {
+    "pbe_gap_eV": 6.354,
+    "gap_type": "direct",
+    "runtime_s": 2.8,
+    "status": "success"
+  },
+  "LiCl": {
+    "pbe_gap_eV": 6.36,
+    "gap_type": "direct",
+    "runtime_s": 4.7,
+    "status": "success"
+  },
+  "NaBr": {
+    "pbe_gap_eV": 4.165,
+    "gap_type": "direct",
+    "runtime_s": 9.1,
+    "status": "success"
+  },
+  "NaI": {
+    "pbe_gap_eV": 3.64,
+    "gap_type": "direct",
+    "runtime_s": 7.6,
+    "status": "success"
+  },
+  "MgO": {
+    "pbe_gap_eV": 4.475,
+    "gap_type": "direct",
+    "runtime_s": 3.4,
+    "status": "success"
+  },
+  "CaO": {
+    "pbe_gap_eV": 3.751,
+    "gap_type": "indirect",
+    "runtime_s": 6.5,
+    "status": "success"
+  },
+  "BaO": {
+    "pbe_gap_eV": 1.976,
+    "gap_type": "direct",
+    "runtime_s": 15.5,
+    "status": "success"
+  },
+  "SrTiO3": {
+    "pbe_gap_eV": 2.179,
+    "gap_type": "indirect",
+    "runtime_s": 15.3,
+    "status": "success"
+  },
+  "BaTiO3": {
+    "pbe_gap_eV": 2.068,
+    "gap_type": "indirect",
+    "runtime_s": 19.54,
+    "status": "success"
+  },
+  "CsPbI3": {
+    "pbe_gap_eV": 1.323,
+    "gap_type": "direct",
+    "runtime_s": 60.32,
+    "status": "success"
+  },
+  "CsPbBr3": {
+    "pbe_gap_eV": 1.532,
+    "gap_type": "direct",
+    "runtime_s": 66.33,
+    "status": "success"
+  },
+  "CsPbCl3": {
+    "pbe_gap_eV": 1.919,
+    "gap_type": "direct",
+    "runtime_s": 52.73,
+    "status": "success"
+  },
+  "CsSnI3": {
+    "pbe_gap_eV": 0.327,
+    "gap_type": "direct",
+    "runtime_s": 55.02,
+    "status": "success"
+  },
+  "CsSnBr3": {
+    "pbe_gap_eV": 0.392,
+    "gap_type": "direct",
+    "runtime_s": 66.09,
+    "status": "success"
+  },
+  "CsSnCl3": {
+    "pbe_gap_eV": 0.799,
+    "gap_type": "direct",
+    "runtime_s": 50.18,
+    "status": "success"
+  },
+  "RbPbBr3": {
+    "pbe_gap_eV": 1.395,
+    "gap_type": "direct",
+    "runtime_s": 41.57,
+    "status": "success"
+  }
+}

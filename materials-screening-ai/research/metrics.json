@@ -1,7 +1,7 @@
 {
   "metadata": {
     "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
-    "git_commit": "69668a5ff60b63ac9974cb3be4a96a436359444d",
+    "git_commit": "9e1bab404a6d7181ba4d901486c69b52ab24b2a3",
     "calibration_records_sha256": "7893affeba49606c546130a80b83be6c0d44f9039a7ed0d74a63292c80e91a5a",
     "num_evaluated_samples": 10,
     "num_families": 3,
@@ -42,6 +42,7 @@
     "constant_scissor_loocv_mae": 0.6086666666666669,
     "linear_pbe_loocv_mae": 0.7176368471098746,
     "family_mean_delta_loocv_mae": 0.5287777777777778,
+    "ridge_alpha_1_loocv_mae": 0.4561118959669713,
     "mean_delta_loco_mae": 0.8955277777777779,
     "constant_scissor_loco_mae": 0.8955277777777779,
     "linear_pbe_loco_mae": 0.6596603307581743,
@@ -62,6 +63,7 @@
     "n_family": 7,
     "ridge_loocv_mae": 0.26826477512699937,
     "family_mean_delta_loocv_mae": 0.46138095238095245,
+    "constant_scissor_loocv_mae": 0.5615079365079366,
     "linear_pbe_loocv_mae": 0.6244903278406392,
     "pooled_mean_delta_loocv_mae": 0.5615079365079366,
     "q_tilde_in_family": 0.7272887750070427
@@ -149,6 +151,25 @@
         "inv_eps_inf": 5.5827638694158826e-05,
         "pbe_div_eps": 5.316254297322723e-05
       }
+    }
+  },
+  "sensitivity_analyses": {
+    "without_cssncl3_n9": {
+      "fit_equation": "E_exp = 1.7514 * PBE + -0.7056",
+      "linear_scissor_loocv_mae": 0.37881386176132087,
+      "ridge_alpha_1_loocv_mae": 0.21733549126206428
+    },
+    "without_eps_inf_descriptor_n10": {
+      "features": [
+        "pbe_gap",
+        "pbe_gap_sq",
+        "chi_diff",
+        "r_ratio",
+        "Z_avg"
+      ],
+      "full_sample_ridge_loocv_mae": 0.6183248795564312,
+      "halides_ridge_loocv_mae": 0.3145062541708546,
+      "delta_mae_vs_with_eps_eV": 0.1622129835894599
     }
   },
   "leverage_and_design_matrix_p7": {
@@ -241,6 +262,7 @@
     },
     "paired_mean_difference_eV": 0.18855925946077245,
     "exact_two_sided_permutation_p_value": 0.5,
-    "exact_one_sided_permutation_p_value": 0.25
+    "exact_one_sided_permutation_p_value": 0.25,
+    "interpretation_note": "Descriptive only: sample size K=3 has only 2^3=8 permutations (resolution floor 0.1250)"
   }
 }

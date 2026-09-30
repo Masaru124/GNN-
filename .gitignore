@@ -55,3 +55,11 @@ results/*
 crystal_gnn/results/*
 !results/*.csv
 !crystal_gnn/results/*.csv
+
+# Copyrighted literature PDFs and raw text dumps
+*.pdf
+research/literature/pdfs/
+materials-screening-ai/research/literature/pdfs/
+combined.md
+combined research paper.pdf
+materials-screening-ai/research/literature/combined.md

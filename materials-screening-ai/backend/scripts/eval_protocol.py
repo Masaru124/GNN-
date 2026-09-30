@@ -288,7 +288,9 @@ def run_eval_protocol():
         with open(verified_csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for r in reader:
-                verified_rows[r["formula"]] = r
+                k = r.get("compound") or r.get("formula")
+                if k:
+                    verified_rows[k] = r
 
     with open(prov_csv_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
@@ -508,6 +510,36 @@ def run_eval_protocol():
         boot_means.append(np.mean(deltas_loco_nested_vs_lin[b]))
     paired_delta_nested_vs_lin_ci = [float(np.percentile(boot_means, 2.5)), float(np.percentile(boot_means, 97.5))]
 
+    # -------------------------------------------------------------------------
+    # SECTION E: SENSITIVITY ANALYSES & RETRACTION AUDIT
+    # -------------------------------------------------------------------------
+    # Sensitivity 1: Refit without CsSnCl3 (N=9)
+    no_sn_indices = [i for i in range(n_samples) if formulas[i] != "CsSnCl3"]
+    A_9 = np.column_stack([pbes[no_sn_indices], np.ones(len(no_sn_indices))])
+    c_9, b_9 = np.linalg.lstsq(A_9, targets[no_sn_indices], rcond=None)[0]
+    lin_9_loocv_errs = []
+    ridge_9_loocv_errs = []
+    for i_9 in no_sn_indices:
+        tr_9 = [j for j in no_sn_indices if j != i_9]
+        A_sub = np.column_stack([pbes[tr_9], np.ones(len(tr_9))])
+        c_sub, b_sub = np.linalg.lstsq(A_sub, targets[tr_9], rcond=None)[0]
+        lin_9_loocv_errs.append(abs(targets[i_9] - (c_sub * pbes[i_9] + b_sub)))
+        
+        p_9 = Pipeline([('scaler', StandardScaler()), ('ridge', Ridge(alpha=1.0, fit_intercept=True))])
+        p_9.fit(X_full[tr_9], y_delta[tr_9])
+        pred_9 = pbes[i_9] + p_9.predict(X_full[i_9:i_9+1])[0]
+        ridge_9_loocv_errs.append(abs(targets[i_9] - pred_9))
+
+    # Sensitivity 2: Refit without eps_inf descriptor (N=10)
+    ridge_no_eps_loocv_errs = []
+    for i in range(n_samples):
+        tr = [j for j in range(n_samples) if j != i]
+        p_no_eps = Pipeline([('scaler', StandardScaler()), ('ridge', Ridge(alpha=1.0, fit_intercept=True))])
+        p_no_eps.fit(X_no_eps[tr], y_delta[tr])
+        pred_no_eps = pbes[i] + p_no_eps.predict(X_no_eps[i:i+1])[0]
+        ridge_no_eps_loocv_errs.append(abs(targets[i] - pred_no_eps))
+    pero_no_eps_loocv_mae = float(np.mean([ridge_no_eps_loocv_errs[i] for i in pero_indices]))
+
     metrics = {
         "metadata": {
             "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
@@ -541,6 +573,7 @@ def run_eval_protocol():
             "constant_scissor_loocv_mae": float(np.mean(bl_loocv_errs["constant_scissor"])),
             "linear_pbe_loocv_mae": float(np.mean(bl_loocv_errs["linear_pbe"])),
             "family_mean_delta_loocv_mae": float(np.mean(bl_loocv_errs["family_mean_delta"])),
+            "ridge_alpha_1_loocv_mae": float(np.mean(loocv_ridge_errs)),
             "mean_delta_loco_mae": float(np.mean(bl_loco_errs["mean_delta"])),
             "constant_scissor_loco_mae": float(np.mean(bl_loco_errs["constant_scissor"])),
             "linear_pbe_loco_mae": float(np.mean(bl_loco_errs["linear_pbe"])),
@@ -557,6 +590,7 @@ def run_eval_protocol():
             "n_family": len(pero_indices),
             "ridge_loocv_mae": pero_ridge_loocv_mae,
             "family_mean_delta_loocv_mae": pero_fam_mean_loocv_mae,
+            "constant_scissor_loocv_mae": float(np.mean([bl_loocv_errs["constant_scissor"][i] for i in pero_indices])),
             "linear_pbe_loocv_mae": pero_linear_loocv_mae,
             "pooled_mean_delta_loocv_mae": pero_mean_d_loocv_mae,
             "q_tilde_in_family": q_tilde_in_family
@@ -572,6 +606,19 @@ def run_eval_protocol():
             "nested_loco_mae_without_eps": float(np.mean(loco_no_eps_nested)),
             "nested_chosen_alphas": chosen_alphas_loco,
             "standardized_coefficients": standardized_coeffs
+        },
+        "sensitivity_analyses": {
+            "without_cssncl3_n9": {
+                "fit_equation": f"E_exp = {c_9:.4f} * PBE + {b_9:.4f}",
+                "linear_scissor_loocv_mae": float(np.mean(lin_9_loocv_errs)),
+                "ridge_alpha_1_loocv_mae": float(np.mean(ridge_9_loocv_errs))
+            },
+            "without_eps_inf_descriptor_n10": {
+                "features": ["pbe_gap", "pbe_gap_sq", "chi_diff", "r_ratio", "Z_avg"],
+                "full_sample_ridge_loocv_mae": float(np.mean(ridge_no_eps_loocv_errs)),
+                "halides_ridge_loocv_mae": pero_no_eps_loocv_mae,
+                "delta_mae_vs_with_eps_eV": float(np.mean(ridge_no_eps_loocv_errs) - np.mean(loocv_ridge_errs))
+            }
         },
         "leverage_and_design_matrix_p7": {
             "num_features_p": p_dim,
@@ -593,7 +640,8 @@ def run_eval_protocol():
             "family_mae_linear_scissor": {fam: fam_mae_scissor[k] for k, fam in enumerate(unique_fams_list)},
             "paired_mean_difference_eV": observed_t,
             "exact_two_sided_permutation_p_value": two_sided_p,
-            "exact_one_sided_permutation_p_value": one_sided_p
+            "exact_one_sided_permutation_p_value": one_sided_p,
+            "interpretation_note": f"Descriptive only: sample size K={K} has only 2^{K}={2**K} permutations (resolution floor {1.0/(2**K):.4f})"
         }
     }
 

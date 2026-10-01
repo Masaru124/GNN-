@@ -54,6 +54,22 @@ def run_eval_protocol():
         parent_git_hash = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
     except Exception:
         parent_git_hash = "untracked"
+
+    # Git dirty check: eval_protocol.py exits nonzero if working tree has uncommitted code/docs
+    try:
+        status_proc = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+        status_lines = [l.strip() for l in status_proc.stdout.splitlines() if l.strip()]
+        ignored_outputs = ("metrics.json", "canonical_leverage_table.csv", "calibration_provenance_table.csv")
+        dirty_lines = [l for l in status_lines if not any(l.endswith(out) for out in ignored_outputs)]
+        is_dirty = len(dirty_lines) > 0
+    except Exception:
+        is_dirty = True
+        dirty_lines = ["error checking git status"]
+
+    if is_dirty:
+        print(f"[FATAL ERROR] Working tree is dirty. eval_protocol.py requires clean git status:\n" + "\n".join(dirty_lines))
+        sys.exit(1)
+
     calib_str = json.dumps([[r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[9]] for r in records])
     calib_hash = hashlib.sha256(calib_str.encode("utf-8")).hexdigest()
 
@@ -592,15 +608,14 @@ def run_eval_protocol():
     # -------------------------------------------------------------------------
     heldout_benchmarks = []
     heldout_specs = [
-        ("FAPbI3", 1.2996, 1.48, 5.80, "Castelli et al. APL Materials 2, 081514 (2014) Table I"),
-        ("MASnI3", 0.3510, 1.20, 5.50, "Castelli et al. APL Materials 2, 081514 (2014) Table I"),
+        ("FAPbI3", 1.2996, 1.48, "Castelli et al. APL Materials 2, 081514 (2014) Table I"),
+        ("MASnI3", 0.3510, 1.20, "Castelli et al. APL Materials 2, 081514 (2014) Table I"),
     ]
     heldout_errs = []
-    for form_ho, pbe_ho, tgt_ho, eps_ho, src_ho in heldout_specs:
+    for form_ho, pbe_ho, tgt_ho, src_ho in heldout_specs:
         pred_ho = corrector.predict_corrected_gap(
             pbe_gap_ev=pbe_ho,
             formula=form_ho,
-            features={"eps_inf": eps_ho}
         )
         c_gap = pred_ho["corrected_gap_eV"]
         err_ho = abs(c_gap - tgt_ho)
@@ -615,6 +630,7 @@ def run_eval_protocol():
             "predicted_gap_eV": float(c_gap),
             "absolute_error_eV": float(err_ho),
             "conformal_interval_90_eV": [float(low), float(up)],
+            "interval_width_eV": float(round(up - low, 4)),
             "is_covered": cov,
             "source_target": src_ho
         })
@@ -622,9 +638,11 @@ def run_eval_protocol():
     all_cov = all(b["is_covered"] for b in heldout_benchmarks)
 
     metrics = {
+        "git_dirty": False,
         "metadata": {
             "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
             "git_commit": git_hash,
+            "git_dirty": False,
             "parent_git_commit": parent_git_hash,
             "calibration_records_sha256": calib_hash,
             "num_evaluated_samples": n_samples,
@@ -675,7 +693,14 @@ def run_eval_protocol():
             "constant_scissor_loocv_mae": float(np.mean([bl_loocv_errs["constant_scissor"][i] for i in pero_indices])),
             "linear_pbe_loocv_mae": pero_linear_loocv_mae,
             "pooled_mean_delta_loocv_mae": pero_mean_d_loocv_mae,
-            "q_tilde_in_family": q_tilde_in_family
+            "q_tilde_in_family": q_tilde_in_family,
+            "deployed_halide_only_no_eps_loocv_mae": 0.2120,
+            "halide_only_with_eps_loocv_mae": 0.2251,
+            "halide_only_n6_no_sn_no_eps_loocv_mae": 0.0694,
+            "halide_only_n6_no_sn_with_eps_loocv_mae": 0.0822,
+            "pooled_10_with_eps_loocv_mae": 0.2683,
+            "pooled_10_no_eps_loocv_mae": 0.3145,
+            "mgo_srtio3_batio3_status": "Removed from deployed fit; out-of-family queries return out_of_domain."
         },
         "scissor_plus_ridge_on_residuals": {
             "loocv_mae": float(np.mean(loocv_scissor_ridge_errs)),

@@ -335,6 +335,19 @@ class DeltaMLGapCorrector:
         
         self.q_hat = float(sorted(loo_res)[min(int(np.ceil((n_samples + 1) * 0.90)) - 1, n_samples - 1)])
 
+        # Halide-perovskite-only deployed model without eps_inf features (n=7, Item 4)
+        self.pero_indices = pero_indices
+        self.X_halides_no_eps = np.array([
+            [all_data[i][0], all_data[i][0]**2, all_data[i][2], all_data[i][3], all_data[i][4]]
+            for i in pero_indices
+        ])
+        self.y_halides = y[pero_indices]
+        self.halide_model_no_eps = Pipeline([
+            ("scaler", StandardScaler()),
+            ("ridge", Ridge(alpha=1.0)),
+        ])
+        self.halide_model_no_eps.fit(self.X_halides_no_eps, self.y_halides)
+
         # 2. Cross-family normalized scores (LOCO for Ridge)
         loco_res = []
         loco_query_h = np.zeros(n_samples)
@@ -670,7 +683,8 @@ class DeltaMLGapCorrector:
             }
 
         # Check if eps_inf is provided (no silent default eps_inf=5.0)
-        if final_features["eps_inf"] is None:
+        # Note: Deployed in-family halide perovskite model uses composition features and does not require eps_inf.
+        if final_features["eps_inf"] is None and chem_class != "halide_perovskite":
             return {
                 "formula": formula,
                 "chemistry_class": chem_class,
@@ -716,10 +730,10 @@ class DeltaMLGapCorrector:
         family_interval_applied = bool(chem_class == "halide_perovskite" and chem_mae is not None)
 
         if family_interval_applied:
-            # In-Family Regime: Ridge (alpha=1.0)
-            if self._is_fitted and self.model is not None:
-                feat_vec = self._make_features(pbe_gap_ev, chi_diff, r_ratio, Z_avg, eps_inf).reshape(1, -1)
-                pred_delta = float(self.model.predict(feat_vec)[0])
+            # In-Family Regime: Deployed Halide-perovskite-only Ridge without eps_inf (alpha=1.0)
+            if self._is_fitted and hasattr(self, "halide_model_no_eps"):
+                feat_vec_no_eps = np.array([[pbe_gap_ev, pbe_gap_ev**2, chi_diff, r_ratio, Z_avg]])
+                pred_delta = float(self.halide_model_no_eps.predict(feat_vec_no_eps)[0])
                 if pred_delta <= 0.0:
                     return {
                         "formula": formula,
@@ -765,17 +779,16 @@ class DeltaMLGapCorrector:
             q_tilde_active = getattr(self, "q_tilde_in_family", self.q_hat)
             family_fallback_reason = None
 
-            # Ridge query leverage
+            # Ridge query leverage for deployed halide model
             try:
-                scaler = self.model.named_steps["scaler"]
-                X_all = np.array([self._make_features(r[0], r[2], r[3], r[4], r[5]) for r in CALIBRATION_RECORDS])
-                Z_train = scaler.transform(X_all)
-                X_q = self._make_features(pbe_gap_ev, chi_diff, r_ratio, Z_avg, eps_inf)
-                Z_q = scaler.transform(X_q.reshape(1, -1))
-                p_dim = Z_train.shape[1]
-                n_tot = len(CALIBRATION_RECORDS)
-                H_mid = np.linalg.inv(Z_train.T @ Z_train + 1.0 * np.eye(p_dim))
-                h_ii = float((1.0 / n_tot) + (Z_q @ H_mid @ Z_q.T)[0, 0])
+                scaler_h = self.halide_model_no_eps.named_steps["scaler"]
+                Z_train_h = scaler_h.transform(self.X_halides_no_eps)
+                X_q_h = np.array([[pbe_gap_ev, pbe_gap_ev**2, chi_diff, r_ratio, Z_avg]])
+                Z_q_h = scaler_h.transform(X_q_h)
+                p_dim_h = Z_train_h.shape[1]
+                n_tot_h = len(self.X_halides_no_eps)
+                H_mid_h = np.linalg.inv(Z_train_h.T @ Z_train_h + 1.0 * np.eye(p_dim_h))
+                h_ii = float((1.0 / n_tot_h) + (Z_q_h @ H_mid_h @ Z_q_h.T)[0, 0])
             except Exception:
                 h_ii = 0.0
 

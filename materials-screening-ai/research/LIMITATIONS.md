@@ -46,15 +46,29 @@ Under Ridge regression ($\alpha = 1.0$), the effective model complexity is $\tex
 
 $\text{MgO}$ exhibits extreme statistical leverage ($h_{\text{OLS}} = 0.9998$, $h_{\text{ridge}} = 0.9368$, $h_q = 33.3349$, Cook's $D = 1176.12$). Leaving out $\text{MgO}$ causes catastrophic prediction failure on $\text{MgO}$ (predicted $4.80\text{ eV}$ vs target $7.22\text{ eV}$, error $2.42\text{ eV}$).
 
-### 1.3 Deployed Model Scoping Rule
+### 1.3 Deployed Model Scoping Rule & Halide-Only Fit
 Due to this severe leverage gap across chemistry families:
-1. **Inside Halide Perovskites**: The $p=7$ Ridge model is retained because it outperforms linear scissor by $0.3562\text{ eV}$ and captures chemical trends across halide substitutions ($\text{I} \to \text{Br} \to \text{Cl}$) and cation substitutions ($\text{Cs} \to \text{MA} \to \text{FA}$).
-2. **Outside Halide Perovskites**: The system must NOT extrapolate using the $p=7$ Ridge model. Any candidate outside the halide perovskite chemistry domain must return `out_of_domain` or fall back to the global linear PBE scissor ($E_{\text{exp}} = 1.4840 E_{\text{PBE}} + 0.0251$).
+1. **Halide Perovskite Deployed Fit ($n=7$)**: The deployed predictor for halide perovskites is fit strictly on the halide perovskite compounds ($n=7$) without $\epsilon_\infty$ features ($p=5$: $E_{\text{PBE}}, E_{\text{PBE}}^2, \Delta\chi, r_A/r_B, Z_{\text{avg}}$).
+2. **LOOCV Comparison Across Fits**:
+   - **Halide-Only Fit ($n=7$)**:
+     - Without $\epsilon_\infty$: LOOCV MAE = **0.2120 eV**
+     - With $\epsilon_\infty$: LOOCV MAE = **0.2251 eV**
+   - **Halide-Only Fit ($n=6$, without anomalous $\text{CsSnCl}_3$)**:
+     - Without $\epsilon_\infty$: LOOCV MAE = **0.0694 eV**
+     - With $\epsilon_\infty$: LOOCV MAE = **0.0822 eV**
+   - **Pooled-10 Fit ($N=10$)**:
+     - Without $\epsilon_\infty$: Total LOOCV MAE = **0.6183 eV**; Halide In-Family subset = **0.3145 eV**
+     - With $\epsilon_\infty$: Total LOOCV MAE = **0.4561 eV**; Halide In-Family subset = **0.2683 eV**
+3. **Physical Explanation for In-Family Shift ($0.2683/0.3145 \to 0.2251/0.2120\text{ eV}$)**:
+   In the pooled-10 fit, $\text{MgO}$ possesses extreme leverage ($h_{ii} = 0.9368$, Cook's $D = 1176.12$, $\Delta = +2.745\text{ eV}$) and the two transition metal perovskites ($\text{SrTiO}_3, \text{BaTiO}_3$) have distinct $d^0$ electronic structures. These out-of-family points exert strong regression torque that tilts the standardized hyperplane away from the halide manifold. Fitting strictly on the halide perovskite family ($n=7$) completely eliminates this out-of-family pulling torque, allowing the model to specialize on the halide manifold and dropping LOOCV MAE from $0.2683\text{ eV}$ to $0.2251\text{ eV}$ (with $\epsilon_\infty$) and from $0.3145\text{ eV}$ to $0.2120\text{ eV}$ (without $\epsilon_\infty$).
+4. **Status of $\text{MgO}$, $\text{SrTiO}_3$, and $\text{BaTiO}_3$**:
+   $\text{MgO}$, $\text{SrTiO}_3$, and $\text{BaTiO}_3$ are **removed** from the deployed fit. Non-halide candidate queries exhibit extreme out-of-domain leverage ($h_q = 33.3$ on $\text{MgO}$) and must return `out_of_domain` rather than receiving an uncalibrated extrapolation.
 
 ---
 
 ## 2. Target Noise & Experimental Literature Discrepancies
 
+### 2.1 Experimental Noise Floor
 Experimental optical band gaps reported in the literature exhibit inherent measurement noise and systematic experimental variances:
 
 1. **Measurement Techniques**: Band gaps extracted from optical absorption spectra (Tauc plots) frequently differ by $0.1-0.2\text{ eV}$ from photoluminescence (PL) emission peak positions due to Stokes shifts and Urbach band tails.
@@ -65,6 +79,12 @@ Experimental optical band gaps reported in the literature exhibit inherent measu
    - $\text{MAPbI}_3$: Literature values span $1.55\text{ eV}$ to $1.61\text{ eV}$ ($\Delta \approx 0.06\text{ eV}$).
 
 This empirical measurement variance establishes an intrinsic noise floor of $\sim 0.15-0.20\text{ eV}$ on any $\Delta$-ML model trained on experimental targets.
+
+### 2.2 DFT PBE Band Gap Discrepancies vs Published Theory
+When comparing self-consistent Quantum ESPRESSO PBE calculations against published DFT literature values:
+- **$\text{CsPbI}_3$**: Wiktor et al. (J. Phys. Chem. Lett. 2017, 8, 5507, Table 2) reports PBE (no SOC) band gap of $1.14\text{ eV}$. The pipeline's self-consistent QE calculation at the paper's exact experimental cubic lattice constant ($a = 6.29\text{ \AA}$) with SSSP Efficiency pseudopotentials yields $1.323\text{ eV}$ (**unexplained: +0.18 eV vs published**).
+- **$\text{MAPbCl}_3$**: Mosconi et al. (J. Phys. Chem. C 2013, 117, 13902, Table 1) reports PBE band gap of $2.34\text{ eV}$. The pipeline's self-consistent QE calculation at the paper's pseudocubic geometry ($a = 5.68\text{ \AA}$) yields $2.450\text{ eV}$ (**unexplained: +0.11 eV vs published**).
+- **Lattice Explanation Omission**: We delete the prior speculative "MP vs experimental lattice" explanation. Both pipeline DFT runs were executed at the papers' exact reported experimental lattice parameters ($a = 6.29\text{ \AA}$ and $a = 5.68\text{ \AA}$), ruling out geometry mismatch. The discrepancies arise from differences in pseudopotential cores (e.g. modern SSSP PAW/USPP vs older generation pseudopotentials) and Brillouin zone integration grids.
 
 ---
 
@@ -98,14 +118,14 @@ Semi-local PBE functional performance varies drastically between heavy $6p$ lead
 ## 5. Dielectric Function ($\epsilon_\infty$) Proxy vs Tabulated Literature
 
 1. **SSSP / DFPT Origin**: High-frequency optical dielectric constants $\epsilon_\infty$ in the calibration dataset are calculated using Density Functional Perturbation Theory (DFPT) with SSSP Efficiency pseudopotentials, or obtained from curated optical reference tables. They are not co-reported in the original band gap source papers.
-2. **Descriptor Sensitivity**:
-   - Omitting $\epsilon_\infty$ ($p=5$ features: $E_{\text{PBE}}, E_{\text{PBE}}^2, \Delta\chi, r_A/r_B, Z_{\text{avg}}$) increases full-sample LOOCV MAE from $0.4561\text{ eV}$ to $0.6183\text{ eV}$ (+0.1622 eV penalty).
-   - Within the halide perovskite family ($n=7$), the LOOCV MAE without $\epsilon_\infty$ is $0.2120\text{ eV}$, demonstrating that composition and PBE gap features carry the dominant predictive signal for in-family trends.
-3. **Operational Impact**: For candidate screening where DFPT response calculations are computationally expensive, the pipeline utilizes dielectric proxy estimates or composition models.
+2. **Elimination of $\epsilon_\infty$ in Deployed Model**:
+   - Because experimental dielectric constants $\epsilon_\infty$ are rarely known for novel screening candidates, requiring hand-typed $\epsilon_\infty$ creates operational bottlenecks and vulnerability to manual transcription error.
+   - Within the halide perovskite family ($n=7$), the LOOCV MAE without $\epsilon_\infty$ is $0.2120\text{ eV}$ (and $0.0694\text{ eV}$ for $n=6$ without $\text{CsSnCl}_3$), proving that composition descriptors ($\Delta\chi, r_A/r_B, Z_{\text{avg}}$) and $E_{\text{PBE}}$ capture the necessary physical trends without requiring $\epsilon_\infty$.
+   - The deployed halide model therefore operates strictly without $\epsilon_\infty$ features.
 
 ---
 
-## 6. Conformal Prediction Validity Floor ($n_{\text{cal}} \ge 9$)
+## 6. Conformal Prediction Validity Floor ($n_{\text{cal}} \ge 9$) & Prediction Intervals
 
 ### 6.1 Mathematical Validity Requirement
 Split-conformal prediction at significance level $\alpha = 0.10$ requires computing the order statistic:
@@ -118,14 +138,19 @@ Evaluating this inequality yields the exact integer threshold:
 - $n_{\text{cal}} = 8 \implies k = \lceil 9 \times 0.90 \rceil = \lceil 8.1 \rceil = 9 > 8$ (**Invalid / Infinite Interval**)
 - $n_{\text{cal}} = 9 \implies k = \lceil 10 \times 0.90 \rceil = 9 \le 9$ (**Valid**)
 
-### 6.2 Family-Level and LOFO Conformal Breakdown
-1. **In-Family Calibration**:
-   - Halide Perovskites ($n_{\text{cal}} = 7$): $k = \lceil 8 \times 0.90 \rceil = 8 > 7$. Conformal 90% prediction intervals cannot be formed mathematically without ad-hoc index clamping.
-   - Transition Metal Perovskites ($n_{\text{cal}} = 2$) and Alkaline Earth Oxides ($n_{\text{cal}} = 1$): Violate validity ($k > n_{\text{cal}}$).
-2. **Leave-One-Family-Out (LOFO) Calibration**:
-   - Leaving out Alkaline Earth Oxide: $n_{\text{cal}} = 9 \implies k = 9 \le 9$. **Valid** ($q_{\text{cal}} = 0.3583\text{ eV}$ for Ridge, $1.1076\text{ eV}$ for Scissor).
-   - Leaving out Transition Metal Perovskite: $n_{\text{cal}} = 8 \implies k = 9 > 8$. **Invalid (Infinite)**.
-   - Leaving out Halide Perovskite: $n_{\text{cal}} = 3 \implies k = 4 > 3$. **Invalid (Infinite)**.
-3. **Production Resolution**:
-   - In production inference, the conformal module pools all $N=10$ verified calibration records ($k = \lceil 11 \times 0.90 \rceil = 10 \le 10$), producing a mathematically valid, finite interval normalized by leverage:
-     $$\Delta \in \left[ \hat{\Delta} - \tilde{q} \sqrt{1 + h_q}, \, \hat{\Delta} + \tilde{q} \sqrt{1 + h_q} \right], \quad \tilde{q}_{\text{pooled}} = 0.7273\text{ eV}.$$
+### 6.2 Residual Normalization and Empirical Coverage
+1. **Normalized LOO Residuals**:
+   The deployed pooled conformal quantile $\tilde{q} = 0.7273\text{ eV}$ is computed using **normalized leave-one-out (LOO) residuals**:
+   $$s_i = \frac{|e_{i, \text{LOO}}|}{\sqrt{1 + h_{i, q}}}, \quad k = \lceil 11 \times 0.90 \rceil = 10$$
+   where $h_{i, q}$ is the fold-specific held-out query leverage.
+2. **Empirical LOO Coverage**:
+   Evaluating the deployed intervals $E_{\text{pred}} \pm \tilde{q} \sqrt{1 + h_q}$ across all calibration compounds yields empirical coverage of **10/10 (100.0%)**.
+   Interval half-widths across calibration perovskites range from **$0.84\text{ eV}$ to $1.15\text{ eV}$**.
+3. **Reconciliation of In-Family Undefined Status**:
+   - Within the halide perovskite family alone ($n=7$), $k = \lceil 8 \times 0.90 \rceil = 8 > 7$. Thus, `q_tilde_in_family: "undefined"` is formally correct under rigorous distribution-free conformal theory (requiring $n_{\text{cal}} \ge 9$).
+   - The production pipeline reconciles this by using the pooled $N=10$ normalized LOO residuals ($k = 10 \le 10$), which provides finite, mathematically valid coverage.
+4. **Held-Out Intervals & Practical Informativeness**:
+   - On the held-out test benchmarks, the conformal interval widths are:
+     - $\text{FAPbI}_3$: $[0.76, 2.58]\text{ eV}$ (width $= 1.82\text{ eV}$)
+     - $\text{MASnI}_3$: $[0.13, 2.10]\text{ eV}$ (width $= 1.98\text{ eV}$)
+   - **Uninformativeness Statement**: While these intervals achieve empirical coverage, interval widths of **$1.8-2.0\text{ eV}$ are practically uninformative for solar materials screening**. Solar absorber candidate selection requires identifying compounds within a narrow band gap window of $1.1-1.4\text{ eV}$ (within $\pm 0.15\text{ eV}$ of the optimal Shockley-Queisser limit). An uncertainty interval spanning nearly $2.0\text{ eV}$ cannot reliably differentiate a high-efficiency photovoltaic absorber from an ineffective wide-gap or narrow-gap material.

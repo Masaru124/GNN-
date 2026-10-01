@@ -1,0 +1,356 @@
+{
+  "nodes": [
+    {
+      "id": "crystal_gnn_readme_doc",
+      "label": "Readme",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_readme_overview",
+      "label": "crystal_gnn Overview & Pipeline",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a1_doc",
+      "label": "Ablation A1",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A1.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a2_doc",
+      "label": "Ablation A2",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A2.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a3_doc",
+      "label": "Ablation A3",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A3.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a4_doc",
+      "label": "Ablation A4",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A4.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a5_doc",
+      "label": "Ablation A5",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A5.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a6_doc",
+      "label": "Ablation A6",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A6.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_ablation_a7_doc",
+      "label": "Ablation A7",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\ablation_A7.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_configs_default_doc",
+      "label": "Default",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\configs\\default.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_requirements_doc",
+      "label": "Requirements",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\requirements.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_sample_cifs_readme_doc",
+      "label": "Readme",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\sample_cifs\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_sample_cifs_readme_overview",
+      "label": "sample_cifs Overview & Pipeline",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\sample_cifs\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_summary_doc",
+      "label": "Summary",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\summary.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_summary_overview",
+      "label": "crystal_gnn Overview & Pipeline",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\summary.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "crystal_gnn_webapp_static_index_doc",
+      "label": "Index",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\webapp\\static\\index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_backend_requirements_doc",
+      "label": "Requirements",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\backend\\requirements.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_docker_compose_doc",
+      "label": "Docker-Compose",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\docker-compose.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_agents_doc",
+      "label": "Agents",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\AGENTS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_agent_rules",
+      "label": "Frontend Agent Rules & Standards",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\AGENTS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_design_doc",
+      "label": "Design",
+      "file_type": "document",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\DESIGN.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_design_principles",
+      "label": "Materials Screening UI Design System",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\DESIGN.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_public_file_icon",
+      "label": "file.svg Icon",
+      "file_type": "image",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\public\\file.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_public_globe_icon",
+      "label": "globe.svg Icon",
+      "file_type": "image",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\public\\globe.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_public_next_icon",
+      "label": "next.svg Icon",
+      "file_type": "image",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\public\\next.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_public_vercel_icon",
+      "label": "vercel.svg Icon",
+      "file_type": "image",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\public\\vercel.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "materials_screening_ai_frontend_public_window_icon",
+      "label": "window.svg Icon",
+      "file_type": "image",
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\public\\window.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "crystal_gnn_readme_doc",
+      "target": "crystal_gnn_readme_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "crystal_gnn_sample_cifs_readme_doc",
+      "target": "crystal_gnn_sample_cifs_readme_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\sample_cifs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "crystal_gnn_summary_doc",
+      "target": "crystal_gnn_summary_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\crystal_gnn\\summary.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "materials_screening_ai_frontend_agents_doc",
+      "target": "materials_screening_ai_frontend_agent_rules",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\AGENTS.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "materials_screening_ai_frontend_design_doc",
+      "target": "materials_screening_ai_frontend_design_principles",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\User\\Desktop\\GNN\\materials-screening-ai\\frontend\\DESIGN.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

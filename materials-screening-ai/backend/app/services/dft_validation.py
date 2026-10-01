@@ -67,6 +67,7 @@ SSSP_EFFICIENCY_URL_BASE = "https://pseudopotentials.quantum-espresso.org/upf_fi
 # Format: {element_symbol: filename}
 SSSP_EFFICIENCY_PPS = {
     "H":  "H.pbe-rrkjus_psl.1.0.0.UPF",
+    "C":  "C.pbe-n-kjpaw_psl.1.0.0.UPF",
     "Li": "Li.pbe-s-kjpaw_psl.1.0.0.UPF",
     "Na": "Na.pbe-spnl-kjpaw_psl.1.0.0.UPF",
     "K":  "K.pbe-spn-kjpaw_psl.1.0.0.UPF",
@@ -108,7 +109,7 @@ SSSP_EFFICIENCY_PPS = {
 # SSSP recommended cutoffs (ecutwfc, ecutrho) per element — eV
 # Source: SSSP v1.3 efficiency recommended cutoffs
 SSSP_CUTOFFS: Dict[str, Tuple[float, float]] = {
-    "H":  (40, 320), "Li": (50, 400), "Na": (60, 480), "K": (60, 480),
+    "H":  (40, 320), "C": (45, 360), "Li": (50, 400), "Na": (60, 480), "K": (60, 480),
     "Rb": (60, 480), "Cs": (70, 560), "Ca": (55, 440), "Sr": (60, 480),
     "Ba": (60, 480), "Mg": (60, 480), "Zr": (60, 480), "Sn": (75, 600),
     "Pb": (70, 560), "Ge": (75, 600), "Ti": (55, 440), "Si": (30, 240),

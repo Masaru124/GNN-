@@ -63,3 +63,7 @@ materials-screening-ai/research/literature/pdfs/
 combined.md
 combined research paper.pdf
 materials-screening-ai/research/literature/combined.md
+
+# Agent directories and customizations
+.agents/
+**/.agents/

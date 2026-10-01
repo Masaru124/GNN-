@@ -93,7 +93,7 @@ def main():
             "compound": "SrTiO3",
             "family": "transition_metal_perovskite",
             "paper_key": "piskunov",
-            "source_citation": "Piskunov et al., Comput. Mater. Sci. 29, 165 (2004)",
+            "source_citation": "Piskunov et al., Computational Materials Science 29 (2004) 165–178, Section 4.3",
             "doi": "10.1016/j.commatsci.2003.08.036",
             "table_name": "Section 4.3 Text (ref 46)",
             "target_level": "experimental",
@@ -107,7 +107,7 @@ def main():
             "compound": "BaTiO3",
             "family": "transition_metal_perovskite",
             "paper_key": "piskunov",
-            "source_citation": "Piskunov et al., Comput. Mater. Sci. 29, 165 (2004)",
+            "source_citation": "Piskunov et al., Computational Materials Science 29 (2004) 165–178, Section 4.3",
             "doi": "10.1016/j.commatsci.2003.08.036",
             "table_name": "Section 4.3 Text (ref 47)",
             "target_level": "experimental",
@@ -121,7 +121,7 @@ def main():
             "compound": "CsPbI3",
             "family": "halide_perovskite",
             "paper_key": "jpcl",
-            "source_citation": "JPCL 2017, 8, 5507; Castelli et al. APL Mater. 2, 081514 (2014)",
+            "source_citation": "Castelli et al., APL Materials 2, 081514 (2014); Wiktor et al., J. Phys. Chem. Lett. 2017, 8, 5507–5512",
             "doi": "10.1021/acs.jpclett.7b02648",
             "table_name": "Table 6 / Castelli Table I",
             "target_level": "experimental",
@@ -135,7 +135,7 @@ def main():
             "compound": "CsPbBr3",
             "family": "halide_perovskite",
             "paper_key": "jpcl",
-            "source_citation": "JPCL 2017, 8, 5507 (Table 6, ref 38)",
+            "source_citation": "Wiktor et al., J. Phys. Chem. Lett. 2017, 8, 5507–5512 (Table 6, ref 38)",
             "doi": "10.1021/acs.jpclett.7b02648",
             "table_name": "Table 6",
             "target_level": "experimental",
@@ -149,12 +149,12 @@ def main():
             "compound": "CsPbCl3",
             "family": "halide_perovskite",
             "paper_key": "jpcl",
-            "source_citation": "JPCL 2017, 8, 5507 (Table 6, ref 39)",
+            "source_citation": "Wiktor et al., J. Phys. Chem. Lett. 2017, 8, 5507–5512 (Table 6, ref 39)",
             "doi": "10.1021/acs.jpclett.7b02648",
             "table_name": "Table 6",
             "target_level": "experimental",
             "target_value": 2.85,
-            "target_range": "2.85 - 3.00",
+            "target_range": "2.85 (3.00 not in corpus)",
             "regex": r'\|CsPbCl\|3\.66\|0\.63\|−1\.34\|2\.95\|(2\.85d)\|',
             "expected_verbatim": "|CsPbCl|3.66|0.63|−1.34|2.95|2.85d|",
             "status": "VERIFIED",
@@ -163,26 +163,26 @@ def main():
             "compound": "CsSnCl3",
             "family": "halide_perovskite",
             "paper_key": "jpcl",
-            "source_citation": "JPCL 2017, 8, 5507 (Table 6, ref 40)",
+            "source_citation": "Wiktor et al., J. Phys. Chem. Lett. 2017, 8, 5507–5512 (Table 6, ref 40)",
             "doi": "10.1021/acs.jpclett.7b02648",
             "table_name": "Table 6",
             "target_level": "experimental",
             "target_value": 2.60,
             "target_range": "∼2.6",
-            "regex": r'\|CsSnCl.*?\|2\.22\|0\.73\|−0\.35\|2\.60\|(∼2\.6e)\|',
-            "expected_verbatim": "|CsSnCl|2.22|0.73|−0.35|2.60|∼2.6e|",
+            "regex": r'\|CsSnCl[^\n]*?\|2\.22\|0\.73\|−0\.35\|2\.60\|(∼2\.6e)\|',
+            "expected_verbatim": "|CsSnCl aExperimental values come from ref 36. bExperimental values come from ref 37. cExperimental values come from ref 38. dExperimental values come from ref 39. eExperimental values come from ref 40.|2.22|0.73|−0.35|2.60|∼2.6e|",
             "status": "VERIFIED",
         },
         {
             "compound": "MAPbI3",
             "family": "halide_perovskite",
             "paper_key": "mosconi",
-            "source_citation": "Mosconi et al., JPCC 117, 13902 (2013); Castelli 2014",
+            "source_citation": "Mosconi et al., J. Phys. Chem. C 2013, 117, 13902−13913; Castelli 2014",
             "doi": "10.1021/jp4048659",
             "table_name": "Table 1 / Castelli Table I",
             "target_level": "experimental",
             "target_value": 1.57,
-            "target_range": "1.55 - 1.61",
+            "target_range": "1.55 - 1.57 (1.61 not in corpus)",
             "regex": r'\|X=I\|a = 6\.33\|---\|---\|1\.57\|(1\.55b)\|',
             "expected_verbatim": "|X=I|a = 6.33|---|---|1.57|1.55b| (tetragonal: 1.55b-1.57c)",
             "status": "VERIFIED",
@@ -191,7 +191,7 @@ def main():
             "compound": "MAPbBr3",
             "family": "halide_perovskite",
             "paper_key": "mosconi",
-            "source_citation": "Mosconi et al., JPCC 117, 13902 (2013); Castelli 2014",
+            "source_citation": "Mosconi et al., J. Phys. Chem. C 2013, 117, 13902−13913; Castelli 2014",
             "doi": "10.1021/jp4048659",
             "table_name": "Table 1 / Castelli Table I",
             "target_level": "experimental",
@@ -205,14 +205,14 @@ def main():
             "compound": "MAPbCl3",
             "family": "halide_perovskite",
             "paper_key": "mosconi",
-            "source_citation": "Mosconi et al., JPCC 117, 13902 (2013)",
+            "source_citation": "Mosconi et al., J. Phys. Chem. C 2013, 117, 13902−13913",
             "doi": "10.1021/jp4048659",
             "table_name": "Table 1",
             "target_level": "experimental",
             "target_value": 3.11,
             "target_range": "3.11 - 3.12",
-            "regex": r'\|X=Cl.*?\|a = 5\.68\|---\|---\|2\.34\|(3\.11−3\.12e,f)\|',
-            "expected_verbatim": "|X=Cl|a = 5.68|---|---|2.34|3.11−3.12e,f|",
+            "regex": r'\|X=Cl[^\n]*?\|a = 5\.68\|---\|---\|2\.34\|(3\.11−3\.12e,f)\|',
+            "expected_verbatim": "|X=Cl aThe employed lattice parameters are also reported...|a = 5.68|---|---|2.34|3.11−3.12e,f|",
             "status": "VERIFIED",
         },
         # Additional Verified Experimental Rows in Castelli Table I
@@ -220,7 +220,7 @@ def main():
             "compound": "FAPbI3",
             "family": "halide_perovskite",
             "paper_key": "castelli",
-            "source_citation": "Castelli et al., APL Mater. 2, 081514 (2014)",
+            "source_citation": "Castelli et al., APL Materials 2, 081514 (2014)",
             "doi": "10.1063/1.4893495",
             "table_name": "Table I",
             "target_level": "experimental",
@@ -234,12 +234,12 @@ def main():
             "compound": "MASnI3",
             "family": "halide_perovskite",
             "paper_key": "castelli",
-            "source_citation": "Castelli et al., APL Mater. 2, 081514 (2014)",
+            "source_citation": "Castelli et al., APL Materials 2, 081514 (2014)",
             "doi": "10.1063/1.4893495",
             "table_name": "Table I",
             "target_level": "experimental",
             "target_value": 1.20,
-            "target_range": "1.20 - 1.30",
+            "target_range": "1.20 (1.30 not in corpus)",
             "regex": r'\|MASnI\|Tetragonal\|1\.51\|(1\.20)\|',
             "expected_verbatim": "|MASnI|Tetragonal|1.51|1.20|",
             "status": "VERIFIED",
@@ -418,17 +418,21 @@ def main():
                 print(f"[ERROR] Regex match failed for {comp} with pattern: {spec['regex']}")
                 raise AssertionError(f"Programmatic extraction failed for verified compound {comp}")
             
-            match_pos = match.start()
-            page_str = extract_page_number(full_text, match_pos, spec["paper_key"])
-            extracted_cell = match.group(0).replace('\n', ' ').strip()
+            extracted_text = match.group(0).strip()
+            # Enforce single row identity (no multi-line matches for table rows)
+            if comp in ["CsSnCl3", "MAPbCl3", "CsPbI3", "CsPbBr3", "CsPbCl3", "MAPbI3", "MAPbBr3", "FAPbI3", "MASnI3"]:
+                if "\n" in extracted_text:
+                    raise AssertionError(f"Programmatic extraction failed: row match for {comp} spanned multiple lines: {repr(extracted_text)}")
             
             # Assert target value or string is physically present in the match
             if spec["target_value"] is not None:
                 val_str = f"{spec['target_value']:.2f}"
-                assert (val_str in extracted_cell or str(spec["target_value"]) in extracted_cell or str(spec["target_value"]).rstrip('0') in extracted_cell), \
-                    f"Assertion failed: target value {spec['target_value']} not in extracted cell: '{extracted_cell}'"
+                assert (val_str in extracted_text or str(spec["target_value"]) in extracted_text or str(spec["target_value"]).rstrip('0') in extracted_text), \
+                    f"Assertion failed: target value {spec['target_value']} not in extracted text: '{extracted_text}'"
 
-            print(f"[VERIFIED] {comp:8s} | Target: {spec['target_value']} eV | Page: {page_str:20s} | Cell: {extracted_cell[:60]}...")
+            match_pos = match.start()
+            page_str = extract_page_number(full_text, match_pos, spec["paper_key"])
+            print(f"[VERIFIED] {comp:8s} | Target: {spec['target_value']} eV | Page: {page_str:20s} | Row: {extracted_text}")
             verbatim_text = spec["expected_verbatim"]
         else:
             page_str = "N/A"
@@ -450,7 +454,12 @@ def main():
         })
 
     # Write out CSV
-    out_csv = Path("materials-screening-ai/research/literature/verified_literature_targets.csv")
+    if Path("research/literature").exists():
+        out_csv = Path("research/literature/verified_literature_targets.csv")
+    elif Path("materials-screening-ai/research/literature").exists():
+        out_csv = Path("materials-screening-ai/research/literature/verified_literature_targets.csv")
+    else:
+        out_csv = Path("verified_literature_targets.csv")
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     
     with open(out_csv, 'w', newline='', encoding='utf-8') as f:

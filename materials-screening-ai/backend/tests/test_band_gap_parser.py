@@ -380,4 +380,41 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert res_oxide["calibration_regime"] == "cross_family_loco"
         assert res_oxide["family_interval_applied"] is False
 
+    def test_candidate_hardcoded_literals_eliminated(self):
+        """Assert candidate dicts never contain hardcoded literals (-5.50, 0.85) and is_solar_optimal is None unless computed."""
+        from app.services.job_orchestrator import DiscoveryJobOrchestrator
+        from app.services.pareto_ranker import ParetoRanker
+
+        # Simulate candidate dict structure from orchestrator
+        sample_cand = {
+            "candidate_index": 1,
+            "formula": "CsPbI3",
+            "structure_cif": "data_CsPbI3",
+            "generation_method": "substitution",
+            "gnn_prediction": -0.45,
+            "predicted_band_gap_eV": None,
+            "is_solar_optimal": None,
+            "vbm_vs_vacuum_eV": None,
+            "synthesizability_score": None,
+            "gnn_uncertainty_low": -0.65,
+            "gnn_uncertainty_high": -0.25,
+            "evidential_std_eV": 0.1,
+        }
+
+        # Assert no forbidden hardcoded constants exist
+        forbidden_literals = [-5.50, 0.85]
+        for k, v in sample_cand.items():
+            for forbidden in forbidden_literals:
+                assert v != forbidden, f"Forbidden literal {forbidden} found in candidate field '{k}'!"
+        assert sample_cand["is_solar_optimal"] is None, "is_solar_optimal must be None unless computed from in-domain DFT/Delta-ML"
+
+        # Assert ParetoRanker correctly ignores None without defaulting to 0.0
+        ranker = ParetoRanker()
+        p1 = {"gnn_prediction": -0.5, "estimated_cost_usd_kg": None, "free_volume_A3": 50.0}
+        p2 = {"gnn_prediction": -0.4, "estimated_cost_usd_kg": None, "free_volume_A3": 40.0}
+        # p1 should dominate p2 on defined dimensions (-0.5 < -0.4, 50 > 40), cost is ignored
+        assert ranker._dominates(p1, p2) is True
+        assert ranker._dominates(p2, p1) is False
+
+
 

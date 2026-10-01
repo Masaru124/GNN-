@@ -68,43 +68,53 @@ $$H_{\text{ridge}} = \frac{1}{n} \mathbf{1}\mathbf{1}^T + Z (Z^T Z + \alpha I)^{
 
 ---
 
-## 5. Held-Out Conformal Coverage & Explanation of LOFO Scissor Coverage
+## 5. Conformal Prediction Validity & Coverage Audit
 
-1. **Leave-One-Family-Out (LOFO) Coverage**:
-   - Halide Perovskites ($n=7$): 2/7 covered (**28.6%** for scissor), 7/7 covered (**100.0%** for ridge)
-   - Transition Metal Perovskites ($n=2$): 2/2 covered (**100.0%** for scissor), 2/2 covered (**100.0%** for ridge)
-   - Alkaline Earth Oxides ($n=1$): 0/1 covered (**0.0%** for scissor), 0/1 covered (**0.0%** for ridge)
-   - Overall LOFO Scissor Coverage: 4/10 (**40.0%**)
-2. **LOFO Scissor Coverage Domain-Shift Mechanism**:
-   - In full-sample conformal calibration, $\hat{q}$ guarantees $\ge 90\%$ marginal coverage in-distribution.
-   - In cross-family evaluation, $\tilde{q}_{\text{cal}}$ is calibrated exclusively on $K-1$ training families and evaluated under domain shift on the held-out chemistry family, resulting in lower empirical coverage when chemistry families exhibit distinct residual distributions.
-   - For deployed predictions where all individual family sizes $n_{\text{fam}} < 9$, the conformal module safely falls back to pooled calibration with $k = \lceil (N+1) \times 0.90 \rceil = 10$, yielding $\tilde{q}_{\text{pooled}} = \mathbf{0.7273\text{ eV}}$.
+1. **Finite-Sample Mathematical Validity Condition ($n_{\text{cal}} \ge 9$)**:
+   - Conformal prediction at significance level $\alpha = 0.10$ requires computing the order statistic index:
+     $$k = \lceil (n_{\text{cal}} + 1)(1 - \alpha) \rceil = \lceil (n_{\text{cal}} + 1) \cdot 0.90 \rceil$$
+   - A finite, non-infinite conformal prediction interval exists if and only if $k \le n_{\text{cal}}$, which imposes the strict threshold:
+     $$\lceil (n_{\text{cal}} + 1) \cdot 0.90 \rceil \le n_{\text{cal}} \iff n_{\text{cal}} \ge 9.$$
+2. **Leave-One-Family-Out (LOFO) Calibration Breakdown**:
+   - **Alkaline Earth Oxide Held Out** ($n_{\text{cal}} = 9, k = 9$): **Valid** ($k \le n_{\text{cal}}$). Empirical coverage $0/1$ (**0.0%** for both scissor and ridge due to large chemical shift). $\tilde{q}_{\text{cal}} = 0.3583\text{ eV}$ (Ridge), $1.1076\text{ eV}$ (Scissor).
+   - **Halide Perovskites Held Out** ($n_{\text{cal}} = 3, k = 4 > 3$): **Mathematically Undefined (Infinite)**. Calibration set cannot support 90% conformal coverage without artificial clamping.
+   - **Transition Metal Perovskites Held Out** ($n_{\text{cal}} = 8, k = 9 > 8$): **Mathematically Undefined (Infinite)**.
+   - Overall LOFO Cross-Family Scissor Coverage: Formally **N/A** because 9 of 10 samples have undefined (infinite) calibration intervals.
+3. **In-Family Halide Perovskite Calibration ($n_{\text{cal}} = 7$)**:
+   - $k = \lceil 8 \times 0.90 \rceil = 8 > 7$. Pure in-family conformal prediction at 90% is mathematically undefined (infinite).
+4. **Deployed Production Conformal Protocol**:
+   - In production inference, the conformal module pools all $N=10$ verified calibration records ($n_{\text{cal}} = 10 \ge 9, k = \lceil 11 \times 0.90 \rceil = 10 \le 10$), producing a mathematically valid, finite interval normalized by leverage:
+     $$\tilde{q}_{\text{pooled}} = \mathbf{0.7273\text{ eV}}.$$
+   - On the held-out test benchmarks ($\text{FAPbI}_3$ and $\text{MASnI}_3$), both predicted gaps fall inside their 90% prediction intervals ($100\%$ empirical coverage).
 
 ---
 
 ## 6. Comprehensive Per-Compound Provenance ($N=10$ Active Set)
 
-| Formula | Family | PBE (eV) | Target Gap (eV) | Target Level | Literature Source | Table / Page | Level of Theory & SOC |
+All 10 active calibration records are verified against verbatim lines in the local corpus (`combined.md` SHA256: `3bbf35118c8c36e1f2b5fc7b1f714d38522e2100a9961b34512259c2f1795c3c`):
+
+| Formula | Family | PBE (eV) | Target Gap (eV) | Target Level | Reconciled Literature Source | Table / Citation in Corpus | Level of Theory & SOC |
 | :--- | :--- | :---: | :---: | :--- | :--- | :--- | :--- |
-| **MgO** | alkaline_earth_oxide | 4.475 | 7.22 | Experimental | Heyd et al. (2005) | Table V, p. 174101-6 | Experimental optical |
-| **SrTiO3** | transition_metal_perovskite | 2.179 | 3.25 | Experimental | Piskunov (2004) / Bilc (2008) | Table 4 / Table V | Experimental indirect |
-| **BaTiO3** | transition_metal_perovskite | 2.068 | 3.20 | Experimental | Piskunov (2004) / Bilc (2008) | Table 4 / Table V | Experimental |
-| **CsPbI3** | halide_perovskite | 1.323 | 1.73 | Experimental | Castelli (2014) / JPCL (2017) | Table I / Table 6 | Experimental optical |
-| **CsPbBr3** | halide_perovskite | 1.532 | 2.36 | Experimental | Wiktor et al. JPCL (2017) | Table 6, p. 5511 (ref 38) | Experimental optical |
-| **CsPbCl3** | halide_perovskite | 1.919 | 2.85 | Experimental | Wiktor et al. JPCL (2017) | Table 6, p. 5511 (ref 39) | Experimental optical |
-| **CsSnCl3** | halide_perovskite | 0.799 | 2.60 | Experimental | Wiktor et al. JPCL (2017) | Table 6, p. 5511 (ref 40) | Experimental optical |
-| **MAPbI3** | halide_perovskite | 1.550 | 1.57 | Experimental | Castelli (2014) / Mosconi (2013) | Table I / Table 1 | Experimental optical |
-| **MAPbBr3** | halide_perovskite | 1.900 | 2.33 | Experimental | Castelli (2014) / Mosconi (2013) | Table I / Table 1 | Experimental optical |
-| **MAPbCl3** | halide_perovskite | 2.450 | 3.11 | Experimental | Mosconi et al. JPCC (2013) | Table 1, p. 13907 | Experimental optical |
+| **MgO** | alkaline_earth_oxide | 4.475 | 7.22 | Experimental | Heyd et al., J. Chem. Phys. 123, 174101 (2005) | Table V, p. 174101-6 | Experimental optical |
+| **SrTiO3** | transition_metal_perovskite | 2.179 | 3.25 | Experimental | Piskunov et al., Comput. Mater. Sci. 29, 165–178 (2004) | Table 4, p. 173 | Experimental indirect |
+| **BaTiO3** | transition_metal_perovskite | 2.068 | 3.20 | Experimental | Piskunov et al., Comput. Mater. Sci. 29, 165–178 (2004) | Table 4, p. 173 | Experimental |
+| **CsPbI3** | halide_perovskite | 1.323 | 1.73 | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) | Table I (also Wiktor 2017 Table 6) | Experimental optical |
+| **CsPbBr3** | halide_perovskite | 1.532 | 2.36 | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017) | Table 6, p. 5511 (ref 38) | Experimental optical |
+| **CsPbCl3** | halide_perovskite | 1.919 | 2.85 | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017) | Table 6, p. 5511 (ref 39; 2.85 eV verified; 3.00 eV not in corpus) | Experimental optical |
+| **CsSnCl3** | halide_perovskite | 0.799 | 2.60 | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017) | Table 6, p. 5511 (ref 40) | Experimental optical |
+| **MAPbI3** | halide_perovskite | 1.550 | 1.57 | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) / Mosconi (2013) | Table I / Table 1 (1.55–1.57 eV verified; 1.61 eV not in corpus) | Experimental optical |
+| **MAPbBr3** | halide_perovskite | 1.900 | 2.33 | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) / Mosconi (2013) | Table I / Table 1 (2.33 eV verified) | Experimental optical |
+| **MAPbCl3** | halide_perovskite | 2.450 | 3.11 | Experimental | Mosconi et al., J. Phys. Chem. C 117, 13902–13913 (2013) | Table 1, p. 13907 (3.11 eV verified) | Experimental optical |
 
 ---
 
 ## 7. Artifacts & Environment Audit
 
-- `research/metrics.json`: Dynamically generated metrics with zero hardcoded literals.
+- `research/metrics.json`: Dynamically generated metrics with zero hardcoded literals and parent commit hash.
 - `research/canonical_leverage_table.csv`: Statistical leverage matrix for $N=10, p=7$.
 - `research/calibration_provenance_table.csv`: Complete provenance table for active records.
-- `research/literature/verified_literature_targets.csv`: Full audit table of all 21 candidates with verbatim cell text.
+- `research/literature/verified_literature_targets.csv`: Full audit table of all 23 candidates with verbatim cell text.
+- `research/LIMITATIONS.md`: Comprehensive 6-point physical and methodological limitations specification.
 - `research/junit.xml`: Full pytest test results saved with 0 errors.
 - `research/pytest_version.txt`: `pytest 9.0.2` (in Python 3.11.9 `.venv311`).
 - `research/pip_freeze.txt`: Pinned dependencies lockfile.

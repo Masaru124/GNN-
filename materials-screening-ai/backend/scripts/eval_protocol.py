@@ -5,6 +5,8 @@ Evaluates single-fidelity verified experimental optical gap calibration dataset 
 Eliminates all hardcoded literals; computes all LOOCV, LOCO, and conformal metrics dynamically.
 """
 import sys, os, json, hashlib, subprocess, csv
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np
 import sklearn
 from sklearn.linear_model import Ridge
@@ -48,6 +50,10 @@ def run_eval_protocol():
         git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     except Exception:
         git_hash = "untracked"
+    try:
+        parent_git_hash = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
+    except Exception:
+        parent_git_hash = "untracked"
     calib_str = json.dumps([[r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[9]] for r in records])
     calib_hash = hashlib.sha256(calib_str.encode("utf-8")).hexdigest()
 
@@ -239,7 +245,10 @@ def run_eval_protocol():
 
     norm_scores_pero = [loocv_ridge_errs[i] / np.sqrt(1.0 + loocv_query_leverages[i]) for i in pero_indices]
     k_pero = int(np.ceil((len(pero_indices) + 1) * 0.90))
-    q_tilde_in_family = float(sorted(norm_scores_pero)[min(k_pero - 1, len(pero_indices) - 1)])
+    if k_pero <= len(pero_indices):
+        q_tilde_in_family = float(sorted(norm_scores_pero)[k_pero - 1])
+    else:
+        q_tilde_in_family = "undefined (infinite)"
 
     # -------------------------------------------------------------------------
     # TASK 1: LEVERAGE ASSERTIONS & LEVERAGE TABLE
@@ -408,29 +417,48 @@ def run_eval_protocol():
             sciss_tr_loo_norm_scores.append(err_s / np.sqrt(1.0 + h_s))
             
         k_ord = int(np.ceil((n_tr + 1) * 0.90))
-        q_tilde_sciss_cal = float(sorted(sciss_tr_loo_norm_scores)[min(k_ord - 1, n_tr - 1)])
+        if k_ord <= n_tr:
+            q_tilde_sciss_cal = float(sorted(sciss_tr_loo_norm_scores)[k_ord - 1])
+            is_valid_conformal = True
+        else:
+            q_tilde_sciss_cal = None
+            is_valid_conformal = False
         
         A_tr = np.column_stack([pbes[tr_idx], np.ones(n_tr)])
         c_tr, int_tr = np.linalg.lstsq(A_tr, targets[tr_idx], rcond=None)[0]
         pbe_mean_tr = np.mean(pbes[tr_idx])
         pbe_ss_tr = np.sum((pbes[tr_idx] - pbe_mean_tr)**2)
         
-        cov_cnt = 0
-        for te_i in te_idx:
-            h_te = (1.0 / n_tr) + ((pbes[te_i] - pbe_mean_tr)**2) / max(pbe_ss_tr, 1e-6)
-            pred_sciss = c_tr * pbes[te_i] + int_tr
-            err_te = abs(targets[te_i] - pred_sciss)
-            half_w = q_tilde_sciss_cal * np.sqrt(1.0 + h_te)
-            is_c = (err_te <= half_w)
-            if is_c:
-                cov_cnt += 1
-            tot_sciss_cov += int(is_c)
-        lofo_scissor_coverage[fam] = {
-            "n": len(te_idx),
-            "covered": cov_cnt,
-            "coverage_pct": round(cov_cnt / len(te_idx) * 100.0, 1),
-            "q_tilde_cal": round(q_tilde_sciss_cal, 4)
-        }
+        if is_valid_conformal:
+            cov_cnt = 0
+            for te_i in te_idx:
+                h_te = (1.0 / n_tr) + ((pbes[te_i] - pbe_mean_tr)**2) / max(pbe_ss_tr, 1e-6)
+                pred_sciss = c_tr * pbes[te_i] + int_tr
+                err_te = abs(targets[te_i] - pred_sciss)
+                half_w = q_tilde_sciss_cal * np.sqrt(1.0 + h_te)
+                is_c = (err_te <= half_w)
+                if is_c:
+                    cov_cnt += 1
+                tot_sciss_cov += int(is_c)
+            lofo_scissor_coverage[fam] = {
+                "n": len(te_idx),
+                "n_cal": n_tr,
+                "k_order": k_ord,
+                "conformal_valid": True,
+                "covered": cov_cnt,
+                "coverage_pct": round(cov_cnt / len(te_idx) * 100.0, 1),
+                "q_tilde_cal": round(q_tilde_sciss_cal, 4)
+            }
+        else:
+            lofo_scissor_coverage[fam] = {
+                "n": len(te_idx),
+                "n_cal": n_tr,
+                "k_order": k_ord,
+                "conformal_valid": False,
+                "covered": "N/A",
+                "coverage_pct": "N/A",
+                "q_tilde_cal": "undefined (infinite)"
+            }
 
     # LOFO for Ridge
     lofo_ridge_coverage = {}
@@ -455,31 +483,50 @@ def run_eval_protocol():
             tr_loo_norm_scores.append(err_sub / np.sqrt(1.0 + h_k))
             
         k_order = int(np.ceil((n_tr + 1) * 0.90))
-        q_tilde_cal = float(sorted(tr_loo_norm_scores)[min(k_order - 1, n_tr - 1)])
+        if k_order <= n_tr:
+            q_tilde_cal = float(sorted(tr_loo_norm_scores)[k_order - 1])
+            is_valid_ridge_conf = True
+        else:
+            q_tilde_cal = None
+            is_valid_ridge_conf = False
         
         sc_tr = StandardScaler().fit(X_full[tr_idx])
         Z_tr = sc_tr.transform(X_full[tr_idx])
         m_tr = Ridge(alpha=1.0).fit(Z_tr, y_delta[tr_idx])
         H_tr_inv = np.linalg.inv(Z_tr.T @ Z_tr + 1.0 * np.eye(p_dim))
         
-        cov_cnt = 0
-        for te_i in te_idx:
-            z_te = sc_tr.transform(X_full[te_i:te_i+1])
-            h_te = float((1.0 / n_tr) + (z_te @ H_tr_inv @ z_te.T)[0, 0])
-            pred_delta = m_tr.predict(z_te)[0]
-            pred_gap = pbes[te_i] + pred_delta
-            err_te = abs(targets[te_i] - pred_gap)
-            half_width = q_tilde_cal * np.sqrt(1.0 + h_te)
-            is_cov = (err_te <= half_width)
-            if is_cov:
-                cov_cnt += 1
-            tot_ridge_cov += int(is_cov)
-        lofo_ridge_coverage[fam] = {
-            "n": len(te_idx),
-            "covered": cov_cnt,
-            "coverage_pct": round(cov_cnt / len(te_idx) * 100.0, 1),
-            "q_tilde_cal": round(q_tilde_cal, 4)
-        }
+        if is_valid_ridge_conf:
+            cov_cnt = 0
+            for te_i in te_idx:
+                z_te = sc_tr.transform(X_full[te_i:te_i+1])
+                h_te = float((1.0 / n_tr) + (z_te @ H_tr_inv @ z_te.T)[0, 0])
+                pred_delta = m_tr.predict(z_te)[0]
+                pred_gap = pbes[te_i] + pred_delta
+                err_te = abs(targets[te_i] - pred_gap)
+                half_width = q_tilde_cal * np.sqrt(1.0 + h_te)
+                is_cov = (err_te <= half_width)
+                if is_cov:
+                    cov_cnt += 1
+                tot_ridge_cov += int(is_cov)
+            lofo_ridge_coverage[fam] = {
+                "n": len(te_idx),
+                "n_cal": n_tr,
+                "k_order": k_order,
+                "conformal_valid": True,
+                "covered": cov_cnt,
+                "coverage_pct": round(cov_cnt / len(te_idx) * 100.0, 1),
+                "q_tilde_cal": round(q_tilde_cal, 4)
+            }
+        else:
+            lofo_ridge_coverage[fam] = {
+                "n": len(te_idx),
+                "n_cal": n_tr,
+                "k_order": k_order,
+                "conformal_valid": False,
+                "covered": "N/A",
+                "coverage_pct": "N/A",
+                "q_tilde_cal": "undefined (infinite)"
+            }
 
     # Family-level Permutation / Sign Test between Nested Ridge and Linear Scissor
     fam_mae_ridge = []
@@ -540,10 +587,45 @@ def run_eval_protocol():
         ridge_no_eps_loocv_errs.append(abs(targets[i] - pred_no_eps))
     pero_no_eps_loocv_mae = float(np.mean([ridge_no_eps_loocv_errs[i] for i in pero_indices]))
 
+    # -------------------------------------------------------------------------
+    # HELD-OUT TEST EVALUATION ON FAPbI3 AND MASnI3 (QUANTUM ESPRESSO DIRECT PBE + FROZEN DELTA-ML)
+    # -------------------------------------------------------------------------
+    heldout_benchmarks = []
+    heldout_specs = [
+        ("FAPbI3", 1.2996, 1.48, 5.80, "Castelli et al. APL Materials 2, 081514 (2014) Table I"),
+        ("MASnI3", 0.3510, 1.20, 5.50, "Castelli et al. APL Materials 2, 081514 (2014) Table I"),
+    ]
+    heldout_errs = []
+    for form_ho, pbe_ho, tgt_ho, eps_ho, src_ho in heldout_specs:
+        pred_ho = corrector.predict_corrected_gap(
+            pbe_gap_ev=pbe_ho,
+            formula=form_ho,
+            features={"eps_inf": eps_ho}
+        )
+        c_gap = pred_ho["corrected_gap_eV"]
+        err_ho = abs(c_gap - tgt_ho)
+        heldout_errs.append(err_ho)
+        low = pred_ho["interval_lower"]
+        up = pred_ho["interval_upper"]
+        cov = bool(low <= tgt_ho <= up)
+        heldout_benchmarks.append({
+            "formula": form_ho,
+            "pbe_gap_eV": pbe_ho,
+            "target_gap_eV": tgt_ho,
+            "predicted_gap_eV": float(c_gap),
+            "absolute_error_eV": float(err_ho),
+            "conformal_interval_90_eV": [float(low), float(up)],
+            "is_covered": cov,
+            "source_target": src_ho
+        })
+    held_out_mae = float(np.mean(heldout_errs))
+    all_cov = all(b["is_covered"] for b in heldout_benchmarks)
+
     metrics = {
         "metadata": {
             "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
             "git_commit": git_hash,
+            "parent_git_commit": parent_git_hash,
             "calibration_records_sha256": calib_hash,
             "num_evaluated_samples": n_samples,
             "num_families": len(set(families)),
@@ -633,7 +715,14 @@ def run_eval_protocol():
         "held_out_conformal_coverage": {
             "lofo_ridge_per_family": lofo_ridge_coverage,
             "lofo_scissor_per_family": lofo_scissor_coverage,
-            "lofo_scissor_overall_coverage_pct": round(tot_sciss_cov / n_samples * 100.0, 1)
+            "lofo_scissor_overall_coverage_pct": "N/A (conformal condition k <= n_cal violated for n_cal < 9)",
+            "conformal_validity_note": "Conformal 90% intervals require n_cal >= 9. Only alkaline_earth_oxide (n_cal=9) satisfies k=9 <= 9; halide_perovskite (n_cal=3, k=4) and transition_metal_perovskite (n_cal=8, k=9) are formally undefined (infinite intervals)."
+        },
+        "held_out_test_evaluations": {
+            "evaluation_type": "Quantum ESPRESSO direct PBE + Frozen Delta-ML Ridge (no refit)",
+            "benchmark_candidates": heldout_benchmarks,
+            "held_out_mae_eV": held_out_mae,
+            "both_covered_in_interval": all_cov
         },
         "family_permutation_test": {
             "family_mae_nested_ridge": {fam: fam_mae_ridge[k] for k, fam in enumerate(unique_fams_list)},

@@ -1,7 +1,8 @@
 {
   "metadata": {
     "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
-    "git_commit": "9488b15b391e90b549bcae3e85e6d8c57beeb78e",
+    "git_commit": "e4d2a9ac4de863cc5c91b5e190a3ec0aca830aea",
+    "parent_git_commit": "9488b15b391e90b549bcae3e85e6d8c57beeb78e",
     "calibration_records_sha256": "7893affeba49606c546130a80b83be6c0d44f9039a7ed0d74a63292c80e91a5a",
     "num_evaluated_samples": 10,
     "num_families": 3,
@@ -51,7 +52,7 @@
   "production_ridge_alpha_1": {
     "loocv_mae": 0.4561118959669713,
     "loocv_rmse": 0.8607499275112035,
-    "q_tilde_in_family": 0.7272887750070427,
+    "q_tilde_in_family": "undefined (infinite)",
     "loco_pooled_mae": 1.1896370216288217,
     "loco_family_maes": {
       "alkaline_earth_oxide": 2.4165409329929473,
@@ -66,7 +67,7 @@
     "constant_scissor_loocv_mae": 0.5615079365079366,
     "linear_pbe_loocv_mae": 0.6244903278406392,
     "pooled_mean_delta_loocv_mae": 0.5615079365079366,
-    "q_tilde_in_family": 0.7272887750070427
+    "q_tilde_in_family": "undefined (infinite)"
   },
   "scissor_plus_ridge_on_residuals": {
     "loocv_mae": 0.5691733213362916,
@@ -210,44 +211,96 @@
     "lofo_ridge_per_family": {
       "alkaline_earth_oxide": {
         "n": 1,
+        "n_cal": 9,
+        "k_order": 9,
+        "conformal_valid": true,
         "covered": 0,
         "coverage_pct": 0.0,
         "q_tilde_cal": 0.3583
       },
       "halide_perovskite": {
         "n": 7,
-        "covered": 7,
-        "coverage_pct": 100.0,
-        "q_tilde_cal": 0.196
+        "n_cal": 3,
+        "k_order": 4,
+        "conformal_valid": false,
+        "covered": "N/A",
+        "coverage_pct": "N/A",
+        "q_tilde_cal": "undefined (infinite)"
       },
       "transition_metal_perovskite": {
         "n": 2,
-        "covered": 2,
-        "coverage_pct": 100.0,
-        "q_tilde_cal": 0.6729
+        "n_cal": 8,
+        "k_order": 9,
+        "conformal_valid": false,
+        "covered": "N/A",
+        "coverage_pct": "N/A",
+        "q_tilde_cal": "undefined (infinite)"
       }
     },
     "lofo_scissor_per_family": {
       "alkaline_earth_oxide": {
         "n": 1,
+        "n_cal": 9,
+        "k_order": 9,
+        "conformal_valid": true,
         "covered": 0,
         "coverage_pct": 0.0,
         "q_tilde_cal": 1.1076
       },
       "halide_perovskite": {
         "n": 7,
-        "covered": 2,
-        "coverage_pct": 28.6,
-        "q_tilde_cal": 0.0979
+        "n_cal": 3,
+        "k_order": 4,
+        "conformal_valid": false,
+        "covered": "N/A",
+        "coverage_pct": "N/A",
+        "q_tilde_cal": "undefined (infinite)"
       },
       "transition_metal_perovskite": {
         "n": 2,
-        "covered": 2,
-        "coverage_pct": 100.0,
-        "q_tilde_cal": 1.6617
+        "n_cal": 8,
+        "k_order": 9,
+        "conformal_valid": false,
+        "covered": "N/A",
+        "coverage_pct": "N/A",
+        "q_tilde_cal": "undefined (infinite)"
       }
     },
-    "lofo_scissor_overall_coverage_pct": 40.0
+    "lofo_scissor_overall_coverage_pct": "N/A (conformal condition k <= n_cal violated for n_cal < 9)",
+    "conformal_validity_note": "Conformal 90% intervals require n_cal >= 9. Only alkaline_earth_oxide (n_cal=9) satisfies k=9 <= 9; halide_perovskite (n_cal=3, k=4) and transition_metal_perovskite (n_cal=8, k=9) are formally undefined (infinite intervals)."
+  },
+  "held_out_test_evaluations": {
+    "evaluation_type": "Quantum ESPRESSO direct PBE + Frozen Delta-ML Ridge (no refit)",
+    "benchmark_candidates": [
+      {
+        "formula": "FAPbI3",
+        "pbe_gap_eV": 1.2996,
+        "target_gap_eV": 1.48,
+        "predicted_gap_eV": 1.378,
+        "absolute_error_eV": 0.10200000000000009,
+        "conformal_interval_90_eV": [
+          0.4678,
+          2.2882
+        ],
+        "is_covered": true,
+        "source_target": "Castelli et al. APL Materials 2, 081514 (2014) Table I"
+      },
+      {
+        "formula": "MASnI3",
+        "pbe_gap_eV": 0.351,
+        "target_gap_eV": 1.2,
+        "predicted_gap_eV": 0.8733,
+        "absolute_error_eV": 0.3267,
+        "conformal_interval_90_eV": [
+          0.0,
+          1.9762
+        ],
+        "is_covered": true,
+        "source_target": "Castelli et al. APL Materials 2, 081514 (2014) Table I"
+      }
+    ],
+    "held_out_mae_eV": 0.21435000000000004,
+    "both_covered_in_interval": true
   },
   "family_permutation_test": {
     "family_mae_nested_ridge": {

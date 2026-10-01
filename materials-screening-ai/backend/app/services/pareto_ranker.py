@@ -35,37 +35,58 @@ class ParetoRanker:
         For e_above_hull: candidates without hull data (None) are treated as
         non-comparable on this dimension — neither dominating nor dominated.
         """
-        # Objective 1: Predicted Formation Energy
-        e1 = p1.get("gnn_prediction", 0.0)
-        e2 = p2.get("gnn_prediction", 0.0)
-        obj1_better = (e1 < e2) if self.minimize_property else (e1 > e2)
-        obj1_worse = (e1 > e2) if self.minimize_property else (e1 < e2)
+        # Objective 1: Predicted Formation Energy (ignore None)
+        e1 = p1.get("gnn_prediction")
+        e2 = p2.get("gnn_prediction")
+        if e1 is not None and e2 is not None:
+            obj1_better = (e1 < e2) if self.minimize_property else (e1 > e2)
+            obj1_worse = (e1 > e2) if self.minimize_property else (e1 < e2)
+        else:
+            obj1_better = False
+            obj1_worse = False
 
-        # Objective 2: Cost ($/kg)
-        c1 = p1.get("estimated_cost_usd_kg", 0.0)
-        c2 = p2.get("estimated_cost_usd_kg", 0.0)
-        obj2_better = (c1 < c2) if self.minimize_cost else (c1 > c2)
-        obj2_worse = (c1 > c2) if self.minimize_cost else (c1 < c2)
+        # Objective 2: Cost ($/kg) (ignore None)
+        c1 = p1.get("estimated_cost_usd_kg")
+        c2 = p2.get("estimated_cost_usd_kg")
+        if c1 is not None and c2 is not None and self.minimize_cost:
+            obj2_better = (c1 < c2)
+            obj2_worse = (c1 > c2)
+        else:
+            obj2_better = False
+            obj2_worse = False
 
-        # Objective 3: Transport Free Volume (Å³)
-        v1 = p1.get("free_volume_A3", 0.0)
-        v2 = p2.get("free_volume_A3", 0.0)
-        obj3_better = (v1 > v2) if self.maximize_free_volume else (v1 < v2)
-        obj3_worse = (v1 < v2) if self.maximize_free_volume else (v1 > v2)
+        # Objective 3: Transport Free Volume (Å³) (ignore None)
+        v1 = p1.get("free_volume_A3")
+        v2 = p2.get("free_volume_A3")
+        if v1 is not None and v2 is not None and self.maximize_free_volume:
+            obj3_better = (v1 > v2)
+            obj3_worse = (v1 < v2)
+        else:
+            obj3_better = False
+            obj3_worse = False
 
-        # Objective 4: Energy Above Hull (eV/atom) — optional, skip if either is None
+        # Objective 4: Energy Above Hull (eV/atom) (ignore None)
         h1 = p1.get("e_above_hull_eV")
         h2 = p2.get("e_above_hull_eV")
         if h1 is not None and h2 is not None and self.minimize_e_above_hull:
             obj4_better = (h1 < h2)
             obj4_worse = (h1 > h2)
         else:
-            # Non-comparable — treat as equal (neither better nor worse)
             obj4_better = False
             obj4_worse = False
 
-        at_least_one_better = obj1_better or obj2_better or obj3_better or obj4_better
-        no_worse = (not obj1_worse) and (not obj2_worse) and (not obj3_worse) and (not obj4_worse)
+        # Optional Objective 5: Synthesizability Score (maximize, ignore None)
+        s1 = p1.get("synthesizability_score")
+        s2 = p2.get("synthesizability_score")
+        if s1 is not None and s2 is not None:
+            obj5_better = (s1 > s2)
+            obj5_worse = (s1 < s2)
+        else:
+            obj5_better = False
+            obj5_worse = False
+
+        at_least_one_better = obj1_better or obj2_better or obj3_better or obj4_better or obj5_better
+        no_worse = (not obj1_worse) and (not obj2_worse) and (not obj3_worse) and (not obj4_worse) and (not obj5_worse)
 
         return at_least_one_better and no_worse
 

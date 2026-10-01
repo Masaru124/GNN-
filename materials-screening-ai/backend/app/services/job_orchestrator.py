@@ -113,7 +113,7 @@ class DiscoveryJobOrchestrator:
                 pred_val = float(pred_res.get("predicted_formation_energy_per_atom_eV", pred_res.get("predicted_formation_energy_eV", 0.0)))
                 # Band Gap requires DFT (Tier C) — explicitly set to None (Uncalculated)
                 pred_bg = None
-                is_solar_opt = False
+                is_solar_opt = None
                 ev_std = float(pred_res.get("evidential_std_eV", 0.1))
                 conf_int = pred_res.get("conformal_90_interval_eV", pred_res.get("conformal_90_interval", [pred_val - 0.2, pred_val + 0.2]))
                 q_low = float(conf_int[0])
@@ -150,7 +150,9 @@ class DiscoveryJobOrchestrator:
                     "generation_method": cand["generation_method"],
                     "gnn_prediction": pred_val,
                     "predicted_band_gap_eV": None,
-                    "is_solar_optimal": False,
+                    "is_solar_optimal": None,
+                    "vbm_vs_vacuum_eV": None,
+                    "synthesizability_score": None,
                     "gnn_uncertainty_low": q_low,
                     "gnn_uncertainty_high": q_high,
                     "evidential_std_eV": ev_std,
@@ -194,10 +196,12 @@ class DiscoveryJobOrchestrator:
                     try:
                         struct = Structure.from_str(item["structure_cif"], fmt="cif")
                         bg_result = self.bandgap_estimator.estimate_band_gap(struct)
+                        # Item 3: Tier B band gap estimate for triage
                         item["estimated_band_gap_eV"] = bg_result.get("estimated_band_gap_eV")
                         item["bandgap_estimate_source"] = bg_result.get("source_model")
                         item["bandgap_estimate_tier"] = bg_result.get("tier")
-                        item["is_solar_optimal"] = bg_result.get("is_solar_optimal", False)
+                        # is_solar_optimal must derive only from DFT/Delta-ML gap flagged in-domain, otherwise None
+                        item["is_solar_optimal"] = None
                         item["predicted_band_gap_eV"] = bg_result.get("estimated_band_gap_eV")
                     except Exception as e:
                         print(f"[BandGapTierB] Error estimating band gap for {item['formula']}: {e}")

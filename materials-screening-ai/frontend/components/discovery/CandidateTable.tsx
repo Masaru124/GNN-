@@ -343,10 +343,13 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                         >
                           {cand.estimated_band_gap_eV.toFixed(2)} eV (Tier B)
                         </span>
-                        {(cand.is_solar_optimal || (cand.estimated_band_gap_eV >= 1.1 && cand.estimated_band_gap_eV <= 1.7)) && (
+                        {cand.is_solar_optimal === true && (
                           <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
                             🌞 Solar Optimal (1.1-1.7 eV)
                           </span>
+                        )}
+                        {(cand.is_solar_optimal === null || cand.is_solar_optimal === undefined) && (
+                          <span className="text-[9px] text-muted-foreground italic">—</span>
                         )}
                       </div>
                     ) : (

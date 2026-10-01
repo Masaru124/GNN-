@@ -1,8 +1,10 @@
 {
+  "git_dirty": false,
   "metadata": {
     "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
-    "git_commit": "e4d2a9ac4de863cc5c91b5e190a3ec0aca830aea",
-    "parent_git_commit": "9488b15b391e90b549bcae3e85e6d8c57beeb78e",
+    "git_commit": "7ec21b3a6dd088a93f999bdfe590f9beb729d441",
+    "git_dirty": false,
+    "parent_git_commit": "e0a45ea4534d70b8b9e0123aaba74f99c28e7888",
     "calibration_records_sha256": "7893affeba49606c546130a80b83be6c0d44f9039a7ed0d74a63292c80e91a5a",
     "num_evaluated_samples": 10,
     "num_families": 3,
@@ -67,7 +69,14 @@
     "constant_scissor_loocv_mae": 0.5615079365079366,
     "linear_pbe_loocv_mae": 0.6244903278406392,
     "pooled_mean_delta_loocv_mae": 0.5615079365079366,
-    "q_tilde_in_family": "undefined (infinite)"
+    "q_tilde_in_family": "undefined (infinite)",
+    "deployed_halide_only_no_eps_loocv_mae": 0.212,
+    "halide_only_with_eps_loocv_mae": 0.2251,
+    "halide_only_n6_no_sn_no_eps_loocv_mae": 0.0694,
+    "halide_only_n6_no_sn_with_eps_loocv_mae": 0.0822,
+    "pooled_10_with_eps_loocv_mae": 0.2683,
+    "pooled_10_no_eps_loocv_mae": 0.3145,
+    "mgo_srtio3_batio3_status": "Removed from deployed fit; out-of-family queries return out_of_domain."
   },
   "scissor_plus_ridge_on_residuals": {
     "loocv_mae": 0.5691733213362916,
@@ -276,12 +285,13 @@
         "formula": "FAPbI3",
         "pbe_gap_eV": 1.2996,
         "target_gap_eV": 1.48,
-        "predicted_gap_eV": 1.378,
-        "absolute_error_eV": 0.10200000000000009,
+        "predicted_gap_eV": 1.6665,
+        "absolute_error_eV": 0.1865000000000001,
         "conformal_interval_90_eV": [
-          0.4678,
-          2.2882
+          0.6232,
+          2.7098
         ],
+        "interval_width_eV": 2.0866,
         "is_covered": true,
         "source_target": "Castelli et al. APL Materials 2, 081514 (2014) Table I"
       },
@@ -289,17 +299,18 @@
         "formula": "MASnI3",
         "pbe_gap_eV": 0.351,
         "target_gap_eV": 1.2,
-        "predicted_gap_eV": 0.8733,
-        "absolute_error_eV": 0.3267,
+        "predicted_gap_eV": 1.1145,
+        "absolute_error_eV": 0.08549999999999991,
         "conformal_interval_90_eV": [
           0.0,
-          1.9762
+          2.403
         ],
+        "interval_width_eV": 2.403,
         "is_covered": true,
         "source_target": "Castelli et al. APL Materials 2, 081514 (2014) Table I"
       }
     ],
-    "held_out_mae_eV": 0.21435000000000004,
+    "held_out_mae_eV": 0.136,
     "both_covered_in_interval": true
   },
   "family_permutation_test": {

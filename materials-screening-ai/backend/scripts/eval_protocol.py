@@ -645,6 +645,7 @@ def run_eval_protocol():
     heldout_benchmarks = [
         {
             "formula": "FAPbI3",
+            "role": "validation point (used in the model-selection rule)",
             "pbe_gap_eV": fapbi3_pbe,
             "target_gap_eV": fapbi3_tgt,
             "domain_class": "in_domain_lead_halide",
@@ -705,13 +706,20 @@ def run_eval_protocol():
             "in_family_ridge_loocv_mae": 0.1474,
             "in_family_linear_pbe_loocv_mae": 0.1669,
             "in_family_constant_scissor_loocv_mae": 0.3077,
+            "fapbi3_role": "validation point (used in the model-selection rule)",
+            "in_family_fapbi3_validation_point_errors": {
+                "anion_matched_mean_delta": 0.0848,
+                "linear_pbe_scissor": 0.1364,
+                "ridge_alpha_1": 0.2004,
+                "constant_scissor": 0.4693
+            },
             "in_family_fapbi3_heldout_errors": {
                 "anion_matched_mean_delta": 0.0848,
                 "linear_pbe_scissor": 0.1364,
                 "ridge_alpha_1": 0.2004,
                 "constant_scissor": 0.4693
             },
-            "decision_rule_outcome": "Anion-matched mean delta is within 0.05 eV of Ridge on LOOCV (0.1296 vs 0.1474 eV) and no worse on FAPbI3 (0.0848 vs 0.2004 eV); deployed as primary in-family predictor with Ridge retained as documented alternative."
+            "decision_rule_outcome": "Anion-matched mean delta is within 0.05 eV of Ridge on LOOCV (0.1296 vs 0.1474 eV) and no worse on validation point FAPbI3 (used in the model-selection rule) (0.0848 vs 0.2004 eV); deployed as primary in-family predictor with Ridge retained as documented alternative."
         },
         "baselines": {
             "mean_delta_loocv_mae": float(np.mean(bl_loocv_errs["mean_delta"])),

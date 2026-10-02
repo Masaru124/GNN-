@@ -270,19 +270,23 @@ class TestSyntheticOpenShellAndDomainSafety:
     def test_delta_nonpositive_out_of_domain(self):
         """When predicted delta is nonpositive (<= 0), in-family corrector returns out_of_domain_delta_nonpositive and None gap."""
         corrector = get_delta_ml_corrector()
-        # Input features for halide perovskite that produce negative predicted delta under Ridge model
-        res = corrector.predict_corrected_gap(
-            pbe_gap_ev=2.0,
-            formula="CsPbF3",
-            features={"chi_diff": 0.1, "r_ratio": 1.5, "Z_avg": 90.0, "eps_inf": 5.0}
-        )
-        assert res["predicted_delta_eV"] <= 0.0
-        assert res["status"] == "out_of_domain_delta_nonpositive"
-        assert res["delta_nonpositive"] is True
-        assert res["corrected_gap_eV"] is None
-        assert res["interval_pooled"] is None
-        assert res["interval_chemistry_specific"] is None
-        assert res["provisional"] is True
+        orig_deltas = getattr(corrector, "anion_mean_deltas", {}).copy()
+        try:
+            corrector.anion_mean_deltas["I"] = -0.05
+            res = corrector.predict_corrected_gap(
+                pbe_gap_ev=2.0,
+                formula="CsPbI3",
+                features={"chi_diff": 0.1, "r_ratio": 1.5, "Z_avg": 90.0, "eps_inf": 5.0}
+            )
+            assert res["predicted_delta_eV"] <= 0.0
+            assert res["status"] == "out_of_domain_delta_nonpositive"
+            assert res["delta_nonpositive"] is True
+            assert res["corrected_gap_eV"] is None
+            assert res["interval_pooled"] is None
+            assert res["interval_chemistry_specific"] is None
+            assert res["provisional"] is True
+        finally:
+            corrector.anion_mean_deltas = orig_deltas
 
     def test_features_source_provenance_and_provisional_flag(self):
         """All predictions include features_source and provisional: True flag, and require eps_inf."""
@@ -298,7 +302,7 @@ class TestSyntheticOpenShellAndDomainSafety:
         # In-family (halide perovskite) deploys anion_matched_mean_delta (with ridge alternative)
         res_in = corrector.predict_corrected_gap(pbe_gap_ev=1.532, formula="CsPbBr3", features={"eps_inf": 5.30})
         assert res_in["provisional"] is True
-        assert res_in["status"] in ("anion_matched_mean_delta", "delta_ml_ridge")
+        assert res_in["status"] == "anion_matched_mean_delta"
         assert "features_source" in res_in
         assert isinstance(res_in["features_source"], dict)
         for key in ["chi_diff", "r_ratio", "Z_avg", "eps_inf"]:

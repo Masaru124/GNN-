@@ -50,9 +50,9 @@ $$H_{\text{ridge}} = \frac{1}{n} \mathbf{1}\mathbf{1}^T + Z (Z^T Z + \alpha I)^{
 
 ### Deployed Predictor Rule
 - **Out-of-Family / Cross-Family**: Deploy **Linear PBE Scissor** ($E_{\text{exp}} = 1.4840 \cdot E_{\text{PBE}} + 0.0251$, LOCO MAE **0.6597 eV**).
-- **In-Family (Pb-only Halide Perovskites $n=6$)**: Deploy **Anion-Matched Mean $\Delta$ Scissor** because on LOOCV it achieves MAE **0.1296 eV** (beating Ridge **0.1474 eV**, 2-parameter linear scissor **0.1669 eV**, and constant scissor **0.3077 eV**) and on held-out $\text{FAPbI}_3$ achieves error **0.0848 eV** (beating Ridge **0.2004 eV**). Per the decision rule (simple baseline within 0.05 eV of Ridge on LOOCV and no worse on held-out), Anion-Matched Mean $\Delta$ is deployed and Ridge is retained as a documented alternative.
+- **In-Family (Pb-only Halide Perovskites $n=6$)**: Deploy **Anion-Matched Mean $\Delta$ Scissor** because on LOOCV it achieves MAE **0.1296 eV** (beating Ridge **0.1474 eV**, 2-parameter linear scissor **0.1669 eV**, and constant scissor **0.3077 eV**) and on validation point $\text{FAPbI}_3$ (used in the model-selection rule) achieves error **0.0848 eV** (beating Ridge **0.2004 eV**). Per the decision rule (simple baseline within 0.05 eV of Ridge on LOOCV and no worse on validation point), Anion-Matched Mean $\Delta$ is deployed and Ridge is retained as a documented alternative.
 
-| Method / Regime | LOOCV MAE (eV) | LOCO MAE (eV) | In-Family (Pb Perovskites $n=6$) MAE | $\text{FAPbI}_3$ Error (eV) | Deployed Role |
+| Method / Regime | LOOCV MAE (eV) | LOCO MAE (eV) | In-Family (Pb Perovskites $n=6$) MAE | $\text{FAPbI}_3$ Validation Error (eV) | Deployed Role |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Anion-Matched Mean $\Delta$** | **0.1296** | n/a | **0.1296** | **0.0848** | **Deployed In-Family (Pb Perovskites)** |
 | **Ridge ($\alpha=1.0$, No $\epsilon_\infty$)** | 0.1474 | 1.1896 | 0.1474 | 0.2004 | Documented In-Family Alternative |
@@ -67,7 +67,7 @@ $$H_{\text{ridge}} = \frac{1}{n} \mathbf{1}\mathbf{1}^T + Z (Z^T Z + \alpha I)^{
    - For 80% coverage: $k = \lceil (6 + 1) \cdot 0.80 \rceil = 6 \le 6$ (strictly valid finite-sample order statistic).
    - Calibrated 80% conformal quantile:
      $$\tilde{q}_{80} = \mathbf{0.2157\text{ eV}}.$$
-   - On held-out $\text{FAPbI}_3$ ($E_{\text{PBE}} = 1.2656\text{ eV}$), prediction $1.5648\text{ eV}$ with interval $[1.3491, 1.7804]\text{ eV}$ contains target $1.48\text{ eV}$:
+   - On validation point $\text{FAPbI}_3$ (used in the model-selection rule) ($E_{\text{PBE}} = 1.2656\text{ eV}$), prediction $1.5648\text{ eV}$ with interval $[1.3491, 1.7804]\text{ eV}$ contains target $1.48\text{ eV}$:
      **1/1 held-out point inside the interval (not a coverage validation)**.
 2. **Out-of-Domain Sn Halides**:
    - $\text{MASnI}_3$ triggers the Sn/SOC out-of-domain gate with status `out_of_domain` (`reason: 'Sn/SOC regime, 1 calibration point'`).

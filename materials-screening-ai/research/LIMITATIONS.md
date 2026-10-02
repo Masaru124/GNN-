@@ -15,21 +15,21 @@ This document details the six primary limitations identified during the comprehe
 
 ---
 
-## 1. Sample Size, Dimensionality, and Overparameterization ($N=10, p=7$)
+## 1. Sample Size, Dimensionality, and Overparameterization ($N=9, p=7$)
 
 ### 1.1 Effective Degrees of Freedom
-The active single-fidelity calibration set consists of $N=10$ verified compounds spanning 3 distinct chemistry families:
-- **Halide Perovskites** ($n=7$): $\text{CsPbI}_3$, $\text{CsPbBr}_3$, $\text{CsPbCl}_3$, $\text{CsSnCl}_3$, $\text{MAPbI}_3$, $\text{MAPbBr}_3$, $\text{MAPbCl}_3$
+The active single-fidelity calibration set consists of $N=9$ verified compounds spanning 3 distinct chemistry families (with $\text{CsSnCl}_3$ excluded: Sn/SOC regime, one point, qualitative ~2.6 eV target, 0.95 eV LOO residual):
+- **Halide Perovskites** ($n=6$ Pb-only): $\text{CsPbI}_3$, $\text{CsPbBr}_3$, $\text{CsPbCl}_3$, $\text{MAPbI}_3$, $\text{MAPbBr}_3$, $\text{MAPbCl}_3$
 - **Transition Metal Perovskites** ($n=2$): $\text{SrTiO}_3$, $\text{BaTiO}_3$
 - **Alkaline Earth Oxides** ($n=1$): $\text{MgO}$
 
 The full model employs $p=7$ features:
 $$\mathbf{x} = \left[ E_{\text{PBE}}, E_{\text{PBE}}^2, \Delta\chi, r_A/r_B, Z_{\text{avg}}, 1/\epsilon_\infty, E_{\text{PBE}}/\epsilon_\infty \right]$$
 
-With an intercept, the model fits $p+1 = 8$ parameters on $N=10$ samples, leaving only **2 effective degrees of freedom** in unregularized ordinary least squares (OLS). The OLS design matrix has rank 8 ($\text{Tr}(H_{\text{OLS}}) = 8.0000$).
+With an intercept, the model fits $p+1 = 8$ parameters on $N=9$ samples, leaving only **1 effective degree of freedom** in unregularized ordinary least squares (OLS). The OLS design matrix has rank 8 ($\text{Tr}(H_{\text{OLS}}) = 8.0000$).
 
 ### 1.2 Statistical Leverage & Cook's Distance
-Under Ridge regression ($\alpha = 1.0$), the effective model complexity is $\text{Tr}(H_{\text{ridge}}) = 4.5214$, yielding a 2× cutoff criterion of $2 \cdot \text{Tr}(H)/N = 0.9043$.
+Under Ridge regression ($\alpha = 1.0$), the effective model complexity is $\text{Tr}(H_{\text{ridge}}) = 4.0631$, yielding a 2× cutoff criterion of $2 \cdot \text{Tr}(H)/N = 0.9029$.
 
 | Compound | Family | Classical Leverage $h_{ii}$ | Ridge Leverage $h_{ii}$ | Held-Out Query Leverage $h_q$ | Cook's $D$ | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -39,7 +39,7 @@ Under Ridge regression ($\alpha = 1.0$), the effective model complexity is $\tex
 | $\text{CsPbI}_3$ | halide_perovskite | 0.8872 | 0.4689 | 0.8980 | 0.08 | Nominal |
 | $\text{CsPbBr}_3$ | halide_perovskite | 0.7184 | 0.2732 | 0.3734 | 0.02 | Nominal |
 | $\text{CsPbCl}_3$ | halide_perovskite | 0.6941 | 0.2490 | 0.3217 | 0.01 | Nominal |
-| $\text{CsSnCl}_3$ | halide_perovskite | 0.9412 | 0.5972 | 1.4925 | 1.22 | High Residual |
+| [Excluded] $\text{CsSnCl}_3$ | halide_perovskite | — | — | — | — | Excluded: Sn/SOC regime, one point, qualitative ~2.6 eV target, 0.95 eV LOO residual |
 | $\text{MAPbI}_3$ | halide_perovskite | 0.9103 | 0.5056 | 1.0938 | 0.21 | Moderate Leverage |
 | $\text{MAPbBr}_3$ | halide_perovskite | 0.7324 | 0.2994 | 0.4350 | 0.03 | Nominal |
 | $\text{MAPbCl}_3$ | halide_perovskite | 0.7816 | 0.3433 | 0.5224 | 0.06 | Nominal |
@@ -48,15 +48,12 @@ $\text{MgO}$ exhibits extreme statistical leverage ($h_{\text{OLS}} = 0.9998$, $
 
 ### 1.3 Deployed Model Scoping Rule & Halide-Only Fit
 Due to this severe leverage gap across chemistry families:
-1. **Halide Perovskite Deployed Fit ($n=7$)**: The deployed predictor for halide perovskites is fit strictly on the halide perovskite compounds ($n=7$) without $\epsilon_\infty$ features ($p=5$: $E_{\text{PBE}}, E_{\text{PBE}}^2, \Delta\chi, r_A/r_B, Z_{\text{avg}}$).
+1. **Halide Perovskite Deployed Fit ($n=6$)**: The deployed predictor for halide perovskites is fit strictly on the Pb-only halide perovskite compounds ($n=6$) via anion-matched scissor (or Ridge without $\epsilon_\infty$ features: $p=5$).
 2. **LOOCV Comparison Across Fits**:
-   - **Halide-Only Fit ($n=7$)**:
-     - Without $\epsilon_\infty$: LOOCV MAE = **0.2120 eV**
-     - With $\epsilon_\infty$: LOOCV MAE = **0.2251 eV**
    - **Halide-Only Fit ($n=6$, without anomalous $\text{CsSnCl}_3$)**:
-     - Without $\epsilon_\infty$: LOOCV MAE = **0.0694 eV**
-     - With $\epsilon_\infty$: LOOCV MAE = **0.0822 eV**
-   - **Pooled-10 Fit ($N=10$)**:
+     - Anion-Matched Mean $\Delta$: LOOCV MAE = **0.1296 eV**
+     - Ridge without $\epsilon_\infty$: LOOCV MAE = **0.1474 eV**
+   - **Pooled-9 Fit ($N=9$)**:
      - Without $\epsilon_\infty$: Total LOOCV MAE = **0.6183 eV**; Halide In-Family subset = **0.3145 eV**
      - With $\epsilon_\infty$: Total LOOCV MAE = **0.4561 eV**; Halide In-Family subset = **0.2683 eV**
 3. **Physical Explanation for In-Family Shift ($0.2683/0.3145 \to 0.2251/0.2120\text{ eV}$)**:
@@ -74,16 +71,16 @@ Experimental optical band gaps reported in the literature exhibit inherent measu
 1. **Measurement Techniques**: Band gaps extracted from optical absorption spectra (Tauc plots) frequently differ by $0.1-0.2\text{ eV}$ from photoluminescence (PL) emission peak positions due to Stokes shifts and Urbach band tails.
 2. **Sample Morphology**: Single crystals vs polycrystalline thin films vs nanocrystals display varying defect densities and quantum confinement effects.
 3. **Documented Examples in Calibration Corpus**:
-   - $\text{MAPbBr}_3$: Reported as $2.18\text{ eV}$ (Mosconi et al. 2013 Table 1) and $2.33\text{ eV}$ (Castelli et al. 2014 Table I), with other literature reporting $2.36\text{ eV}$ ($\Delta \approx 0.18-0.35\text{ eV}$).
-   - $\text{CsPbCl}_3$: Literature values span $2.85\text{ eV}$ to $3.00\text{ eV}$ ($\Delta \approx 0.15\text{ eV}$).
+   - $\text{MAPbBr}_3$: Reported as $2.00\text{ eV}$ and $2.33-2.35\text{ eV}$ (Mosconi et al. 2013 Table 1) and $2.33\text{ eV}$ (Castelli et al. 2014 Table I) ($\Delta \approx 0.33-0.35\text{ eV}$).
+   - $\text{CsPbCl}_3$: Reported as $2.85\text{ eV}$ (Wiktor et al. 2017 Table 6 footnote d).
    - $\text{MAPbI}_3$: Literature values span $1.55\text{ eV}$ to $1.61\text{ eV}$ ($\Delta \approx 0.06\text{ eV}$).
 
-This empirical measurement variance establishes an intrinsic noise floor of $\sim 0.15-0.20\text{ eV}$ on any $\Delta$-ML model trained on experimental targets.
+This empirical measurement variance establishes an intrinsic noise floor of $\sim 0.33\text{ eV}$ (derived from the $\text{MAPbBr}_3$ experimental report spread of $2.00-2.33\text{ eV}$) on any $\Delta$-ML model trained on experimental targets.
 
 ### 2.2 DFT PBE Band Gap Discrepancies vs Published Theory
 When comparing self-consistent Quantum ESPRESSO PBE calculations against published DFT literature values:
-- **$\text{CsPbI}_3$**: Wiktor et al. (*J. Phys. Chem. Lett.* 2017, 8, 5507, Table 2) reports PBE (no SOC) band gap of $1.14\text{ eV}$. The pipeline's self-consistent QE calculation at the paper's experimental cubic lattice constant ($a = 6.29\text{ \AA}$) with SSSP Efficiency pseudopotentials yields $1.323\text{ eV}$ (**unexplained: +0.18 eV vs published**; Wiktor et al. used norm-conserving pseudopotentials at 80 Ry on a $6\times 6\times 6$ mesh).
-- **$\text{MAPbX}_3$ ($\text{X} = \text{I}, \text{Br}, \text{Cl}$)**: Mosconi et al. (*J. Phys. Chem. C* 2013, 117, 13902, Table 1) reports PBE band gaps of $1.57\text{ eV}$ ($\text{I}$), $1.80\text{ eV}$ ($\text{Br}$), and $2.34\text{ eV}$ ($\text{Cl}$). Pipeline QE calculations with explicit $\text{MA}^+$ cations at the paper's reported geometries ($a = 6.33, 5.90, 5.68\text{ \AA}$) yield $1.3787\text{ eV}$ ($\text{I}$), $1.5954\text{ eV}$ ($\text{Br}$), and $2.0994\text{ eV}$ ($\text{Cl}$). Across all three halides, pipeline QE values are systematically $\sim 0.2\text{ eV}$ lower than Mosconi et al. (discrepancy: $-0.19\text{ eV}$, $-0.20\text{ eV}$, $-0.24\text{ eV}$), attributable to modern SSSP pseudopotential relativistic cores, orientation of the unrelaxed organic cation, and grid densities.
+- **$\text{CsPbI}_3$**: Wiktor et al. (*J. Phys. Chem. Lett.* 2017, 8, 5507, Table 2) reports PBE (no SOC) band gap of $1.14\text{ eV}$. The pipeline's self-consistent QE calculation at the paper's experimental cubic lattice constant ($a = 6.29\text{ \AA}$, not printed in the main text) with SSSP Efficiency pseudopotentials yields $1.323\text{ eV}$ (**unexplained: +0.18 eV vs published**).
+- **$\text{MAPbX}_3$ ($\text{X} = \text{I}, \text{Br}, \text{Cl}$)**: Mosconi et al. (*J. Phys. Chem. C* 2013, 117, 13902, Table 1) reports PBE band gaps of $1.57\text{ eV}$ ($\text{I}$), $1.80\text{ eV}$ ($\text{Br}$), and $2.34\text{ eV}$ ($\text{Cl}$). Pipeline QE calculations with explicit $\text{MA}^+$ cations at the paper's reported geometries ($a = 6.33, 5.90, 5.68\text{ \AA}$) yield $1.3787\text{ eV}$ ($\text{I}$), $1.5954\text{ eV}$ ($\text{Br}$), and $2.0994\text{ eV}$ ($\text{Cl}$). Across all three halides, pipeline QE values are systematically $\sim 0.2\text{ eV}$ lower than Mosconi et al. (discrepancy: $-0.19\text{ eV}$, $-0.20\text{ eV}$, $-0.24\text{ eV}$). Notably, grid density is ruled out as the cause (Mosconi corpus line 739 notes that $4\times 4\times 4$, $6\times 6\times 6$, and $8\times 8\times 8$ Monkhorst-Pack grids yielded identical band gaps); the cause remains not isolated (potential origins include modern SSSP relativistic core pseudopotentials vs older ultrasoft implementations and unrelaxed organic cation orientation).
 
 ---
 

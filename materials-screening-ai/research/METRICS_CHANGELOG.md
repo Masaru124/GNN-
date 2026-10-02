@@ -16,7 +16,7 @@ All production values are frozen and computed reproducibly by `eval_protocol.py`
 | **In-Family Halide Perovskite Ridge LOOCV MAE** | **0.1474 eV** | Ridge ($\alpha=1.0$, No $\epsilon_\infty$, Documented Alternative) | 5 physics features | 6 (Pb-only) |
 | **In-Family Halide Perovskite Linear PBE LOOCV MAE** | **0.1669 eV** | 2-Parameter Linear PBE Scissor ($E_{\text{exp}} = 1.8863 E_{\text{PBE}} - 0.7708$) | Baseline | 6 (Pb-only) |
 | **In-Family Halide Perovskite Constant Scissor MAE** | **0.3077 eV** | Constant Scissor (Mean $\Delta$) | Baseline | 6 (Pb-only) |
-| **Held-Out $\text{FAPbI}_3$ Absolute Error** | **0.0848 eV** | Anion-Matched Mean $\Delta$ (vs Ridge 0.2004 eV, Linear 0.1364 eV) | Prediction: 1.5648 eV (Target: 1.48 eV) | Held-out |
+| **Validation Point $\text{FAPbI}_3$ Absolute Error** | **0.0848 eV** | Anion-Matched Mean $\Delta$ (vs Ridge 0.2004 eV, Linear 0.1364 eV) | Prediction: 1.5648 eV (Target: 1.48 eV) | Validation point (used in the model-selection rule) |
 | **$\tilde{q}_{\text{in\_family}}$ (Halide Perovskite 80%)** | **0.2157 eV** | Finite-sample order statistic ($k = \lceil 7 \times 0.80 \rceil = 6 \le 6$) | $n=6$ Pb-only | 6 |
 | **Held-Out Benchmark Interval Coverage** | **1/1 inside interval** | 1/1 held-out point inside the interval (not a coverage validation) | Interval: $[1.3491, 1.7804]$ eV | 1 |
 
@@ -55,9 +55,9 @@ All production values are frozen and computed reproducibly by `eval_protocol.py`
      - 2-Parameter Linear PBE Scissor: LOOCV MAE = **0.1669 eV**, $\text{FAPbI}_3$ error = **0.1364 eV**
      - Ridge ($\alpha=1.0$, No $\epsilon_\infty$): LOOCV MAE = **0.1474 eV**, $\text{FAPbI}_3$ error = **0.2004 eV**
      - Anion-Matched Mean $\Delta$: LOOCV MAE = **0.1296 eV**, $\text{FAPbI}_3$ error = **0.0848 eV**
-   - **Rule Application**: Anion-Matched Mean $\Delta$ is within 0.05 eV of Ridge on LOOCV ($|0.1296 - 0.1474| = 0.0178 \le 0.05\text{ eV}$) and has lower error on held-out $\text{FAPbI}_3$ ($0.0848\text{ eV} < 0.2004\text{ eV}$).
+   - **Rule Application**: Anion-Matched Mean $\Delta$ is within 0.05 eV of Ridge on LOOCV ($|0.1296 - 0.1474| = 0.0178 \le 0.05\text{ eV}$) and has lower error on validation point $\text{FAPbI}_3$ (used in the model-selection rule) ($0.0848\text{ eV} < 0.2004\text{ eV}$).
    - **Deployment**: Deploy **Anion-Matched Mean $\Delta$** as the primary in-family predictor; retain Ridge as a documented alternative.
-   - **Conformal Coverage**: Valid 80% conformal quantile $q_{80} = \mathbf{0.2157\text{ eV}}$. On held-out $\text{FAPbI}_3$, 1/1 held-out point inside the interval (not a coverage validation). $\text{MASnI}_3$ is gated as out-of-domain.
+   - **Conformal Coverage**: Valid 80% conformal quantile $q_{80} = \mathbf{0.2157\text{ eV}}$. On validation point $\text{FAPbI}_3$ (used in the model-selection rule), 1/1 held-out point inside the interval (not a coverage validation). $\text{MASnI}_3$ is gated as out-of-domain.
 
 ### Scientific Finding
-*"On the single-fidelity verified experimental optical gap calibration set (N=9 active, n=6 Pb-only perovskites), a simple anion-matched scissor achieves LOOCV MAE 0.1296 eV and held-out FAPbI3 error 0.0848 eV, outperforming Ridge regression (0.1474 eV LOOCV, 0.2004 eV held-out). Across chemical families, a 2-parameter linear PBE scissor achieves superior generalization (LOCO MAE 0.6597 eV vs 1.0190 eV Ridge). Tin perovskites require a distinct SOC domain gate due to differing relativistic core physics."*
+*"On the single-fidelity verified experimental optical gap calibration set (N=9 active, n=6 Pb-only perovskites), a simple anion-matched scissor achieves LOOCV MAE 0.1296 eV and validation point FAPbI3 (used in the model-selection rule) error 0.0848 eV, outperforming Ridge regression (0.1474 eV LOOCV, 0.2004 eV held-out). Across chemical families, a 2-parameter linear PBE scissor achieves superior generalization (LOCO MAE 0.6597 eV vs 1.0190 eV Ridge). Tin perovskites require a distinct SOC domain gate due to differing relativistic core physics."*

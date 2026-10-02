@@ -40,7 +40,7 @@ class TestCrossArtifactParity:
         return rows
 
     def test_python_records_count(self):
-        """Canonical record count for active fit is 9 (Pb-only perovskites + oxides) with 1 excluded (CsSnCl3)."""
+        """Canonical record count for active fit is 9 (Pb-only perovskites + oxides) with 1 excluded (CsSnCl3: Sn/SOC regime, one point, qualitative ~2.6 eV target, 0.95 eV LOO residual)."""
         from app.services.delta_ml_corrector import EXCLUDED_UNVERIFIED_RECORDS
         assert len(CALIBRATION_RECORDS) == 9, (
             f"Expected 9 CALIBRATION_RECORDS, got {len(CALIBRATION_RECORDS)}"
@@ -289,21 +289,21 @@ class TestCrossArtifactParity:
 
         # Gate test 3: 0.10 eV -> above 0.10 eV, but below 0.327 eV -> predicted, extrapolation_floor_flag = True
         res_010 = corrector.predict_corrected_gap(pbe_gap_ev=0.10, formula="CsPbI3", features={"eps_inf": 6.10})
-        assert res_010["status"] in ("linear_pbe_scissor", "delta_ml_ridge", "anion_matched_mean_delta")
+        assert res_010["status"] == "anion_matched_mean_delta"
         assert res_010["corrected_gap_eV"] is not None
         assert res_010["extrapolation_floor_flag"] is True
         assert res_010["domain_floor_eV"] == 0.3270
 
         # Gate test 4: 0.20 eV -> above 0.10 eV, but below 0.327 eV -> predicted, extrapolation_floor_flag = True
         res_020 = corrector.predict_corrected_gap(pbe_gap_ev=0.20, formula="CsPbI3", features={"eps_inf": 6.10})
-        assert res_020["status"] in ("linear_pbe_scissor", "delta_ml_ridge", "anion_matched_mean_delta")
+        assert res_020["status"] == "anion_matched_mean_delta"
         assert res_020["corrected_gap_eV"] is not None
         assert res_020["extrapolation_floor_flag"] is True
         assert res_020["domain_floor_eV"] == 0.3270
 
         # Gate test 5: 0.327 eV -> domain floor calibration point on Pb compound -> predicted, extrapolation_floor_flag = False
         res_0327 = corrector.predict_corrected_gap(pbe_gap_ev=0.327, formula="CsPbI3", features={"eps_inf": 6.50})
-        assert res_0327["status"] in ("linear_pbe_scissor", "delta_ml_ridge", "anion_matched_mean_delta")
+        assert res_0327["status"] == "anion_matched_mean_delta"
         assert res_0327["corrected_gap_eV"] is not None
         assert res_0327["extrapolation_floor_flag"] is False
         assert res_0327["domain_floor_eV"] == 0.3270
@@ -399,8 +399,8 @@ class TestCrossArtifactParity:
 
     def test_doc_prose_numerical_parity_scan(self):
         """
-        Verify that metrics.json contains valid, internally consistent figures
-        and that documentation files exist and cite valid metrics.
+        Scan research/*.md for stale constants (N=10, 0.7273, 2.450, 1.550, 0.1552, eps_inf)
+        and require current constants (0.1296, 0.1474, 0.2157, FAPbI3 0.0848/0.2004) to match metrics.json within 1e-3.
         """
         import json
         metrics_path = RESEARCH_DIR / "metrics.json"
@@ -408,8 +408,37 @@ class TestCrossArtifactParity:
         with open(metrics_path, encoding="utf-8") as f:
             metrics = json.load(f)
 
-        # Check key metrics exist in metrics.json and match audited values
-        assert metrics["production_ridge_alpha_1"]["loocv_mae"] > 0
+        expected_constants = {
+            "0.1296": metrics["deployed_model_decision"]["in_family_anion_matched_mean_delta_loocv_mae"],
+            "0.1474": metrics["deployed_model_decision"]["in_family_ridge_loocv_mae"],
+            "0.2157": metrics["halide_perovskites_in_family"]["conformal_80_quantile_q_tilde_eV"],
+            "0.0848": metrics["deployed_model_decision"]["in_family_fapbi3_heldout_errors"]["anion_matched_mean_delta"],
+            "0.2004": metrics["deployed_model_decision"]["in_family_fapbi3_heldout_errors"]["ridge_alpha_1"],
+        }
+
+        stale_constants = ["N=10", "0.7273", "2.450", "1.550", "0.1552", "eps_inf"]
+
+        doc_files = list(RESEARCH_DIR.glob("*.md"))
+        assert len(doc_files) > 0, "No markdown files found in research directory"
+
+        found_expected_counts = {const: 0 for const in expected_constants}
+
+        for doc in doc_files:
+            lines = doc.read_text(encoding="utf-8").splitlines()
+            for line_no, line in enumerate(lines, 1):
+                # Ensure no stale constants exist
+                for stale in stale_constants:
+                    assert stale not in line, f"[{doc.name}:{line_no}] Stale constant '{stale}' found in documentation prose!"
+
+                for const_str, comp_val in expected_constants.items():
+                    if const_str in line:
+                        found_expected_counts[const_str] += 1
+                        diff = abs(float(const_str) - comp_val)
+                        assert diff < 1e-3, f"[{doc.name}:{line_no}] Doc constant '{const_str}' mismatch vs metrics.json {comp_val:.4f}"
+
+        for const_str, count in found_expected_counts.items():
+            assert count > 0, f"Expected constant '{const_str}' was not found in any research/*.md file"
+
         assert metrics["halide_perovskites_in_family"]["deployed_n6_pb_only_loocv_mae"] == 0.1296
         assert metrics["halide_perovskites_in_family"]["conformal_80_quantile_q_tilde_eV"] == 0.2157
         assert metrics["held_out_test_evaluations"]["benchmark_candidates"][1]["out_of_domain"] is True

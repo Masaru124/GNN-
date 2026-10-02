@@ -68,5 +68,5 @@ A complete provenance review of dielectric constants $\epsilon_\infty$ used in t
   - Ridge ($\alpha=1.0$, No $\epsilon_\infty$): LOOCV MAE = **0.1474 eV**, held-out $\text{FAPbI}_3$ error = **0.2004 eV** (Documented Alternative)
   - 2-Parameter Linear PBE Scissor: LOOCV MAE = **0.1669 eV**, held-out $\text{FAPbI}_3$ error = **0.1364 eV**
   - Constant Scissor: LOOCV MAE = **0.3077 eV**, held-out $\text{FAPbI}_3$ error = **0.4693 eV**
-- **Conformal Prediction**: In-family Pb-only ($n=6$) achieves mathematically valid 80% conformal coverage ($k = \lceil (6 + 1) \cdot 0.80 \rceil = 6 \le 6$) with calibrated quantile $\tilde{q}_{80} = \mathbf{0.2157\text{ eV}}$. On held-out $\text{FAPbI}_3$, 1/1 held-out point inside the interval (not a coverage validation).
+- **Conformal Prediction**: In-family Pb-only ($n=6$): finite-sample marginal guarantee under exchangeability (n=6); interval is wide with calibrated quantile $\tilde{q}_{80} = \mathbf{0.2157\text{ eV}}$. On validation point $\text{FAPbI}_3$ (used in the model-selection rule), 1/1 held-out point inside the interval (not a coverage validation).
 - **Cross-Family Performance**: Linear Scissor LOCO MAE = **0.6597 eV** vs Nested Ridge LOCO MAE = **1.0190 eV** (**Linear Scissor Deployed Cross-Family**).

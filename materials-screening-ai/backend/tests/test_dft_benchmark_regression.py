@@ -257,7 +257,7 @@ def test_delta_ml_domain_safety_and_loocv():
     """Verify Delta-ML LOOCV accuracy, effective n=10 (single-fidelity experimental optical gaps), and PBE+U domain boundary."""
     corrector = get_delta_ml_corrector()
     assert corrector._is_fitted, "Delta-ML corrector was not fitted"
-    assert corrector.effective_n in (9, 10), f"Effective n={corrector.effective_n}, expected 9 or 10"
+    assert corrector.effective_n == 9, f"Effective n={corrector.effective_n}, expected 9"
 
     # LOOCV accuracy check
     rep = corrector.get_validation_report()

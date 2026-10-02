@@ -168,7 +168,7 @@ CALIBRATION_RECORDS = [
 
 # Excluded pending primary literature verification / theory-only:
 EXCLUDED_UNVERIFIED_RECORDS = [
-    (0.799, 2.60, 2.37, 0.3846, 31.2, 5.20, "CsSnCl3", "Excluded from Pb-only deployed fit: Sn/SOC regime, 1 calibration point", "mp-977416", "halide_perovskite"),
+    (0.799, 2.60, 2.37, 0.3846, 31.2, 5.20, "CsSnCl3", "Excluded from Pb-only deployed fit: Sn/SOC regime, one point, qualitative ~2.6 eV target, 0.95 eV LOO residual", "mp-977416", "halide_perovskite"),
     (5.106, 6.48, 2.23, 0.5556, 14.0, 2.54, "NaCl", "Unsourced: Absent from Heyd 2005 SC/40 set Table V; Paier 2006 unavailable locally", "mp-22862", "alkali_halide"),
     (4.165, 5.40, 2.03, 0.6389, 23.0, 2.65, "NaBr", "Unsourced: Landolt-Börnstein III/41B not in local corpus", "mp-23259", "alkali_halide"),
     (3.640, 4.85, 1.73, 0.7778, 32.0, 3.00, "NaI", "Unsourced: Landolt-Börnstein III/41B not in local corpus", "mp-23258", "alkali_halide"),
@@ -823,15 +823,76 @@ class DeltaMLGapCorrector:
             # In-Family Regime: Deployed Halide-perovskite-only Anion-Matched Mean Delta
             # Decision rule: LOOCV MAE 0.1296 eV beats Ridge 0.1474 eV,
             # and FAPbI3 held-out error 0.0848 eV beats Ridge 0.2004 eV.
-            # Ridge is retained as a documented alternative.
+            # Domain constraint: strictly calibrated on pure Pb + {Cl, Br, I} + {Cs, MA, FA}.
+            is_valid_domain = True
+            domain_rejection_reason = None
             halide = None
+
             if formula:
-                if "Cl" in formula:
-                    halide = "Cl"
-                elif "Br" in formula:
-                    halide = "Br"
-                elif "I" in formula:
-                    halide = "I"
+                try:
+                    f_comp = formula.replace("MA", "CH3NH3").replace("FA", "CH5N2")
+                    comp = Composition(f_comp)
+                    elements = {el.symbol for el in comp.elements}
+
+                    # 1. B-site must be pure Pb
+                    if "Pb" not in elements:
+                        is_valid_domain = False
+                        domain_rejection_reason = "Non-Pb B-site: in-family domain restricted to pure lead halide perovskites"
+                    elif any(el in {"Sn", "Ge", "Bi", "Sb", "Ti", "Zr"} for el in elements):
+                        is_valid_domain = False
+                        domain_rejection_reason = "B-site alloy/non-Pb metal: in-family domain restricted to pure lead halide perovskites"
+
+                    # 2. Halide must be exactly ONE pure halide from {Cl, Br, I} (no F, no mixed halides)
+                    found_halogens = elements & {"F", "Cl", "Br", "I"}
+                    if "F" in found_halogens:
+                        is_valid_domain = False
+                        domain_rejection_reason = "Fluoride halide out of calibration domain: pure {Cl, Br, I} required"
+                    elif len(found_halogens) > 1:
+                        is_valid_domain = False
+                        domain_rejection_reason = f"Mixed halide ({'/'.join(sorted(found_halogens))}) out of calibration domain: pure single halide required"
+                    elif len(found_halogens) == 1:
+                        halide = list(found_halogens)[0]
+                    else:
+                        is_valid_domain = False
+                        domain_rejection_reason = "No valid halide in {Cl, Br, I} found"
+
+                    # 3. A-site must be from {Cs, MA, FA}
+                    if any(el in {"Rb", "K", "Na", "Li"} for el in elements):
+                        is_valid_domain = False
+                        domain_rejection_reason = f"Uncalibrated A-site cation ({'/'.join(sorted(elements & {'Rb', 'K', 'Na', 'Li'}))}): in-family domain restricted to {{Cs, MA, FA}}"
+                    elif not ("Cs" in elements or "MA" in formula or "FA" in formula or "CH3NH3" in formula or "CH5N2" in formula):
+                        is_valid_domain = False
+                        domain_rejection_reason = "Uncalibrated A-site cation: in-family domain restricted to {Cs, MA, FA}"
+                except Exception as e:
+                    is_valid_domain = False
+                    domain_rejection_reason = f"Failed to parse formula composition: {e}"
+
+            if not is_valid_domain:
+                return {
+                    "formula": formula,
+                    "chemistry_class": chem_class,
+                    "chemistry_mae_eV": chem_mae,
+                    "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                    "corrected_gap_eV": None,
+                    "interval_pooled": None,
+                    "interval_chemistry_specific": None,
+                    "interval_lower": None,
+                    "interval_upper": None,
+                    "interval_width_eV": None,
+                    "q_hat": None,
+                    "status": "out_of_domain",
+                    "out_of_domain": True,
+                    "reason": domain_rejection_reason,
+                    "label": f"Halide perovskite out of calibration domain: {domain_rejection_reason}",
+                    "method": "out_of_domain",
+                    "provisional": True,
+                    "calibration_dataset": CALIBRATION_DATASET_NAME,
+                    "effective_n": self.effective_n,
+                    "features_used": final_features,
+                    "features_source": features_source,
+                    "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                    "requires_metallicity_check": requires_metallicity_check,
+                }
 
             pred_delta = None
             if hasattr(self, "anion_mean_deltas") and halide in self.anion_mean_deltas:

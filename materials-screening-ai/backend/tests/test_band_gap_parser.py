@@ -488,8 +488,6 @@ class TestSyntheticOpenShellAndDomainSafety:
     @pytest.mark.parametrize(
         ("formula", "expected_status"),
         [
-            ("Cs4Pb4I12", "anion_matched_mean_delta"),
-            ("C4H24N4Pb4I12", "anion_matched_mean_delta"),
             ("Cs2PbI4", "out_of_domain"),
             ("C2H12N2PbI3", "out_of_domain"),
             ("Cs0.5FA0.5PbI3", "out_of_domain"),
@@ -540,31 +538,128 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert result["reason"] == reason
         assert result["corrected_gap_eV"] is None
 
-    def test_delta_ml_api_rejects_missing_pbe_gap_without_scissor_fallback(self, monkeypatch):
-        """The API path rejects a missing PBE gap before Delta-ML can apply a fallback."""
+    def test_cs4pb4i12_matches_cspbi3_gap(self):
+        """Cs4Pb4I12 reduces to CsPbI3 and keeps its corrected gap."""
+        corrector = get_delta_ml_corrector()
+        reference = corrector.predict_corrected_gap(1.50, "CsPbI3", {"eps_inf": 5.0})
+        result = corrector.predict_corrected_gap(1.50, "Cs4Pb4I12", {"eps_inf": 5.0})
+
+        assert result["status"] == "anion_matched_mean_delta"
+        assert result["corrected_gap_eV"] == reference["corrected_gap_eV"]
+
+    def test_c4h24n4pb4i12_matches_mapbi3_gap(self):
+        """C4H24N4Pb4I12 reduces to MAPbI3 and keeps its corrected gap."""
+        corrector = get_delta_ml_corrector()
+        reference = corrector.predict_corrected_gap(1.50, "MAPbI3", {"eps_inf": 5.0})
+        result = corrector.predict_corrected_gap(1.50, "C4H24N4Pb4I12", {"eps_inf": 5.0})
+
+        assert result["status"] == "anion_matched_mean_delta"
+        assert result["corrected_gap_eV"] == reference["corrected_gap_eV"]
+
+    def test_c2h12n2pbi3_reports_rejection_reason(self):
+        """C2H12N2PbI3 has A:Pb != 1:1 and returns an explicit rejection reason."""
+        result = get_delta_ml_corrector().predict_corrected_gap(1.50, "C2H12N2PbI3", {"eps_inf": 5.0})
+
+        assert result["status"] == "out_of_domain"
+        assert result["reason"] == "mixed A-site or non-ABX3 stoichiometry: A-site composition (C2H12N2) does not match MA (C1H6N1) or FA (C1H5N2)"
+        assert result["corrected_gap_eV"] is None
+
+    def test_delta_ml_api_rejects_nancl_without_pbe_gap(self, monkeypatch):
+        """NaCl with no PBE gap returns HTTP 400 and persists no correction."""
         from app.api import dft
+
+        candidate = type(
+            "Candidate",
+            (),
+            {
+                "dft_pbe_gap_eV": None,
+                "formula": "NaCl",
+                "dft_delta_ml_gap_eV": None,
+                "dft_delta_ml_interval_lower": None,
+                "dft_delta_ml_interval_upper": None,
+                "dft_delta_ml_q_hat": None,
+            },
+        )()
 
         class FakeQuery:
             def filter(self, _condition):
                 return self
 
             def first(self):
-                return type("Candidate", (), {"dft_pbe_gap_eV": None, "formula": "CsPbI3"})()
+                return candidate
 
         class FakeDb:
+            committed = False
+
             def query(self, _model):
                 return FakeQuery()
+
+            def commit(self):
+                self.committed = True
 
             def close(self):
                 pass
 
-        monkeypatch.setattr(dft, "get_db", lambda: iter([FakeDb()]))
+        db = FakeDb()
+        monkeypatch.setattr(dft, "get_db", lambda: iter([db]))
 
         with pytest.raises(HTTPException) as exc_info:
             dft.apply_delta_ml_correction(123, dft.DeltaMLRequest())
 
         assert exc_info.value.status_code == 400
-        assert "No PBE gap available" in exc_info.value.detail
+        assert exc_info.value.detail == "No PBE gap available for this candidate. Run /api/dft/queue/{id} first."
+        assert candidate.dft_delta_ml_gap_eV is None
+        assert db.committed is False
+
+    def test_delta_ml_api_persists_pb_abx3_correction(self, monkeypatch):
+        """CsPbI3 with a valid PBE gap uses in-domain correction and persists result."""
+        from app.api import dft
+
+        candidate = type(
+            "Candidate",
+            (),
+            {
+                "dft_pbe_gap_eV": 1.323,
+                "formula": "CsPbI3",
+                "dft_delta_ml_gap_eV": None,
+                "dft_delta_ml_interval_lower": None,
+                "dft_delta_ml_interval_upper": None,
+                "dft_delta_ml_q_hat": None,
+                "dft_delta_ml_training_provenance": None,
+                "dft_dielectric_const_pbe": None,
+            },
+        )()
+
+        class FakeQuery:
+            def filter(self, _condition):
+                return self
+
+            def first(self):
+                return candidate
+
+        class FakeDb:
+            committed = False
+
+            def query(self, _model):
+                return FakeQuery()
+
+            def commit(self):
+                self.committed = True
+
+            def close(self):
+                pass
+
+        db = FakeDb()
+        monkeypatch.setattr(dft, "get_db", lambda: iter([db]))
+
+        result = dft.apply_delta_ml_correction(123, dft.DeltaMLRequest(eps_inf=5.8))
+
+        assert result["status"] == "anion_matched_mean_delta"
+        assert result["corrected_gap_eV"] is not None
+        assert candidate.dft_delta_ml_gap_eV == result["corrected_gap_eV"]
+        assert candidate.dft_delta_ml_interval_lower == result["interval_lower"]
+        assert candidate.dft_delta_ml_interval_upper == result["interval_upper"]
+        assert db.committed is True
 
     def test_a_site_composition_equivalence_to_short_names(self):
         """In-domain compositional forms work and give identical corrected gap to short names."""

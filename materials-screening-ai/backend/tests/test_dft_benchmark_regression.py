@@ -13,6 +13,7 @@ pre-registered Materials Project and primary literature reference values:
   7. Delta-ML Corrector: LOOCV validation & PBE+U / metallic domain safety
 """
 
+import shutil
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -25,9 +26,13 @@ from app.services.dft_validation import get_dft_service, DFTValidationService
 from app.services.simulation_service import generate_crystal_prototype
 from app.services.delta_ml_corrector import get_delta_ml_corrector
 
+pytestmark = pytest.mark.qe
+
 
 @pytest.fixture(scope="module")
 def dft_service():
+    if shutil.which("pw.exe") is None:
+        pytest.skip("Quantum ESPRESSO pw.exe not available in PATH.")
     svc = get_dft_service()
     if not svc.qe_available:
         pytest.skip("Quantum ESPRESSO (pw.exe) not available in environment.")

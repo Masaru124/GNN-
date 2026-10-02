@@ -390,8 +390,9 @@ def apply_delta_ml_correction(candidate_id: int, req: DeltaMLRequest) -> Dict[st
         cand.dft_delta_ml_gap_eV = result["corrected_gap_eV"]
         cand.dft_delta_ml_interval_lower = result["interval_lower"]
         cand.dft_delta_ml_interval_upper = result["interval_upper"]
-        cand.dft_delta_ml_q_hat = result["q_hat"]
-        cand.dft_delta_ml_training_provenance = f"delta_ml_ridge (method={result['method']}, q_hat={result['q_hat']})"
+        q_hat = result.get("q_hat", result.get("q_hat_pooled"))
+        cand.dft_delta_ml_q_hat = q_hat
+        cand.dft_delta_ml_training_provenance = f"delta_ml_ridge (method={result['method']}, q_hat={q_hat})"
         if req.eps_inf is not None:
             cand.dft_dielectric_const_pbe = req.eps_inf
 

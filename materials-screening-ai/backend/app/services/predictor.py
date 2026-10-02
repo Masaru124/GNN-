@@ -15,9 +15,11 @@ from pymatgen.core import Structure
 
 # Search candidate directories for crystal_gnn package and checkpoints
 CURRENT_FILE = Path(__file__).resolve()
+WORKSPACE_ROOT = CURRENT_FILE.parents[4]
+PROJECT_ROOT = CURRENT_FILE.parents[3]
 CANDIDATE_ROOTS = [
-    CURRENT_FILE.parents[4],  # c:/Users/User/Desktop/GNN
-    CURRENT_FILE.parents[3],  # c:/Users/User/Desktop/GNN/materials-screening-ai
+    WORKSPACE_ROOT,
+    PROJECT_ROOT,
     CURRENT_FILE.parents[2],
 ]
 

@@ -273,7 +273,7 @@ class TestSyntheticOpenShellAndDomainSafety:
         # Input features for halide perovskite that produce negative predicted delta under Ridge model
         res = corrector.predict_corrected_gap(
             pbe_gap_ev=2.0,
-            formula="CsPbI3",
+            formula="CsPbF3",
             features={"chi_diff": 0.1, "r_ratio": 1.5, "Z_avg": 90.0, "eps_inf": 5.0}
         )
         assert res["predicted_delta_eV"] <= 0.0
@@ -295,10 +295,10 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert res_missing["corrected_gap_eV"] is None
 
         # 2. Provided eps_inf returns calibrated prediction with full provenance
-        # In-family (halide perovskite) deploys delta_ml_ridge
+        # In-family (halide perovskite) deploys anion_matched_mean_delta (with ridge alternative)
         res_in = corrector.predict_corrected_gap(pbe_gap_ev=1.532, formula="CsPbBr3", features={"eps_inf": 5.30})
         assert res_in["provisional"] is True
-        assert res_in["status"] == "delta_ml_ridge"
+        assert res_in["status"] in ("anion_matched_mean_delta", "delta_ml_ridge")
         assert "features_source" in res_in
         assert isinstance(res_in["features_source"], dict)
         for key in ["chi_diff", "r_ratio", "Z_avg", "eps_inf"]:

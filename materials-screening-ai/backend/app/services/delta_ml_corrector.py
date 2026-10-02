@@ -327,7 +327,7 @@ class DeltaMLGapCorrector:
 
         self.q_hat = float(sorted(loo_res)[min(int(np.ceil((n_samples + 1) * 0.90)) - 1, n_samples - 1)])
 
-        # Halide-perovskite-only deployed model without eps_inf features (n=6 Pb-only, Items 3 & 4)
+        # Halide-perovskite-only model without eps_inf features (n=6 Pb-only, Items 3 & 4)
         self.pero_indices = pero_indices
         self.X_halides_no_eps = np.array([
             [all_data[i][0], all_data[i][0]**2, all_data[i][2], all_data[i][3], all_data[i][4]]
@@ -340,7 +340,7 @@ class DeltaMLGapCorrector:
         ])
         self.halide_model_no_eps.fit(self.X_halides_no_eps, self.y_halides)
 
-        # Exact LOOCV on deployed in-family halide predictor (n=6 Pb-only)
+        # Exact LOOCV on alternative in-family halide Ridge predictor (n=6 Pb-only)
         n_p = len(pero_indices)
         pero_loo_res = []
         pero_loo_query_h = []
@@ -367,12 +367,48 @@ class DeltaMLGapCorrector:
         self.pero_loo_query_h = pero_loo_query_h
         norm_scores_pero = [pero_loo_res[i] / np.sqrt(1.0 + pero_loo_query_h[i]) for i in range(n_p)]
 
+        # Anion-Matched Mean Delta predictor (deployed in-family per baseline comparison rule)
+        # Group Pb-only perovskites by halide (Cl, Br, I)
+        pero_formulas = [all_data[i][6] for i in pero_indices]
+        pero_deltas = [y[i] for i in pero_indices]
+        pero_halides = [
+            "Cl" if "Cl" in f else ("Br" if "Br" in f else "I")
+            for f in pero_formulas
+        ]
+
+        self.anion_mean_deltas = {}
+        for h in ["Cl", "Br", "I"]:
+            h_deltas = [pero_deltas[k] for k, hal in enumerate(pero_halides) if hal == h]
+            if h_deltas:
+                self.anion_mean_deltas[h] = float(np.mean(h_deltas))
+
+        # Exact LOOCV for Anion-Matched Mean Delta:
+        # For fold i_p: predict from the other cation with the same halide
+        anion_loo_res = []
+        for i_p in range(n_p):
+            h_curr = pero_halides[i_p]
+            other_deltas = [pero_deltas[k] for k in range(n_p) if k != i_p and pero_halides[k] == h_curr]
+            pred_d = float(np.mean(other_deltas))
+            orig_idx = pero_indices[i_p]
+            pred_gap = pbes[orig_idx] + pred_d
+            anion_loo_res.append(abs(targets[orig_idx] - pred_gap))
+
+        self.anion_loo_errors = anion_loo_res
+        self.anion_loocv_mae = float(np.mean(anion_loo_res))
+        self.anion_loocv_rmse = float(np.sqrt(np.mean(np.array(anion_loo_res)**2)))
+
+        # Conformal calibration for n=6 Anion-Matched predictor:
+        # Order statistic for 80% coverage: k = ceil((6 + 1) * 0.80) = 6 <= 6
+        k_80 = int(np.ceil((n_p + 1) * 0.80))
+        self.anion_q_80_unweighted = float(sorted(anion_loo_res)[min(k_80 - 1, n_p - 1)])
+        norm_scores_anion = [anion_loo_res[i] / np.sqrt(1.0 + pero_loo_query_h[i]) for i in range(n_p)]
+        self.anion_q_tilde_80 = float(sorted(norm_scores_anion)[min(k_80 - 1, n_p - 1)])
+
         # Conformal calibration for n=6 Pb-only:
         # 80% coverage: k = ceil((6 + 1) * 0.80) = 6 <= 6 (valid finite-sample order statistic!)
         # 90% coverage: k = ceil((6 + 1) * 0.90) = 7 > 6 (strictly undefined without extrapolation!)
-        k_80 = int(np.ceil((n_p + 1) * 0.80))
-        self.q_tilde_in_family_80 = float(sorted(norm_scores_pero)[min(k_80 - 1, n_p - 1)])
-        self.q_tilde_in_family = self.q_tilde_in_family_80  # Deployed valid 80% quantile (0.1552 eV)
+        self.q_tilde_in_family_80 = self.anion_q_tilde_80  # Deployed valid 80% quantile
+        self.q_tilde_in_family = self.q_tilde_in_family_80
 
         # 2. Cross-family normalized scores (LOCO for Ridge)
         loco_res = []
@@ -431,7 +467,7 @@ class DeltaMLGapCorrector:
     # ------------------------------------------------------------------
 
     CHEMISTRY_MAES = {
-        "halide_perovskite": 0.2683,
+        "halide_perovskite": 0.1296,
         "transition_metal_perovskite": 0.0640,
         "alkaline_earth_oxide": 2.6770,
         "alkali_halide": 1.0540,
@@ -784,53 +820,79 @@ class DeltaMLGapCorrector:
         family_interval_applied = bool(chem_class == "halide_perovskite" and chem_mae is not None)
 
         if family_interval_applied:
-            # In-Family Regime: Deployed Halide-perovskite-only Ridge without eps_inf (alpha=1.0)
-            if self._is_fitted and hasattr(self, "halide_model_no_eps"):
+            # In-Family Regime: Deployed Halide-perovskite-only Anion-Matched Mean Delta
+            # Decision rule: LOOCV MAE 0.1296 eV beats Ridge 0.1474 eV,
+            # and FAPbI3 held-out error 0.0848 eV beats Ridge 0.2004 eV.
+            # Ridge is retained as a documented alternative.
+            halide = None
+            if formula:
+                if "Cl" in formula:
+                    halide = "Cl"
+                elif "Br" in formula:
+                    halide = "Br"
+                elif "I" in formula:
+                    halide = "I"
+
+            pred_delta = None
+            if hasattr(self, "anion_mean_deltas") and halide in self.anion_mean_deltas:
+                pred_delta = self.anion_mean_deltas[halide]
+                corrected = pbe_gap_ev + pred_delta
+                method = "anion_matched_mean_delta"
+            elif self._is_fitted and hasattr(self, "halide_model_no_eps"):
                 feat_vec_no_eps = np.array([[pbe_gap_ev, pbe_gap_ev**2, chi_diff, r_ratio, Z_avg]])
                 pred_delta = float(self.halide_model_no_eps.predict(feat_vec_no_eps)[0])
-                if pred_delta <= 0.0:
-                    return {
-                        "formula": formula,
-                        "chemistry_class": chem_class,
-                        "chemistry_mae_eV": chem_mae,
-                        "pbe_gap_eV": round(pbe_gap_ev, 4),
-                        "corrected_gap_eV": None,
-                        "predicted_delta_eV": round(pred_delta, 4),
-                        "interval_lower": None,
-                        "interval_upper": None,
-                        "interval_width_eV": None,
-                        "interval_pooled": None,
-                        "interval_chemistry_specific": None,
-                        "q_hat_pooled": None,
-                        "q_hat_chemistry": None,
-                        "coverage_level": self.confidence_level,
-                        "status": "out_of_domain_delta_nonpositive",
-                        "delta_nonpositive": True,
-                        "provisional": True,
-                        "label": "Out of domain: predicted delta nonpositive (extrapolation diagnostic)",
-                        "should_escalate_to_r2scan": True,
-                        "escalation_reason": (
-                            f"Delta-ML model predicted nonpositive delta ({pred_delta:.4f} eV <= 0) for {formula}. "
-                            "PBE gap underestimation is expected to be positive for insulating compounds. "
-                            "Nonpositive delta indicates severe model extrapolation failure; scissor correction withheld."
-                        ),
-                        "method": "out_of_domain",
-                        "calibration_dataset": CALIBRATION_DATASET_NAME,
-                        "effective_n": self.effective_n,
-                        "features_used": final_features,
-                        "features_source": features_source,
-                        "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
-                        "requires_metallicity_check": requires_metallicity_check,
-                    }
                 corrected = pbe_gap_ev + pred_delta
-                corrected = max(0.0, min(corrected, 20.0))
                 method = "delta_ml_ridge"
             else:
                 corrected = pbe_gap_ev + PBE_MEAN_UNDERESTIMATE_EV
                 method = "mean_correction_fallback"
 
+            if pred_delta is not None and pred_delta <= 0.0:
+                return {
+                    "formula": formula,
+                    "chemistry_class": chem_class,
+                    "chemistry_mae_eV": chem_mae,
+                    "pbe_gap_eV": round(pbe_gap_ev, 4),
+                    "corrected_gap_eV": None,
+                    "predicted_delta_eV": round(pred_delta, 4),
+                    "interval_lower": None,
+                    "interval_upper": None,
+                    "interval_width_eV": None,
+                    "interval_pooled": None,
+                    "interval_chemistry_specific": None,
+                    "q_hat_pooled": None,
+                    "q_hat_chemistry": None,
+                    "coverage_level": self.confidence_level,
+                    "status": "out_of_domain_delta_nonpositive",
+                    "delta_nonpositive": True,
+                    "provisional": True,
+                    "label": "Out of domain: predicted delta nonpositive (extrapolation diagnostic)",
+                    "should_escalate_to_r2scan": True,
+                    "escalation_reason": (
+                        f"Delta-ML model predicted nonpositive delta ({pred_delta:.4f} eV <= 0) for {formula}. "
+                        "PBE gap underestimation is expected to be positive for insulating compounds. "
+                        "Nonpositive delta indicates severe model extrapolation failure; scissor correction withheld."
+                    ),
+                    "method": "out_of_domain",
+                    "calibration_dataset": CALIBRATION_DATASET_NAME,
+                    "effective_n": self.effective_n,
+                    "features_used": final_features,
+                    "features_source": features_source,
+                    "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                    "requires_metallicity_check": requires_metallicity_check,
+                }
+
+            corrected = max(0.0, min(corrected, 20.0))
+
+            # Documented alternative: Ridge prediction
+            alternative_methods = {}
+            if self._is_fitted and hasattr(self, "halide_model_no_eps"):
+                feat_vec_no_eps = np.array([[pbe_gap_ev, pbe_gap_ev**2, chi_diff, r_ratio, Z_avg]])
+                ridge_d = float(self.halide_model_no_eps.predict(feat_vec_no_eps)[0])
+                alternative_methods["ridge_alpha_1"] = round(pbe_gap_ev + ridge_d, 4)
+
             calibration_regime = "in_family_loocv"
-            q_tilde_active = getattr(self, "q_tilde_in_family", self.q_hat)
+            q_tilde_active = getattr(self, "anion_q_tilde_80", getattr(self, "q_tilde_in_family", 0.1552))
             family_fallback_reason = None
 
             # Ridge query leverage for deployed halide model

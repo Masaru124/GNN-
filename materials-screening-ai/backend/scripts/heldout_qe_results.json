@@ -2,7 +2,9 @@
   "FAPbI3": {
     "formula": "FAPbI3",
     "a_cubic_angstrom": 6.362,
-    "citation": "Weller et al., J. Mater. Chem. A 3, 9208 (2015); Castelli et al., APL Mater. 2, 081514 (2014) Table I",
+    "lattice_citation": "literature value (unverified in corpus), unrelaxed",
+    "target_citation": "Castelli et al., APL Mater. 2, 081514 (2014) Table I",
+    "citation": "Target: Castelli et al. (2014) Table I; Lattice a=6.362 A: literature value (unverified in corpus), unrelaxed",
     "target_exp_gap_eV": 1.48,
     "domain_class": "in_domain_lead_halide",
     "pbe_gap_eV": 1.2656,

@@ -289,21 +289,21 @@ class TestCrossArtifactParity:
 
         # Gate test 3: 0.10 eV -> above 0.10 eV, but below 0.327 eV -> predicted, extrapolation_floor_flag = True
         res_010 = corrector.predict_corrected_gap(pbe_gap_ev=0.10, formula="CsPbI3", features={"eps_inf": 6.10})
-        assert res_010["status"] in ("linear_pbe_scissor", "delta_ml_ridge")
+        assert res_010["status"] in ("linear_pbe_scissor", "delta_ml_ridge", "anion_matched_mean_delta")
         assert res_010["corrected_gap_eV"] is not None
         assert res_010["extrapolation_floor_flag"] is True
         assert res_010["domain_floor_eV"] == 0.3270
 
         # Gate test 4: 0.20 eV -> above 0.10 eV, but below 0.327 eV -> predicted, extrapolation_floor_flag = True
         res_020 = corrector.predict_corrected_gap(pbe_gap_ev=0.20, formula="CsPbI3", features={"eps_inf": 6.10})
-        assert res_020["status"] in ("linear_pbe_scissor", "delta_ml_ridge")
+        assert res_020["status"] in ("linear_pbe_scissor", "delta_ml_ridge", "anion_matched_mean_delta")
         assert res_020["corrected_gap_eV"] is not None
         assert res_020["extrapolation_floor_flag"] is True
         assert res_020["domain_floor_eV"] == 0.3270
 
         # Gate test 5: 0.327 eV -> domain floor calibration point on Pb compound -> predicted, extrapolation_floor_flag = False
         res_0327 = corrector.predict_corrected_gap(pbe_gap_ev=0.327, formula="CsPbI3", features={"eps_inf": 6.50})
-        assert res_0327["status"] in ("linear_pbe_scissor", "delta_ml_ridge")
+        assert res_0327["status"] in ("linear_pbe_scissor", "delta_ml_ridge", "anion_matched_mean_delta")
         assert res_0327["corrected_gap_eV"] is not None
         assert res_0327["extrapolation_floor_flag"] is False
         assert res_0327["domain_floor_eV"] == 0.3270
@@ -410,8 +410,8 @@ class TestCrossArtifactParity:
 
         # Check key metrics exist in metrics.json and match audited values
         assert metrics["production_ridge_alpha_1"]["loocv_mae"] > 0
-        assert metrics["halide_perovskites_in_family"]["deployed_n6_pb_only_loocv_mae"] == 0.1474
-        assert metrics["halide_perovskites_in_family"]["conformal_80_quantile_q_tilde_eV"] == 0.1552
+        assert metrics["halide_perovskites_in_family"]["deployed_n6_pb_only_loocv_mae"] == 0.1296
+        assert metrics["halide_perovskites_in_family"]["conformal_80_quantile_q_tilde_eV"] == 0.2157
         assert metrics["held_out_test_evaluations"]["benchmark_candidates"][1]["out_of_domain"] is True
 
 

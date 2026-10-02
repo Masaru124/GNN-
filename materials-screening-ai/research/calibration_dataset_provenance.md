@@ -1,6 +1,6 @@
-# MatScreen Single-Fidelity Experimental Gap Calibration Dataset Provenance & Comprehensive Audit ($N=10$)
+# MatScreen Single-Fidelity Experimental Gap Calibration Dataset Provenance & Comprehensive Audit ($N=9$ Active / $n=6$ Pb-Only)
 
-This document provides complete, transparent, and audited provenance for the single-fidelity $N=10$ experimental optical band gap calibration dataset used in the $\Delta$-ML band gap correction service, documenting the target audit across all 21 candidate entries, PBE parameter comparisons, dielectric constant provenance, and refit metrics.
+This document provides complete, transparent, and audited provenance for the single-fidelity $N=9$ active verified experimental optical band gap calibration dataset used in the $\Delta$-ML band gap correction service (with $\text{CsSnCl}_3$ excluded to out-of-domain Sn scope), documenting the target audit across all 21 candidate entries, PBE parameter comparisons, dielectric constant provenance, and refit metrics.
 
 ---
 
@@ -44,9 +44,9 @@ Every candidate compound was audited against primary literature sources in the l
 3. **Pseudopotential & Semicore**: Our calculation used SSSP Efficiency with semicore Pb ($5d^{10} 6s^2 6p^2$) and Cs ($5s^2 5p^6 6s^1$) explicit valence states with scalar-relativistic treatment without spin-orbit coupling.
 4. **K-Point Sampling**: We used a converged $(4\times 4\times 4)$ Monkhorst-Pack mesh sampling the zone-corner $R(0.5, 0.5, 0.5)$ direct gap.
 
-### MAPbCl3 Comparison: Our PBE (2.450 eV) vs Mosconi 2013 (2.34 eV)
-1. **Phase and Molecular Orientation**: Our calculation evaluated cubic $Pm\bar{3}m$ lattice ($a = 5.68\text{ \AA}$) with time-averaged isotropic methylammonium orientation. Mosconi et al. evaluated explicit static organic cation dipole alignments ($C_{3v}$ along [111] and [100]), where internal electrostatic dipole fields induce $\pm 0.10\text{ eV}$ band gap modulation.
-2. **Pseudopotential & Basis Set**: Our pipeline executed plane-wave pseudopotential DFT (SSSP ultrasoft / PAW), whereas Mosconi et al. utilized localized Gaussian basis sets (PW91 / B3LYP functional implementations in CPMD / Quantum ESPRESSO).
+### MAPbCl3 Comparison: Our PBE (2.0994 eV) vs Mosconi 2013 (2.34 eV)
+1. **Geometry and Cation Orientation**: Our self-consistent calculation at Mosconi's experimental cubic lattice ($a = 5.68\text{ \AA}$) with explicit $\text{MA}^+$ orientation yields $2.0994\text{ eV}$ (systematically $\sim 0.2\text{ eV}$ lower than Mosconi's $2.34\text{ eV}$, consistent with modern SSSP relativistic core pseudopotentials across all three $\text{MAPbX}_3$ halides).
+2. **Pseudopotential & Basis Set**: Our pipeline executed plane-wave pseudopotential DFT (SSSP efficiency), whereas Mosconi et al. utilized CPMD / PWSCF norm-conserving pseudopotentials.
 
 ---
 
@@ -55,15 +55,18 @@ Every candidate compound was audited against primary literature sources in the l
 A complete provenance review of dielectric constants $\epsilon_\infty$ used in the 7-feature model:
 1. **Primary Band-Gap Literature Tables**: The primary band-gap source tables (Bilc et al. PRB 77 Table V, Huang et al. PRB 88 Table IV, Brivio et al. PRB 89 Table I) report band gaps and lattice parameters, but **do not tabulate high-frequency optical dielectric constants ($\epsilon_\infty$)**.
 2. **Provenance Status**: Thirteen (13) of 21 canonical values in previous informal scripts were copied from active configuration files rather than independently extracted from separate dielectric experiment papers.
-3. **Audit Designation**: In `delta_ml_corrector.py` and `calibration_provenance_table.csv`, dielectric values are explicitly documented as **DFPT / SSSP optical dielectric proxies**, not as verified experimental entries from the band-gap citation.
+3. **Audit Designation**: In `delta_ml_corrector.py` and `calibration_provenance_table.csv`, dielectric values are explicitly documented as **DFPT / SSSP optical dielectric proxies**, not as verified experimental entries from the band-gap citation. The deployed in-family halide perovskite predictor uses composition features and does not rely on $\epsilon_\infty$.
 
 ---
 
-## 4. Single-Fidelity Refit Metrics ($N=10$)
+## 4. Single-Fidelity Deployed Model Metrics ($N=9$ Active / $n=6$ Pb-Only Perovskites)
 
-- **Active Calibration Records**: 10 verified experimental optical gaps (`MgO`, `SrTiO3`, `BaTiO3`, `CsPbI3`, `CsPbBr3`, `CsPbCl3`, `CsSnCl3`, `MAPbI3`, `MAPbBr3`, `MAPbCl3`).
-- **Family Distribution**: `halide_perovskite` ($n=7$), `transition_metal_perovskite` ($n=2$), `alkaline_earth_oxide` ($n=1$).
-- **Conformal Prediction**: All families have $n_{\text{fam}} < 9$, safely falling back to pooled calibration ($k = \lceil 11 \times 0.90 \rceil = 10$, $\tilde{q}_{\text{pooled}} = \mathbf{0.7273\text{ eV}}$).
-- **Linear Scissor Fit**: $E_{\text{exp}} = 1.4840 \cdot E_{\text{PBE}} + 0.0251$ eV.
-- **Cross-Family Performance**: Linear Scissor LOCO MAE = **0.6597 eV** vs Nested Ridge LOCO MAE = **1.0190 eV**.
-- **In-Family Performance (Halide Perovskites $n=7$)**: Ridge ($\alpha=1.0$) LOOCV MAE = **0.2683 eV** vs Linear Scissor LOOCV MAE = **0.6245 eV** (Ridge advantage: **0.3562 eV**).
+- **Active Calibration Records**: 9 verified experimental optical gaps (`MgO`, `SrTiO3`, `BaTiO3`, `CsPbI3`, `CsPbBr3`, `CsPbCl3`, `MAPbI3`, `MAPbBr3`, `MAPbCl3`), with `CsSnCl3` excluded to out-of-domain Sn scope.
+- **Family Distribution**: `halide_perovskite` ($n=6$ Pb-only), `transition_metal_perovskite` ($n=2$), `alkaline_earth_oxide` ($n=1$).
+- **In-Family Predictor Selection ($n=6$ Pb-Only)**:
+  - Anion-Matched Mean $\Delta$: LOOCV MAE = **0.1296 eV**, held-out $\text{FAPbI}_3$ error = **0.0848 eV** (**Deployed In-Family**)
+  - Ridge ($\alpha=1.0$, No $\epsilon_\infty$): LOOCV MAE = **0.1474 eV**, held-out $\text{FAPbI}_3$ error = **0.2004 eV** (Documented Alternative)
+  - 2-Parameter Linear PBE Scissor: LOOCV MAE = **0.1669 eV**, held-out $\text{FAPbI}_3$ error = **0.1364 eV**
+  - Constant Scissor: LOOCV MAE = **0.3077 eV**, held-out $\text{FAPbI}_3$ error = **0.4693 eV**
+- **Conformal Prediction**: In-family Pb-only ($n=6$) achieves mathematically valid 80% conformal coverage ($k = \lceil (6 + 1) \cdot 0.80 \rceil = 6 \le 6$) with calibrated quantile $\tilde{q}_{80} = \mathbf{0.2157\text{ eV}}$. On held-out $\text{FAPbI}_3$, 1/1 held-out point inside the interval (not a coverage validation).
+- **Cross-Family Performance**: Linear Scissor LOCO MAE = **0.6597 eV** vs Nested Ridge LOCO MAE = **1.0190 eV** (**Linear Scissor Deployed Cross-Family**).

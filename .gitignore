@@ -67,3 +67,6 @@ materials-screening-ai/research/literature/combined.md
 # Agent directories and customizations
 .agents/
 **/.agents/
+
+# Graphify generated index and cache
+graphify-out/

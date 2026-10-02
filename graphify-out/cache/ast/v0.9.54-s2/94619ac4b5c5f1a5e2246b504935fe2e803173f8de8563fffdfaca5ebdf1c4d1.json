@@ -1,1 +1,0 @@
-{"nodes": [{"id": "pkg_crystal_gnn", "label": "crystal_gnn", "file_type": "code", "type": "package", "ecosystem": "python", "source_file": "crystal_gnn/pyproject.toml", "source_location": "L1", "version": "0.1.0"}], "edges": []}

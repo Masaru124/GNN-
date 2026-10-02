@@ -1,0 +1,70 @@
+2229ffc Masaru124 <masarukaze041@gmail.com> docs: rewrite README as full setup and run guide
+76d2f6a Masaru124 <masarukaze041@gmail.com> Merge remote-tracking branch 'origin/main'
+2d58bcd Masaru124 <masarukaze041@gmail.com> chore: refresh metrics provenance
+482b492 Masaru124 <masarukaze041@gmail.com> chore: regenerate test artifacts at 5f932c5
+5f932c5 Masaru124 <masarukaze041@gmail.com> test: cover all corrector statuses and CsPbF3 gate
+051c232 Masaru124 <masarukaze041@gmail.com> chore: docker build fixes and checkpoint fetch tooling
+aa10369 Masaru124 <masarukaze041@gmail.com> chore: refresh metrics provenance
+664c82b Masaru124 <masarukaze041@gmail.com> chore: refresh test artifacts from fresh worktree at 0c7615f
+0c7615f Masaru124 <masarukaze041@gmail.com> test: stub predictor class in orchestrator record test
+28d7887 Masaru124 <masarukaze041@gmail.com> fix: guard out-of-domain q_hat persist and label 80% level
+919b15e Masaru124 <masarukaze041@gmail.com> test: assert in-domain q_tilde 0.2157 and coverage 0.80
+92b3f5e Masaru124 <masarukaze041@gmail.com> fix: align deployed calibration quantile
+b55898d Masaru124 <masarukaze041@gmail.com> chore: ignore generated graphify output
+451fee2 Masaru124 <masarukaze041@gmail.com> chore: refresh metrics provenance
+f48fc9f Masaru124 <masarukaze041@gmail.com> fix: persist active Delta-ML quantile
+60d6e28 Masaru124 <masarukaze041@gmail.com> chore: record QE validation artifacts
+61bab3a Masaru124 <masarukaze041@gmail.com> test: validate QE and null gap handling
+b9fa2a0 Masaru124 <masarukaze041@gmail.com> chore: record final test artifacts
+73fae21 Masaru124 <masarukaze041@gmail.com> test: harden API and QE test gates
+cfb642b Masaru124 <masarukaze041@gmail.com> chore: regenerate calibration metrics
+6f28181 Masaru124 <masarukaze041@gmail.com> test: harden Pb halide domain gate
+3ece164 Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json, junit.xml, and pytest.log
+b8b97c2 Masaru124 <masarukaze041@gmail.com> fix(corrector): use reduced composition in gate, restrict domain to pure Pb halide perovskites, and remove hardcoded test runner path
+c607c90 Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json and junit.xml test results
+c7061b6 Masaru124 <masarukaze041@gmail.com> fix(gate): classify A-site by composition counts, cap formula length at 40 chars, and add equivalence tests
+6f9df7b Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json and junit.xml test results
+099ec4b Masaru124 <masarukaze041@gmail.com> fix(gate): enforce ABX3 stoichiometry and pure single A-site gating, update limitations scatter text
+7b40d0e Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json and junit.xml test results
+d791885 Masaru124 <masarukaze041@gmail.com> fix(eval): enforce strict pure Pb halide gating, pin assertions, and update validation docs
+b1b244c Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json and junit.xml test results
+c05a59d Masaru124 <masarukaze041@gmail.com> chore(eval): update loco_residuals_alpha_comparison.csv with n=9 calibration set
+ade2c34 Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json and junit.xml test results
+f9950d0 Masaru124 <masarukaze041@gmail.com> fix(eval): deploy anion-matched mean delta predictor, rescoped n=6 Pb baseline, and audit parity
+30c1967 Masaru124 <masarukaze041@gmail.com> chore(eval): update metrics.json and junit.xml test results
+b59a383 Masaru124 <masarukaze041@gmail.com> test(parity): align parity tests with n=6 Pb-only model and pythonpath
+6088665 Masaru124 <masarukaze041@gmail.com> fix(eval): import Path in eval_protocol.py
+888250e Masaru124 <masarukaze041@gmail.com> fix(scope): deploy Pb-only n=6 conformal model, dynamic held-out QE, and out-of-domain Sn gate
+415b586 Masaru124 <masarukaze041@gmail.com> chore(eval): record commit hash in metrics.json
+c9658e3 Masaru124 <masarukaze041@gmail.com> chore(eval): commit final verification metrics and test junit xml
+7ffb031 Masaru124 <masarukaze041@gmail.com> fix(protocol): deploy halide-only no-eps model, update limitations, and enforce git_dirty check
+1173593 Masaru124 <masarukaze041@gmail.com> dft
+44be6bc Masaru124 <masarukaze041@gmail.com> chore(metrics): update git hash to 1bc7cef in metrics.json
+1bc7cef Masaru124 <masarukaze041@gmail.com> chore(test): update junit.xml from clean full suite run
+64b54b8 Masaru124 <masarukaze041@gmail.com> chore(metrics): update git hash in metrics.json
+c9e3237 Masaru124 <masarukaze041@gmail.com> fix(provenance): add programmatic literature extractor, audit scripts, sensitivity metrics, and copyright ignore rules
+c37f525 Masaru124 <masarukaze041@gmail.com> chore(metrics): update git commit hash in metrics.json
+41752bb Masaru124 <masarukaze041@gmail.com> fix(provenance): complete single-fidelity experimental refit (N=10) and full audit of literature targets
+e6a538a Masaru124 <masarukaze041@gmail.com> Merge remote-tracking branch 'origin/main'
+640d189 Masaru124 <masarukaze041@gmail.com> Implement CHGNet+MACE ensemble disagreement gate, stability analysis, and band gap estimation
+cc6f465 bichitrabehera <bichitrabehera.345@gmail.com> fixed the issue with the mobile view , and changed the 3d crystal lattice viewer
+977c19e bichitrabehera <bichitrabehera.345@gmail.com> fixed the issue with the mobile view , and changed the 3d crystal lattice viewer
+dcb1bf9 Masaru124 <masarukaze041@gmail.com> lab
+4bd2d46 Masaru124 <masarukaze041@gmail.com> lab
+73086ce Masaru124 <masarukaze041@gmail.com> nlp disc
+2f9b35b Masaru124 <masarukaze041@gmail.com> nlp disc
+d8cfaa3 bichitrabehera <bichitrabehera.345@gmail.com> new design 1
+888430f bichitrabehera <bichitrabehera.345@gmail.com> new design 1
+8f5c06c Masaru124 <masarukaze041@gmail.com> fixed data
+a47810a Masaru124 <masarukaze041@gmail.com> fixed data
+ef49453 Masaru124 <masarukaze041@gmail.com> Fix .gitignore rule to track crystal_gnn.data package modules
+9a4c077 Masaru124 <masarukaze041@gmail.com> Fix .gitignore rule to track crystal_gnn.data package modules
+2e6c0ec bichitrabehera <bichitrabehera.345@gmail.com> new design
+2cfbb16 bichitrabehera <bichitrabehera.345@gmail.com> new design
+e7dbdb7 Masaru124 <masarukaze041@gmail.com> dockers fix
+482fbad Masaru124 <masarukaze041@gmail.com> dockers fix
+a9618ad Masaru124 <masarukaze041@gmail.com> dockers
+f648e04 Masaru124 <masarukaze041@gmail.com> Configure Docker backend setup and dataset utilities
+308a68e Masaru124 <masarukaze041@gmail.com> web predict
+f7de0ca Masaru124 <masarukaze041@gmail.com> web
+ef6f771 Masaru124 <masarukaze041@gmail.com> Initial commit: Multi-Scale Evidential GNN with zero-shot inference and UQ calibration

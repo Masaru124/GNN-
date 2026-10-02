@@ -77,3 +77,8 @@ graphify-out/
 skills-lock.json
 
 .freebuff/
+
+# Scratch / build leftovers
+scratch_dft_test/
+*.egg-info/
+input_tmp.in

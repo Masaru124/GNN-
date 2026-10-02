@@ -75,3 +75,5 @@ graphify-out/
 
 # Skills lock file (generated)
 skills-lock.json
+
+.freebuff/

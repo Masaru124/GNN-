@@ -39,3 +39,18 @@ results/*
 crystal_gnn/results/*
 !results/*.csv
 !crystal_gnn/results/*.csv
+
+# Large archives and binaries never needed inside the image
+qe_download.zip
+*.pdf
+combined.md
+
+# QE Windows binaries are not runnable in Linux containers
+qe/
+
+# Generated indexes, agent dirs, local tooling
+graphify-out/
+.agents/
+.freebuff/
+.pytest_cache/
+__pycache__/

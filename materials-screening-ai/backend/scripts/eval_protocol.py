@@ -5,6 +5,7 @@ Evaluates single-fidelity verified experimental optical gap calibration dataset 
 Eliminates all hardcoded literals; computes all LOOCV, LOCO, and conformal metrics dynamically.
 """
 import sys, os, json, hashlib, subprocess, csv
+from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np

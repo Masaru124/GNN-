@@ -450,3 +450,33 @@ class TestSyntheticOpenShellAndDomainSafety:
             assert res["reason"] == "Sn/SOC regime, 1 calibration point", f"Expected exact reason 'Sn/SOC regime, 1 calibration point' for {sn_formula}, got {res.get('reason')}"
             assert res["interval_lower"] is None
             assert res["interval_upper"] is None
+
+    def test_stoichiometry_and_mixed_a_site_gate(self):
+        """Require ABX3 stoichiometry and pure single A-site in {Cs, MA, FA}; reject non-ABX3 and mixed A-site."""
+        corrector = get_delta_ml_corrector()
+
+        # Out-of-domain: non-ABX3 stoichiometry or mixed A-site
+        out_of_domain_cases = [
+            ("Cs4PbBr6", "non-ABX3 stoichiometry"),
+            ("Cs2PbI4", "non-ABX3 stoichiometry"),
+            ("CsPb2Br5", "non-ABX3 stoichiometry"),
+            ("Cs0.5FA0.5PbI3", "mixed A-site"),
+            ("MA0.5FA0.5PbI3", "mixed A-site"),
+        ]
+        for form, expected_reason_substr in out_of_domain_cases:
+            res = corrector.predict_corrected_gap(pbe_gap_ev=1.50, formula=form, features={"eps_inf": 5.0})
+            assert res["status"] == "out_of_domain", f"{form}: expected status 'out_of_domain', got {res.get('status')}"
+            assert res.get("out_of_domain") is True, f"{form}: expected out_of_domain=True"
+            assert res["corrected_gap_eV"] is None, f"{form}: expected corrected_gap_eV=None"
+            assert expected_reason_substr in res.get("reason", ""), f"{form}: expected reason containing '{expected_reason_substr}', got '{res.get('reason')}'"
+
+        # In-domain: pure ABX3 lead halide perovskites
+        in_domain_cases = [
+            "CsPbI3", "CsPbBr3", "CsPbCl3", "MAPbI3", "MAPbBr3", "MAPbCl3", "FAPbI3"
+        ]
+        for form in in_domain_cases:
+            res = corrector.predict_corrected_gap(pbe_gap_ev=1.50, formula=form, features={"eps_inf": 5.0})
+            assert res["status"] == "anion_matched_mean_delta", f"{form}: expected in-domain status 'anion_matched_mean_delta', got {res.get('status')}"
+            assert res.get("out_of_domain") is not True, f"{form}: expected in-domain"
+            assert res["corrected_gap_eV"] is not None, f"{form}: expected numerical corrected_gap_eV"
+

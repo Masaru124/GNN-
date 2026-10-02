@@ -75,7 +75,7 @@ Experimental optical band gaps reported in the literature exhibit inherent measu
    - $\text{CsPbCl}_3$: Reported as $2.85\text{ eV}$ (Wiktor et al. 2017 Table 6 footnote d).
    - $\text{MAPbI}_3$: Literature values span $1.55\text{ eV}$ to $1.61\text{ eV}$ ($\Delta \approx 0.06\text{ eV}$).
 
-This empirical measurement variance establishes an intrinsic noise floor of $\sim 0.33\text{ eV}$ (derived from the $\text{MAPbBr}_3$ experimental report spread of $2.00-2.33\text{ eV}$) on any $\Delta$-ML model trained on experimental targets.
+This empirical measurement variance establishes a target scatter up to $0.33\text{ eV}$ ($\text{MAPbBr}_3$: $2.00$ vs $2.33\text{ eV}$); $\sim 0.06\text{ eV}$ or less for the other calibration compounds. LOOCV $0.13\text{ eV}$ is within the scatter of experimental targets.
 
 ### 2.2 DFT PBE Band Gap Discrepancies vs Published Theory
 When comparing self-consistent Quantum ESPRESSO PBE calculations against published DFT literature values:

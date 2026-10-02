@@ -667,9 +667,11 @@ class TestSyntheticOpenShellAndDomainSafety:
 
         assert result["status"] == "anion_matched_mean_delta"
         assert result["corrected_gap_eV"] is not None
+        assert result["coverage_level"] == 0.80
         assert candidate.dft_delta_ml_gap_eV == result["corrected_gap_eV"]
         assert candidate.dft_delta_ml_interval_lower == result["interval_lower"]
         assert candidate.dft_delta_ml_interval_upper == result["interval_upper"]
+        assert candidate.dft_delta_ml_q_hat == result["q_tilde"]
         assert db.committed is True
 
     def test_delta_ml_api_rejects_nacl_gap_without_scissor_fallback(self, monkeypatch):

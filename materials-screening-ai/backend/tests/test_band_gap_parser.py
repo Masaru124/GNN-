@@ -393,20 +393,24 @@ class TestSyntheticOpenShellAndDomainSafety:
         from pymatgen.core import Structure, Lattice
         from app.services.job_orchestrator import DiscoveryJobOrchestrator
         from app.services.pareto_ranker import ParetoRanker
-        import app.services.job_orchestrator as job_orchestrator_mod
+        import app.services.predictor as predictor_mod
 
         # GNN weights (crystal_gnn/model_inference.pt, 77 MB) are intentionally not tracked in git.
-        # Stub the predictor so this record-construction test is hermetic in fresh worktrees.
-        class _StubPredictor:
-            def predict(self, _struct):
-                return {
-                    "predicted_formation_energy_per_atom_eV": -1.75,
-                    "evidential_std_eV": 0.05,
-                    "conformal_90_interval_eV": [-1.95, -1.55],
-                }
-
+        # Stub the predictor class so this record-construction test is hermetic in fresh worktrees.
         monkeypatch.setattr(
-            job_orchestrator_mod, "GNNPredictorService", lambda: _StubPredictor()
+            predictor_mod.GNNPredictorService, "_instance", None, raising=False
+        )
+        monkeypatch.setattr(
+            predictor_mod.GNNPredictorService, "__init__", lambda self, *a, **k: None
+        )
+        monkeypatch.setattr(
+            predictor_mod.GNNPredictorService,
+            "predict",
+            lambda self, _struct: {
+                "predicted_formation_energy_per_atom_eV": -1.75,
+                "evidential_std_eV": 0.05,
+                "conformal_90_interval_eV": [-1.95, -1.55],
+            },
         )
 
         orchestrator = DiscoveryJobOrchestrator()

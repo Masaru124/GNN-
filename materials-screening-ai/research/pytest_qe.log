@@ -1,0 +1,100 @@
+git rev-parse HEAD: e4e781eaee4019f2843ccaa947a424c997cb393f
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: ./materials-screening-ai
+configfile: pytest.ini
+plugins: anyio-4.13.0, cov-7.1.0
+collected 10 items
+
+backend\tests\test_dft_benchmark_regression.py ..........                [100%]
+
+============================== warnings summary ===============================
+..\.venv311\Lib\site-packages\torch\jit\_script.py:1488: 24 warnings
+  ./.venv311\Lib\site-packages\torch\jit\_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+..\.venv311\Lib\site-packages\torch_geometric\llm\utils\backend_utils.py:26
+  ./.venv311\Lib\site-packages\torch_geometric\llm\utils\backend_utils.py:26: DeprecationWarning: `torch_geometric.distributed` has been deprecated since 2.7.0 and will no longer be maintained. For distributed training, refer to our tutorials on distributed training at https://pytorch-geometric.readthedocs.io/en/latest/tutorial/distributed.html or cuGraph examples at https://github.com/rapidsai/cugraph-gnn/tree/main/python/cugraph-pyg/cugraph_pyg/examples
+    from torch_geometric.distributed import (
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:20
+  ./.venv311\Lib\site-packages\emmet\core\utils.py:20: DeprecationWarning: This module has been moved to the pymatgen.core.elasticity module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.elasticity.strain import Deformation
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:20
+  ./.venv311\Lib\site-packages\emmet\core\utils.py:20: DeprecationWarning: This module has been moved to the pymatgen.core.elasticity.strain module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.elasticity.strain import Deformation
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:21
+  ./.venv311\Lib\site-packages\emmet\core\utils.py:21: DeprecationWarning: This module has been moved to the pymatgen.core.graphs module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.graphs import MoleculeGraph
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:22
+  ./.venv311\Lib\site-packages\emmet\core\utils.py:22: DeprecationWarning: This module has been moved to the pymatgen.core.local_env module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.local_env import OpenBabelNN, metal_edge_extender
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:23
+  ./.venv311\Lib\site-packages\emmet\core\utils.py:23: DeprecationWarning: This module has been moved to the pymatgen.core.molecule_matcher module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.molecule_matcher import MoleculeMatcher
+
+..\.venv311\Lib\site-packages\emmet\core\utils.py:24
+  ./.venv311\Lib\site-packages\emmet\core\utils.py:24: DeprecationWarning: This module has been moved to the pymatgen.core.structure_matcher module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.structure_matcher import (
+
+..\.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27
+  ./.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27: DeprecationWarning: Entry, ComputedEntry and ComputedStructureEntry have been moved to pymatgen.core.entries module. This stub will be removed v2027.1.
+    from pymatgen.entries.compatibility import MU_H2O
+
+..\.venv311\Lib\site-packages\pymatgen\analysis\compatibility\__init__.py:23
+  ./.venv311\Lib\site-packages\pymatgen\analysis\compatibility\__init__.py:23: DeprecationWarning: This module has been moved to the pymatgen.core.structure_analyzer module. This stub will be removed v2027.1. 
+    from pymatgen.analysis.structure_analyzer import oxide_type, sulfide_type
+
+..\.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27
+  ./.venv311\Lib\site-packages\pymatgen\analysis\pourbaix_diagram.py:27: DeprecationWarning: All compatibility have been moved to the pymatgen.analysis.compatibility module. This stub will be removed v2027.1.
+    from pymatgen.entries.compatibility import MU_H2O
+
+..\.venv311\Lib\site-packages\mp_api\client\mprester.py:18
+  ./.venv311\Lib\site-packages\mp_api\client\mprester.py:18: DeprecationWarning: Entry, ComputedEntry and ComputedStructureEntry have been moved to pymatgen.core.entries module. This stub will be removed v2027.1.
+    from pymatgen.entries.computed_entries import ComputedStructureEntry
+
+..\.venv311\Lib\site-packages\e3nn\o3\_wigner.py:10
+  ./.venv311\Lib\site-packages\e3nn\o3\_wigner.py:10: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+    _Jd, _W3j_flat, _W3j_indices = torch.load(os.path.join(os.path.dirname(__file__), 'constants.pt'))
+
+backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_kpoint_symmetry_scope_and_candidate_audit
+backend/tests/test_dft_benchmark_regression.py::test_kpoint_symmetry_scope_and_candidate_audit
+  ./.venv311\Lib\site-packages\spglib\spg.py:438: DeprecationWarning: Set OLD_ERROR_HANDLING to false and catch the errors directly.
+    _set_no_error(_throw)
+
+backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+  ./.venv311\Lib\site-packages\spglib\cell.py:106: DeprecationWarning: Set OLD_ERROR_HANDLING to false and catch the errors directly.
+    _set_no_error()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: ./materials-screening-ai\research\junit_qe.xml -
+============================ slowest 10 durations =============================
+187.47s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_dfpt_born_charges_benchmark
+86.99s call     backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+14.81s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+8.10s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+5.10s call     backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+5.09s call     backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+4.71s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+0.79s call     backend/tests/test_dft_benchmark_regression.py::test_kpoint_even_mesh_guarantee
+0.29s call     backend/tests/test_dft_benchmark_regression.py::test_delta_ml_domain_safety_and_loocv
+0.09s call     backend/tests/test_dft_benchmark_regression.py::test_kpoint_symmetry_scope_and_candidate_audit
+================= 10 passed, 52 warnings in 328.71s (0:05:28) =================
+

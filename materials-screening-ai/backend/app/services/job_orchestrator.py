@@ -61,6 +61,86 @@ class DiscoveryJobOrchestrator:
         self.synthesis_service = get_synthesis_service()
         self.retrain_buffer = get_retrain_buffer()
 
+    def build_candidate_record(
+        self,
+        idx: int,
+        cand: Dict[str, Any],
+        query: Optional[Dict[str, Any]] = None,
+        parser: Optional[ConstraintParser] = None,
+        transport_analyzer: Optional[TransportPropertyProxy] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Construct candidate record dictionary following the orchestrator processing pipeline."""
+        query = query or {}
+        struct: Structure = cand["structure"]
+        target_ion = query.get("target_ion", "Li")
+
+        if parser is None:
+            parser = ConstraintParser(
+                exclude_toxic=query.get("exclude_toxic", True),
+                max_cost_usd_kg=float(query["max_cost_usd_kg"]) if query.get("max_cost_usd_kg") else None,
+                max_density_g_cm3=float(query["max_density_g_cm3"]) if query.get("max_density_g_cm3") else None,
+            )
+        if transport_analyzer is None:
+            transport_analyzer = TransportPropertyProxy(target_ion=target_ion)
+
+        # GNN Formation Energy Prediction & Tier C Band Gap Flagging
+        pred_res = self.predictor.predict(struct)
+        pred_val = float(pred_res.get("predicted_formation_energy_per_atom_eV", pred_res.get("predicted_formation_energy_eV", 0.0)))
+        pred_bg = None
+        is_solar_opt = None
+        ev_std = float(pred_res.get("evidential_std_eV", 0.1))
+        conf_int = pred_res.get("conformal_90_interval_eV", pred_res.get("conformal_90_interval", [pred_val - 0.2, pred_val + 0.2]))
+        q_low = float(conf_int[0])
+        q_high = float(conf_int[1])
+
+        # Hard Filter Evaluation
+        pass_filter, reasons, metrics = parser.evaluate_structure(struct, predicted_property=pred_val)
+        if not pass_filter:
+            print(f"[HardFilter] Rejected {cand.get('formula')}: {', '.join(reasons)}")
+            return None
+
+        # Transport Property Proxy
+        transport_res = transport_analyzer.analyze_structure(struct)
+
+        # WL Novelty Verification
+        novelty_status, match_id = self.novelty_checker.verify_novelty(struct)
+
+        # Multi-Fidelity Decision Routing
+        decision = self.mf_orchestrator.decide_next_action(
+            gnn_prediction=pred_val,
+            uncertainty_low=q_low,
+            uncertainty_high=q_high,
+            hard_filter_pass=pass_filter,
+            target_threshold=float(query.get("target_property_max")) if query.get("target_property_max") else -0.20,
+            is_solar_optimal=is_solar_opt
+        )
+
+        return {
+            "candidate_index": idx + 1,
+            "formula": cand.get("formula", ""),
+            "structure_cif": cand.get("cif_content", ""),
+            "generation_method": cand.get("generation_method", "substitution"),
+            "gnn_prediction": pred_val,
+            "predicted_band_gap_eV": None,
+            "is_solar_optimal": None,
+            "vbm_vs_vacuum_eV": None,
+            "synthesizability_score": None,
+            "gnn_uncertainty_low": q_low,
+            "gnn_uncertainty_high": q_high,
+            "evidential_std_eV": ev_std,
+            "gnn_model_version": self.al_service.current_version,
+            "novelty_status": novelty_status,
+            "known_match_id": match_id,
+            "hard_filter_pass": pass_filter,
+            "filter_reasons_json": json.dumps(reasons),
+            "density_g_cm3": metrics["density_g_cm3"],
+            "estimated_cost_usd_kg": metrics["cost_usd_kg"],
+            "free_volume_A3": transport_res["free_volume_A3"],
+            "bottleneck_radius_A": transport_res["bottleneck_radius_A"],
+            "orchestrator_decision": decision,
+            "confidence_tier": "Tier 1 (Stability & Cost Screened)",
+        }
+
     def run_discovery_pipeline(self, job_id: str, query: Dict[str, Any], user_id: Optional[int] = None):
         """Execute full discovery pipeline in background worker."""
         t0 = time.time()
@@ -106,69 +186,15 @@ class DiscoveryJobOrchestrator:
 
             # 4. Process Each Candidate
             for idx, cand in enumerate(raw_candidates):
-                struct: Structure = cand["structure"]
-
-                # GNN Formation Energy Prediction & Tier C Band Gap Flagging
-                pred_res = self.predictor.predict(struct)
-                pred_val = float(pred_res.get("predicted_formation_energy_per_atom_eV", pred_res.get("predicted_formation_energy_eV", 0.0)))
-                # Band Gap requires DFT (Tier C) — explicitly set to None (Uncalculated)
-                pred_bg = None
-                is_solar_opt = None
-                ev_std = float(pred_res.get("evidential_std_eV", 0.1))
-                conf_int = pred_res.get("conformal_90_interval_eV", pred_res.get("conformal_90_interval", [pred_val - 0.2, pred_val + 0.2]))
-                q_low = float(conf_int[0])
-                q_high = float(conf_int[1])
-
-                # Hard Filter Evaluation
-                pass_filter, reasons, metrics = parser.evaluate_structure(struct, predicted_property=pred_val)
-
-                # HARD FILTER ENFORCEMENT: Disqualify candidates that fail hard cost / toxicity filters
-                if not pass_filter:
-                    print(f"[HardFilter] Rejected {cand['formula']}: {', '.join(reasons)}")
-                    continue
-
-                # Transport Property Proxy
-                transport_res = transport_analyzer.analyze_structure(struct)
-
-                # WL Novelty Verification
-                novelty_status, match_id = self.novelty_checker.verify_novelty(struct)
-
-                # Multi-Fidelity Information Gain Decision Routing
-                decision = self.mf_orchestrator.decide_next_action(
-                    gnn_prediction=pred_val,
-                    uncertainty_low=q_low,
-                    uncertainty_high=q_high,
-                    hard_filter_pass=pass_filter,
-                    target_threshold=float(query.get("target_property_max")) if query.get("target_property_max") else -0.20,
-                    is_solar_optimal=is_solar_opt
+                cand_record = self.build_candidate_record(
+                    idx=idx,
+                    cand=cand,
+                    query=query,
+                    parser=parser,
+                    transport_analyzer=transport_analyzer,
                 )
-
-                processed_candidates.append({
-                    "candidate_index": idx + 1,
-                    "formula": cand["formula"],
-                    "structure_cif": cand["cif_content"],
-                    "generation_method": cand["generation_method"],
-                    "gnn_prediction": pred_val,
-                    "predicted_band_gap_eV": None,
-                    "is_solar_optimal": None,
-                    "vbm_vs_vacuum_eV": None,
-                    "synthesizability_score": None,
-                    "gnn_uncertainty_low": q_low,
-                    "gnn_uncertainty_high": q_high,
-                    "evidential_std_eV": ev_std,
-                    "gnn_model_version": self.al_service.current_version,
-                    "novelty_status": novelty_status,
-                    "known_match_id": match_id,
-                    "hard_filter_pass": pass_filter,
-                    "filter_reasons_json": json.dumps(reasons),
-                    "density_g_cm3": metrics["density_g_cm3"],
-                    "estimated_cost_usd_kg": metrics["cost_usd_kg"],
-                    "free_volume_A3": transport_res["free_volume_A3"],
-                    "bottleneck_radius_A": transport_res["bottleneck_radius_A"],
-                    "orchestrator_decision": decision,
-                    "confidence_tier": "Tier 1 (Stability & Cost Screened)",
-                })
-
+                if cand_record is not None:
+                    processed_candidates.append(cand_record)
             # 5. Stage 6.5: Energy Above Hull / Decomposition Stability Check
             for item in processed_candidates:
                 try:

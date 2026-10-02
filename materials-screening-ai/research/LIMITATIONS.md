@@ -84,7 +84,7 @@ This empirical measurement variance establishes an intrinsic noise floor of $\si
 When comparing self-consistent Quantum ESPRESSO PBE calculations against published DFT literature values:
 - **$\text{CsPbI}_3$**: Wiktor et al. (J. Phys. Chem. Lett. 2017, 8, 5507, Table 2) reports PBE (no SOC) band gap of $1.14\text{ eV}$. The pipeline's self-consistent QE calculation at the paper's exact experimental cubic lattice constant ($a = 6.29\text{ \AA}$) with SSSP Efficiency pseudopotentials yields $1.323\text{ eV}$ (**unexplained: +0.18 eV vs published**).
 - **$\text{MAPbCl}_3$**: Mosconi et al. (J. Phys. Chem. C 2013, 117, 13902, Table 1) reports PBE band gap of $2.34\text{ eV}$. The pipeline's self-consistent QE calculation at the paper's pseudocubic geometry ($a = 5.68\text{ \AA}$) yields $2.450\text{ eV}$ (**unexplained: +0.11 eV vs published**).
-- **Lattice Explanation Omission**: We delete the prior speculative "MP vs experimental lattice" explanation. Both pipeline DFT runs were executed at the papers' exact reported experimental lattice parameters ($a = 6.29\text{ \AA}$ and $a = 5.68\text{ \AA}$), ruling out geometry mismatch. The discrepancies arise from differences in pseudopotential cores (e.g. modern SSSP PAW/USPP vs older generation pseudopotentials) and Brillouin zone integration grids.
+- unexplained: +0.18 eV (CsPbI3) vs published PBE with NC pseudopotentials at 80 Ry/6x6x6; optionally run QE with an NC (ONCV) pseudopotential at the paper's settings and report the gap.
 
 ---
 
@@ -125,32 +125,24 @@ Semi-local PBE functional performance varies drastically between heavy $6p$ lead
 
 ---
 
-## 6. Conformal Prediction Validity Floor ($n_{\text{cal}} \ge 9$) & Prediction Intervals
+## 6. Conformal Prediction Validity Floor & Deployed Prediction Intervals
 
-### 6.1 Mathematical Validity Requirement
-Split-conformal prediction at significance level $\alpha = 0.10$ requires computing the order statistic:
-$$k = \left\lceil (n_{\text{cal}} + 1)(1 - \alpha) \right\rceil = \left\lceil (n_{\text{cal}} + 1) \cdot 0.90 \right\rceil$$
+### 6.1 Mathematical Validity Requirement ($n=6$)
+Conformal prediction order statistic calculation:
+$$k = \left\lceil (n + 1)(1 - \alpha) \right\rceil$$
 
-For a finite, valid prediction interval, the $k$-th order statistic must exist within the calibration set:
-$$k \le n_{\text{cal}} \iff \left\lceil (n_{\text{cal}} + 1) \cdot 0.90 \right\rceil \le n_{\text{cal}}$$
+For the deployed lead-halide perovskite predictor ($n=6$):
+- **90% Confidence ($\alpha = 0.10$)**:
+  $$k = \lceil (6 + 1) \cdot 0.90 \rceil = \lceil 6.3 \rceil = 7 > 6 \quad (\textbf{Undefined / Infinite Interval})$$
+- **80% Confidence ($\alpha = 0.20$)**:
+  $$k = \lceil (6 + 1) \cdot 0.80 \rceil = \lceil 5.6 \rceil = 6 \le 6 \quad (\textbf{Valid Finite-Sample Interval})$$
 
-Evaluating this inequality yields the exact integer threshold:
-- $n_{\text{cal}} = 8 \implies k = \lceil 9 \times 0.90 \rceil = \lceil 8.1 \rceil = 9 > 8$ (**Invalid / Infinite Interval**)
-- $n_{\text{cal}} = 9 \implies k = \lceil 10 \times 0.90 \rceil = 9 \le 9$ (**Valid**)
+The deployed predictor therefore reports an **80% prediction interval** calibrated strictly from the $n=6$ Pb-only leave-one-out residuals ($k=6$), or reports no interval if 90% coverage is requested. The previously reported pooled-10 $\tilde{q}$ has been removed from the deployed service.
 
-### 6.2 Residual Normalization and Empirical Coverage
-1. **Normalized LOO Residuals**:
-   The deployed pooled conformal quantile $\tilde{q} = 0.7273\text{ eV}$ is computed using **normalized leave-one-out (LOO) residuals**:
-   $$s_i = \frac{|e_{i, \text{LOO}}|}{\sqrt{1 + h_{i, q}}}, \quad k = \lceil 11 \times 0.90 \rceil = 10$$
-   where $h_{i, q}$ is the fold-specific held-out query leverage.
-2. **Empirical LOO Coverage**:
-   Evaluating the deployed intervals $E_{\text{pred}} \pm \tilde{q} \sqrt{1 + h_q}$ across all calibration compounds yields empirical coverage of **10/10 (100.0%)**.
-   Interval half-widths across calibration perovskites range from **$0.84\text{ eV}$ to $1.15\text{ eV}$**.
-3. **Reconciliation of In-Family Undefined Status**:
-   - Within the halide perovskite family alone ($n=7$), $k = \lceil 8 \times 0.90 \rceil = 8 > 7$. Thus, `q_tilde_in_family: "undefined"` is formally correct under rigorous distribution-free conformal theory (requiring $n_{\text{cal}} \ge 9$).
-   - The production pipeline reconciles this by using the pooled $N=10$ normalized LOO residuals ($k = 10 \le 10$), which provides finite, mathematically valid coverage.
-4. **Held-Out Intervals & Practical Informativeness**:
-   - On the held-out test benchmarks, the conformal interval widths are:
-     - $\text{FAPbI}_3$: $[0.76, 2.58]\text{ eV}$ (width $= 1.82\text{ eV}$)
-     - $\text{MASnI}_3$: $[0.13, 2.10]\text{ eV}$ (width $= 1.98\text{ eV}$)
-   - **Uninformativeness Statement**: While these intervals achieve empirical coverage, interval widths of **$1.8-2.0\text{ eV}$ are practically uninformative for solar materials screening**. Solar absorber candidate selection requires identifying compounds within a narrow band gap window of $1.1-1.4\text{ eV}$ (within $\pm 0.15\text{ eV}$ of the optimal Shockley-Queisser limit). An uncertainty interval spanning nearly $2.0\text{ eV}$ cannot reliably differentiate a high-efficiency photovoltaic absorber from an ineffective wide-gap or narrow-gap material.
+### 6.2 In-Sample LOO Coverage Tautology & Held-Out Performance
+1. **Tautological In-Sample Coverage**:
+   Evaluating conformal coverage on the calibration training set itself using leave-one-out residuals is mathematically tautological. Because $\tilde{q}$ is defined by construction as the empirical order statistic of the LOO residuals ($k=6$ out of $6$), the in-sample LOO coverage is guaranteed to be $100\%$ ($6/6$) by definition. Real statistical validity can only be demonstrated on independent held-out queries.
+2. **Held-Out Predictions**:
+   - $\text{FAPbI}_3$ (In-Domain Lead Halide): PBE $= 1.2656\text{ eV} \implies \hat{E}_g = 1.5951\text{ eV}$ (Target $1.48\text{ eV}$, error $0.1151\text{ eV}$). With $80\%$ interval half-width $\pm 0.2590\text{ eV}$, interval is $[1.336, 1.854]\text{ eV}$ (covered).
+   - $\text{MASnI}_3$ (Out-of-Domain Tin Halide): Categorized as `out_of_domain` with reason `"Sn/SOC regime, 1 calibration point"`. Evaluating the un-gated Pb model on $\text{MASnI}_3$ yields $\hat{E}_g = 0.5269\text{ eV}$ (Target $1.20\text{ eV}$, error $0.6731\text{ eV}$), showing catastrophic failure when extrapolating across the relativistic SOC regime.
+

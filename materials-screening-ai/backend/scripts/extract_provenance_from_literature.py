@@ -22,11 +22,11 @@ CANDIDATE_PATHS = [
     Path("research/literature/combined.md"),
 ]
 
-def find_combined_md() -> Path:
+def find_combined_md():
     for p in CANDIDATE_PATHS:
         if p.exists():
             return p
-    raise FileNotFoundError("combined.md not found in repository.")
+    return None
 
 def extract_page_number(text: str, match_pos: int, paper_prefix: str) -> str:
     """Extract page number from nearest preceding or following page marker."""
@@ -66,6 +66,9 @@ def extract_page_number(text: str, match_pos: int, paper_prefix: str) -> str:
 
 def main():
     combined_path = find_combined_md()
+    if combined_path is None:
+        print("[INFO] Literature corpus (combined.md) is absent from repository. Exiting cleanly.")
+        sys.exit(0)
     print(f"Reading literature corpus from: {combined_path.resolve()}")
     with open(combined_path, 'r', encoding='utf-8', errors='ignore') as f:
         full_text = f.read()

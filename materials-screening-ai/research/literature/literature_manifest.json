@@ -1,0 +1,105 @@
+{
+  "manifest_description": "Provenance manifest recording DOIs and SHA256 digests for all local literature corpus files.",
+  "corpus_files": {
+    "combined.md": {
+      "sha256": "3bbf35118c8c36e1f2b5fc7b1f714d38522e2100a9961b34512259c2f1795c3c",
+      "size_bytes": 448857
+    },
+    "evidence_matrix.csv": {
+      "sha256": "bec673db7cd92a707db3dd48920cb78e29bab330997d7184fcabd980285f70ed",
+      "size_bytes": 3008
+    },
+    "verified_literature_targets.csv": {
+      "sha256": "1e1802d6bfc4e8ec526d76f57f0054febb9342c0d7e3b12793b6730c16d1347f",
+      "size_bytes": 5230
+    },
+    "pdfs/bilc_2008_arxiv0712.2764.pdf": {
+      "sha256": "ad74a587d6be598a225fd4a7aac8f91fb61d3481988fffb8ee15447c0382c190",
+      "size_bytes": 426111
+    },
+    "pdfs/bilc_2008_arxiv0805.0753.pdf": {
+      "sha256": "f2520f307651a96545de4852dd70490cbc9373726471fb319bf4ba1d45f031b2",
+      "size_bytes": 529396
+    },
+    "pdfs/brivio_2014_arxiv1312.4839.pdf": {
+      "sha256": "066d1b6c85b0223f3f56f9d908f1fb69fd8b69ae0d5a7a5571c6524d3cfb6fd7",
+      "size_bytes": 335224
+    },
+    "pdfs/brivio_2014_arxiv1401.4057.pdf": {
+      "sha256": "ed46274f68c905ae665560aca5e6deef7d6d66dae32e3f5512c47ab7b2a7589d",
+      "size_bytes": 859052
+    },
+    "pdfs/brivio_2014_arxiv1401.6993.pdf": {
+      "sha256": "e51f956b1f9b2983597573d151ca1b92bba3b0a839887e41cf10c2bdf9e2182c",
+      "size_bytes": 802535
+    },
+    "pdfs/huang_2013_arxiv1307.6186.pdf": {
+      "sha256": "03cadadd73dcf854cb1e533aca76dfd235a57b41e38eec782602f728938aa384",
+      "size_bytes": 391322
+    }
+  },
+  "verified_paper_references": [
+    {
+      "title": "Bandgap calculations and trends of organometal halide perovskites",
+      "authors": "Castelli, Garcia-Lastra, Thygesen, Jacobsen",
+      "journal": "APL Materials 2, 081514 (2014)",
+      "doi": "10.1063/1.4893495"
+    },
+    {
+      "title": "Energy band gaps and lattice parameters evaluated with the Heyd-Scuseria-Ernzerhof screened hybrid functional",
+      "authors": "Heyd, Peralta, Scuseria, Martin",
+      "journal": "J. Chem. Phys. 123, 174101 (2005)",
+      "doi": "10.1063/1.2085170"
+    },
+    {
+      "title": "First-Principles Modeling of Mixed Halide Organometal Perovskites for Photovoltaic Applications",
+      "authors": "Mosconi, Amat, Nazeeruddin, Gratzel, De Angelis",
+      "journal": "J. Phys. Chem. C 117, 13902-13913 (2013)",
+      "doi": "10.1021/jp4048659"
+    },
+    {
+      "title": "Bulk properties and electronic structure of SrTiO3, BaTiO3, PbTiO3 perovskites: an ab initio HF/DFT study",
+      "authors": "Piskunov, Heifets, Eglitis, Borstel",
+      "journal": "Comput. Mater. Sci. 29, 165-178 (2004)",
+      "doi": "10.1016/j.commatsci.2003.08.036"
+    },
+    {
+      "title": "Predictive Determination of Band Gaps of Inorganic Halide Perovskites",
+      "authors": "Wiktor, Rothlisberger, Pasquarello",
+      "journal": "J. Phys. Chem. Lett. 8, 5507-5512 (2017)",
+      "doi": "10.1021/acs.jpclett.7b02648"
+    },
+    {
+      "title": "Stability and electronic properties of new inorganic perovskites from high-throughput ab initio calculations",
+      "authors": "Korbel, Marques, Botti",
+      "journal": "J. Mater. Chem. C 4, 3157-3167 (2016)",
+      "doi": "10.1039/C6TC00295H",
+      "status": "unverified_for_calibration"
+    },
+    {
+      "title": "Heyd-Scuseria-Ernzerhof hybrid functional for calculating the lattice dynamics of semiconductors",
+      "authors": "Hummer, Harl, Kresse",
+      "journal": "Phys. Rev. B 79, 134105 (2009)",
+      "doi": "10.1103/PhysRevB.79.134105",
+      "status": "unverified_for_calibration"
+    },
+    {
+      "title": "Electronic structure of (Sr,Ba,Pb)TiO3: A comparative study using hybrid functionals",
+      "authors": "Bilc, Orlando, Shaltaf, Rignanese et al.",
+      "journal": "Phys. Rev. B 77, 165107 (2008)",
+      "doi": "10.1103/PhysRevB.77.165107"
+    },
+    {
+      "title": "Electronic band structure and optical properties of the full-inorganic and organic-inorganic halide perovskites",
+      "authors": "Huang, Lambrecht",
+      "journal": "Phys. Rev. B 88, 165203 (2013)",
+      "doi": "10.1103/PhysRevB.88.165203"
+    },
+    {
+      "title": "Relativistic GW calculations on CH3NH3PbI3 and CH3NH3SnI3",
+      "authors": "Brivio, Butler, Walsh, van Schilfgaarde",
+      "journal": "Phys. Rev. B 89, 155204 (2014)",
+      "doi": "10.1103/PhysRevB.89.155204"
+    }
+  ]
+}

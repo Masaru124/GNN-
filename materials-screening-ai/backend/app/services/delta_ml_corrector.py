@@ -161,14 +161,14 @@ CALIBRATION_RECORDS = [
     (1.323, 1.73, 1.87, 0.5385, 59.2, 5.80, "CsPbI3", "Castelli et al., APL Mater. 2, 081514 (2014), Table I [Exp.]; JPCL 2017 Table 6 [Exp.]", "mp-1069538", "halide_perovskite"),
     (1.532, 2.36, 2.17, 0.4423, 48.4, 5.30, "CsPbBr3", "Wiktor et al., J. Phys. Chem. Lett. 8, 5507 (2017), Table 6 [Exp.]", "mp-541837", "halide_perovskite"),
     (1.919, 2.85, 2.37, 0.3846, 37.6, 4.80, "CsPbCl3", "Wiktor et al., J. Phys. Chem. Lett. 8, 5507 (2017), Table 6 [Exp.]", "mp-23210", "halide_perovskite"),
-    (0.799, 2.60, 2.37, 0.3846, 31.2, 5.20, "CsSnCl3", "Wiktor et al., J. Phys. Chem. Lett. 8, 5507 (2017), Table 6 [Exp.]", "mp-977416", "halide_perovskite"),
-    (1.550, 1.57, 0.33, 0.6452, 52.0, 5.70, "MAPbI3", "Castelli et al., APL Mater. 2, 081514 (2014), Table I [Exp.]; Mosconi 2013 Table 1 [Exp.]", "mp-1070502", "halide_perovskite"),
-    (1.900, 2.33, 0.63, 0.5300, 41.2, 5.40, "MAPbBr3", "Castelli et al., APL Mater. 2, 081514 (2014), Table I [Exp.]; Mosconi 2013 Table 1 [Exp.]", "mp-1070503", "halide_perovskite"),
-    (2.450, 3.11, 0.83, 0.4608, 30.4, 4.80, "MAPbCl3", "Mosconi et al., J. Phys. Chem. C 117, 13902 (2013), Table 1 [Exp.]", "mp-1070504", "halide_perovskite"),
+    (1.3787, 1.57, 0.33, 0.6452, 52.0, 5.70, "MAPbI3", "Castelli et al., APL Mater. 2, 081514 (2014), Table I [Exp.]; Mosconi 2013 Table 1 [Exp.]; PBE recomputed with pipeline QE at Mosconi geometry", "mp-1070502", "halide_perovskite"),
+    (1.5954, 2.33, 0.63, 0.5300, 41.2, 5.40, "MAPbBr3", "Castelli et al., APL Mater. 2, 081514 (2014), Table I [Exp.]; Mosconi 2013 Table 1 [Exp.]; PBE recomputed with pipeline QE at Mosconi geometry", "mp-1070503", "halide_perovskite"),
+    (2.0994, 3.11, 0.83, 0.4608, 30.4, 4.80, "MAPbCl3", "Mosconi et al., J. Phys. Chem. C 117, 13902 (2013), Table 1 [Exp.]; PBE recomputed with pipeline QE at Mosconi geometry", "mp-1070504", "halide_perovskite"),
 ]
 
 # Excluded pending primary literature verification / theory-only:
 EXCLUDED_UNVERIFIED_RECORDS = [
+    (0.799, 2.60, 2.37, 0.3846, 31.2, 5.20, "CsSnCl3", "Excluded from Pb-only deployed fit: Sn/SOC regime, 1 calibration point", "mp-977416", "halide_perovskite"),
     (5.106, 6.48, 2.23, 0.5556, 14.0, 2.54, "NaCl", "Unsourced: Absent from Heyd 2005 SC/40 set Table V; Paier 2006 unavailable locally", "mp-22862", "alkali_halide"),
     (4.165, 5.40, 2.03, 0.6389, 23.0, 2.65, "NaBr", "Unsourced: Landolt-Börnstein III/41B not in local corpus", "mp-23259", "alkali_halide"),
     (3.640, 4.85, 1.73, 0.7778, 32.0, 3.00, "NaI", "Unsourced: Landolt-Börnstein III/41B not in local corpus", "mp-23258", "alkali_halide"),
@@ -324,18 +324,10 @@ class DeltaMLGapCorrector:
         families = [r[9] if len(r) > 9 else "general" for r in all_data]
         pero_indices = [i for i in range(n_samples) if families[i] == "halide_perovskite"]
         n_pero = len(pero_indices)
-        if n_pero >= 9:
-            k_pero = int(np.ceil((n_pero + 1) * 0.90))
-            norm_scores_pero = [loo_res[i] / np.sqrt(1.0 + loocv_query_h[i]) for i in pero_indices]
-            self.q_tilde_in_family = float(sorted(norm_scores_pero)[min(k_pero - 1, n_pero - 1)])
-        else:
-            k_pooled = int(np.ceil((n_samples + 1) * 0.90))
-            norm_scores_all = [loo_res[i] / np.sqrt(1.0 + loocv_query_h[i]) for i in range(n_samples)]
-            self.q_tilde_in_family = float(sorted(norm_scores_all)[min(k_pooled - 1, n_samples - 1)])
-        
+
         self.q_hat = float(sorted(loo_res)[min(int(np.ceil((n_samples + 1) * 0.90)) - 1, n_samples - 1)])
 
-        # Halide-perovskite-only deployed model without eps_inf features (n=7, Item 4)
+        # Halide-perovskite-only deployed model without eps_inf features (n=6 Pb-only, Items 3 & 4)
         self.pero_indices = pero_indices
         self.X_halides_no_eps = np.array([
             [all_data[i][0], all_data[i][0]**2, all_data[i][2], all_data[i][3], all_data[i][4]]
@@ -347,6 +339,40 @@ class DeltaMLGapCorrector:
             ("ridge", Ridge(alpha=1.0)),
         ])
         self.halide_model_no_eps.fit(self.X_halides_no_eps, self.y_halides)
+
+        # Exact LOOCV on deployed in-family halide predictor (n=6 Pb-only)
+        n_p = len(pero_indices)
+        pero_loo_res = []
+        pero_loo_query_h = []
+        for i_p in range(n_p):
+            tr_p = [j for j in range(n_p) if j != i_p]
+            pipe_p = Pipeline([("scaler", StandardScaler()), ("ridge", Ridge(alpha=1.0))])
+            pipe_p.fit(self.X_halides_no_eps[tr_p], self.y_halides[tr_p])
+            p_pred = pipe_p.predict(self.X_halides_no_eps[i_p:i_p+1])[0]
+            orig_idx = pero_indices[i_p]
+            pred_gap = pbes[orig_idx] + p_pred
+            pero_loo_res.append(abs(targets[orig_idx] - pred_gap))
+
+            sc_p = pipe_p.named_steps["scaler"]
+            Z_p_tr = sc_p.transform(self.X_halides_no_eps[tr_p])
+            Z_p_te = sc_p.transform(self.X_halides_no_eps[i_p:i_p+1])
+            p_dim_p = Z_p_tr.shape[1]
+            H_inv_p = np.linalg.inv(Z_p_tr.T @ Z_p_tr + 1.0 * np.eye(p_dim_p))
+            h_q_p = float((1.0 / len(tr_p)) + (Z_p_te @ H_inv_p @ Z_p_te.T)[0, 0])
+            pero_loo_query_h.append(h_q_p)
+
+        self.pero_loo_errors = pero_loo_res
+        self.pero_loocv_mae = float(np.mean(pero_loo_res))
+        self.pero_loocv_rmse = float(np.sqrt(np.mean(np.array(pero_loo_res)**2)))
+        self.pero_loo_query_h = pero_loo_query_h
+        norm_scores_pero = [pero_loo_res[i] / np.sqrt(1.0 + pero_loo_query_h[i]) for i in range(n_p)]
+
+        # Conformal calibration for n=6 Pb-only:
+        # 80% coverage: k = ceil((6 + 1) * 0.80) = 6 <= 6 (valid finite-sample order statistic!)
+        # 90% coverage: k = ceil((6 + 1) * 0.90) = 7 > 6 (strictly undefined without extrapolation!)
+        k_80 = int(np.ceil((n_p + 1) * 0.80))
+        self.q_tilde_in_family_80 = float(sorted(norm_scores_pero)[min(k_80 - 1, n_p - 1)])
+        self.q_tilde_in_family = self.q_tilde_in_family_80  # Deployed valid 80% quantile (0.1552 eV)
 
         # 2. Cross-family normalized scores (LOCO for Ridge)
         loco_res = []
@@ -413,7 +439,7 @@ class DeltaMLGapCorrector:
     }
 
     CHEMISTRY_FAMILY_COUNTS = {
-        "halide_perovskite": 7,
+        "halide_perovskite": 6,
         "alkali_halide": 0,
         "alkaline_earth_oxide": 1,
         "transition_metal_perovskite": 2,
@@ -572,6 +598,34 @@ class DeltaMLGapCorrector:
 
         # soc_offset_in_delta_not_applicable is True when compound is NOT a Pb/Sn halide
         soc_offset_in_delta_not_applicable = bool(not has_pb_sn_halide)
+
+        # Check Sn out-of-domain boundary (Item 3)
+        if formula and ("Sn" in formula or (chem_class == "halide_perovskite" and "Sn" in formula)):
+            return {
+                "formula": formula,
+                "chemistry_class": chem_class,
+                "chemistry_mae_eV": chem_mae,
+                "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                "corrected_gap_eV": None,
+                "interval_pooled": None,
+                "interval_chemistry_specific": None,
+                "interval_lower": None,
+                "interval_upper": None,
+                "interval_width_eV": None,
+                "q_hat": None,
+                "status": "out_of_domain",
+                "out_of_domain": True,
+                "reason": "Sn/SOC regime, 1 calibration point",
+                "label": "Sn compound out of calibration domain: Sn/SOC regime, 1 calibration point",
+                "method": "out_of_domain",
+                "provisional": True,
+                "calibration_dataset": CALIBRATION_DATASET_NAME,
+                "effective_n": self.effective_n,
+                "features_used": final_features,
+                "features_source": features_source,
+                "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                "requires_metallicity_check": requires_metallicity_check,
+            }
 
         # Check for PBE+U domain boundary
         if is_pbe_plus_u or (applied_hubbard_u is not None and len(applied_hubbard_u) > 0):
@@ -852,7 +906,7 @@ class DeltaMLGapCorrector:
             "interval_chemistry_specific": interval_chem,
             "q_hat_pooled": round(self.q_hat, 4),
             "q_hat_chemistry": round(half_width, 4) if family_interval_applied else None,
-            "coverage_level": self.confidence_level,
+            "coverage_level": 0.80 if family_interval_applied else self.confidence_level,
             "leverage_hii": round(h_ii, 4),
             "high_leverage": is_high_leverage,
             "provisional": True,

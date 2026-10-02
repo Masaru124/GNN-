@@ -2,7 +2,21 @@
 
 import { useState } from "react";
 import { CandidateItem } from "./ParetoFrontierChart";
-import { Download, Sparkles, Cpu, CheckCircle2, X, Activity, Box, FlaskConical, ShieldCheck, RefreshCw, BookOpen, AlertCircle, Zap } from "lucide-react";
+import {
+  Download,
+  Sparkles,
+  Cpu,
+  CheckCircle2,
+  X,
+  Activity,
+  Box,
+  FlaskConical,
+  ShieldCheck,
+  RefreshCw,
+  BookOpen,
+  AlertCircle,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Viewer3D } from "@/components/Viewer3D";
 
@@ -13,20 +27,37 @@ interface Props {
   onCandidatesUpdated?: () => void;
 }
 
-export function CandidateTable({ candidates, onTriggerValidation, isValidating, onCandidatesUpdated }: Props) {
+export function CandidateTable({
+  candidates,
+  onTriggerValidation,
+  isValidating,
+  onCandidatesUpdated,
+}: Props) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterMode, setFilterMode] = useState<string>("all");
-  const [activeTrajectoryCandidate, setActiveTrajectoryCandidate] = useState<CandidateItem | null>(null);
-  const [active3DmolCandidate, setActive3DmolCandidate] = useState<CandidateItem | null>(null);
+  const [activeTrajectoryCandidate, setActiveTrajectoryCandidate] =
+    useState<CandidateItem | null>(null);
+  const [active3DmolCandidate, setActive3DmolCandidate] =
+    useState<CandidateItem | null>(null);
   const [dftQueuingId, setDftQueuingId] = useState<number | null>(null);
-  const [dftStatusMsg, setDftStatusMsg] = useState<{ id: number; msg: string; isError?: boolean } | null>(null);
+  const [dftStatusMsg, setDftStatusMsg] = useState<{
+    id: number;
+    msg: string;
+    isError?: boolean;
+  } | null>(null);
 
-  const handleQueueDft = async (cand: CandidateItem, fastMode: boolean = true) => {
+  const handleQueueDft = async (
+    cand: CandidateItem,
+    fastMode: boolean = true,
+  ) => {
     setDftQueuingId(cand.id);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/dft/queue/${cand.id}?fast_mode=${fastMode}&kpt_dist=0.35`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/dft/queue/${cand.id}?fast_mode=${fastMode}&kpt_dist=0.35`,
+        {
+          method: "POST",
+        },
+      );
       const data = await res.json();
       if (data.status === "qe_not_installed") {
         setDftStatusMsg({
@@ -57,12 +88,14 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
   const selectAllRank1 = () => {
-    const rank1Ids = candidates.filter((c) => c.pareto_rank === 1).map((c) => c.id);
+    const rank1Ids = candidates
+      .filter((c) => c.pareto_rank === 1)
+      .map((c) => c.id);
     setSelectedIds(rank1Ids);
   };
 
@@ -81,8 +114,13 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
     if (filterMode === "rank1") return c.pareto_rank === 1;
     if (filterMode === "novel") return c.novelty_status === "novel";
     if (filterMode === "tier2") return c.confidence_tier.includes("Tier 2");
-    if (filterMode === "ensemble_disagree") return c.ensemble_status === "requires_independent_validation";
-    if (filterMode === "ensemble_agree") return c.ensemble_status === "high_confidence_agreement" || c.ensemble_status === "moderate_agreement";
+    if (filterMode === "ensemble_disagree")
+      return c.ensemble_status === "requires_independent_validation";
+    if (filterMode === "ensemble_agree")
+      return (
+        c.ensemble_status === "high_confidence_agreement" ||
+        c.ensemble_status === "moderate_agreement"
+      );
     return true;
   });
 
@@ -91,8 +129,13 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
       {/* Table Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
         <div>
-          <h3 className="text-base font-bold text-foreground">Discovered Candidate Shortlist</h3>
-          <p className="text-xs text-muted-foreground">Ranked by multi-objective Pareto optimality, charge neutrality & physics confidence</p>
+          <h3 className="text-base font-bold text-foreground">
+            Discovered Candidate Shortlist
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Ranked by multi-objective Pareto optimality, charge neutrality &
+            physics confidence
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -125,18 +168,24 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
             className="text-xs gap-1.5 font-bold"
           >
             <Cpu className="h-3.5 w-3.5" />
-            {isValidating ? "Running MLIP Relaxation..." : `Validate Selected (${selectedIds.length})`}
+            {isValidating
+              ? "Running MLIP Relaxation..."
+              : `Validate Selected (${selectedIds.length})`}
           </Button>
         </div>
       </div>
 
       {/* S.U.N. Rate Summary Card (MatterGen / LeMat-GenBench Standard Benchmark) */}
-      {candidates.some((c) => c.e_above_hull_eV !== undefined && c.e_above_hull_eV !== null) && (
+      {candidates.some(
+        (c) => c.e_above_hull_eV !== undefined && c.e_above_hull_eV !== null,
+      ) && (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             <div>
-              <span className="font-bold text-foreground">Discovery Funnel S.U.N. Metrics</span>
+              <span className="font-bold text-foreground">
+                Discovery Funnel S.U.N. Metrics
+              </span>
               <span className="text-muted-foreground ml-1.5 text-[11px]">
                 (Stable / Unique / Novel standard crystal discovery rate)
               </span>
@@ -144,23 +193,41 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
           </div>
           <div className="flex items-center gap-4 font-mono text-xs">
             <div className="bg-background/80 px-2.5 py-1 rounded border border-border">
-              <span className="text-muted-foreground text-[10px] block">Strict S.U.N. (≤0 eV/atom)</span>
+              <span className="text-muted-foreground text-[10px] block">
+                Strict S.U.N. (≤0 eV/atom)
+              </span>
               <strong className="text-emerald-500 text-sm">
                 {(
-                  (candidates.filter((c) => c.e_above_hull_eV !== null && c.e_above_hull_eV !== undefined && c.e_above_hull_eV <= 0.0 && c.novelty_status === "novel").length /
+                  (candidates.filter(
+                    (c) =>
+                      c.e_above_hull_eV !== null &&
+                      c.e_above_hull_eV !== undefined &&
+                      c.e_above_hull_eV <= 0.0 &&
+                      c.novelty_status === "novel",
+                  ).length /
                     Math.max(1, candidates.length)) *
                   100
-                ).toFixed(1)}%
+                ).toFixed(1)}
+                %
               </strong>
             </div>
             <div className="bg-background/80 px-2.5 py-1 rounded border border-border">
-              <span className="text-muted-foreground text-[10px] block">M.S.U.N. (≤0.1 eV/atom)</span>
+              <span className="text-muted-foreground text-[10px] block">
+                M.S.U.N. (≤0.1 eV/atom)
+              </span>
               <strong className="text-primary text-sm">
                 {(
-                  (candidates.filter((c) => c.e_above_hull_eV !== null && c.e_above_hull_eV !== undefined && c.e_above_hull_eV <= 0.1 && c.novelty_status === "novel").length /
+                  (candidates.filter(
+                    (c) =>
+                      c.e_above_hull_eV !== null &&
+                      c.e_above_hull_eV !== undefined &&
+                      c.e_above_hull_eV <= 0.1 &&
+                      c.novelty_status === "novel",
+                  ).length /
                     Math.max(1, candidates.length)) *
                   100
-                ).toFixed(1)}%
+                ).toFixed(1)}
+                %
               </strong>
             </div>
             <div className="text-[10px] text-muted-foreground max-w-xs hidden md:block">
@@ -200,9 +267,14 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
               <th className="p-2.5 w-8">
                 <input
                   type="checkbox"
-                  checked={selectedIds.length === candidates.length && candidates.length > 0}
+                  checked={
+                    selectedIds.length === candidates.length &&
+                    candidates.length > 0
+                  }
                   onChange={(e) =>
-                    setSelectedIds(e.target.checked ? candidates.map((c) => c.id) : [])
+                    setSelectedIds(
+                      e.target.checked ? candidates.map((c) => c.id) : [],
+                    )
                   }
                   className="rounded border-border text-primary"
                 />
@@ -266,7 +338,9 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                   <td className="p-2.5 font-semibold text-foreground">
                     <div>{cand.formula}</div>
                     <div className="text-[10px] text-muted-foreground font-normal">
-                      {cand.generation_method === "pymatgen_substitution" ? "Substitution" : "MatterGen AI"}
+                      {cand.generation_method === "pymatgen_substitution"
+                        ? "Substitution"
+                        : "MatterGen AI"}
                     </div>
                   </td>
 
@@ -281,7 +355,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                   <td className="p-2.5">
                     {cand.orchestrator_decision === "promote_to_tier2" ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
-                        <Cpu className="h-3 w-3 text-emerald-500" /> Promote → Tier 2
+                        <Cpu className="h-3 w-3 text-emerald-500" /> Promote →
+                        Tier 2
                       </span>
                     ) : cand.orchestrator_decision === "reject" ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold text-[10px]">
@@ -297,7 +372,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                   {/* Charge Neutrality Gate */}
                   <td className="p-2.5">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
-                      <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Balanced
+                      <CheckCircle2 className="h-3 w-3 text-emerald-500" />{" "}
+                      Balanced
                     </span>
                   </td>
 
@@ -308,20 +384,24 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
                   {/* Energy Above Hull (Item 1) */}
                   <td className="p-2.5">
-                    {cand.e_above_hull_eV !== null && cand.e_above_hull_eV !== undefined ? (
+                    {cand.e_above_hull_eV !== null &&
+                    cand.e_above_hull_eV !== undefined ? (
                       <span
                         title={`Convex Hull Classification: ${cand.hull_classification || "computed"}`}
                         className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
                           cand.e_above_hull_eV <= 0.0001
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                             : cand.e_above_hull_eV <= 0.05
-                            ? "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30"
-                            : cand.e_above_hull_eV <= 0.1
-                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                            : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                              ? "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30"
+                              : cand.e_above_hull_eV <= 0.1
+                                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                                : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
                         }`}
                       >
-                        {cand.e_above_hull_eV <= 0 ? "0.000" : `+${cand.e_above_hull_eV.toFixed(3)}`} eV
+                        {cand.e_above_hull_eV <= 0
+                          ? "0.000"
+                          : `+${cand.e_above_hull_eV.toFixed(3)}`}{" "}
+                        eV
                       </span>
                     ) : (
                       <span
@@ -335,7 +415,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
                   {/* Honestly Labeled Band Gap Column (Item 3 Tier B / C) */}
                   <td className="p-2.5">
-                    {cand.estimated_band_gap_eV !== null && cand.estimated_band_gap_eV !== undefined ? (
+                    {cand.estimated_band_gap_eV !== null &&
+                    cand.estimated_band_gap_eV !== undefined ? (
                       <div className="flex flex-col gap-0.5">
                         <span
                           title={`Tier B ML/Heuristic Estimate (${cand.bandgap_estimate_source || "calibrated"}). Disclosed error ~0.3-0.5 eV vs DFT.`}
@@ -348,8 +429,11 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                             🌞 Solar Optimal (1.1-1.7 eV)
                           </span>
                         )}
-                        {(cand.is_solar_optimal === null || cand.is_solar_optimal === undefined) && (
-                          <span className="text-[9px] text-muted-foreground italic">—</span>
+                        {(cand.is_solar_optimal === null ||
+                          cand.is_solar_optimal === undefined) && (
+                          <span className="text-[9px] text-muted-foreground italic">
+                            —
+                          </span>
                         )}
                       </div>
                     ) : (
@@ -364,7 +448,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
                   {/* Conformal 90% Interval */}
                   <td className="p-2.5 font-mono text-muted-foreground">
-                    [{cand.gnn_uncertainty_low.toFixed(2)}, {cand.gnn_uncertainty_high.toFixed(2)}]
+                    [{cand.gnn_uncertainty_low.toFixed(2)},{" "}
+                    {cand.gnn_uncertainty_high.toFixed(2)}]
                   </td>
 
                   {/* Novelty Status */}
@@ -387,7 +472,10 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
                   {/* Channel Bottleneck Radius */}
                   <td className="p-2.5 font-mono text-foreground font-semibold">
-                    {cand.bottleneck_radius_A ? cand.bottleneck_radius_A.toFixed(2) : "1.25"} Å
+                    {cand.bottleneck_radius_A
+                      ? cand.bottleneck_radius_A.toFixed(2)
+                      : "1.25"}{" "}
+                    Å
                   </td>
 
                   {/* Free Volume */}
@@ -397,7 +485,8 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
                   {/* Tier 2 MLIP Physics Validation Status & Trajectory Button */}
                   <td className="p-2.5">
-                    {cand.mlip_relaxed_energy_eV !== null && cand.mlip_relaxed_energy_eV !== undefined ? (
+                    {cand.mlip_relaxed_energy_eV !== null &&
+                    cand.mlip_relaxed_energy_eV !== undefined ? (
                       <button
                         onClick={() => setActiveTrajectoryCandidate(cand)}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 transition-colors text-left"
@@ -413,7 +502,9 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                         </div>
                       </button>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground italic">Tier 1 Only</span>
+                      <span className="text-[10px] text-muted-foreground italic">
+                        Tier 1 Only
+                      </span>
                     )}
                   </td>
 
@@ -423,21 +514,26 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                       <div
                         title={
                           cand.energy_disagreement_eV_per_atom != null
-                            ? `ΔE: ${cand.energy_disagreement_eV_per_atom.toFixed(4)} eV/atom | RMSD: ${cand.structural_rmsd_between_mlips_A != null ? cand.structural_rmsd_between_mlips_A.toFixed(4) + ' Å' : 'N/A'}\n\nNote: Agreement = \"no evidence of blind spot,\" NOT \"confirmed correct.\" This is a triage gate, not a replacement for independent validation.`
-                            : `Status: ${cand.ensemble_status}\n\nNote: Agreement = \"no evidence of blind spot,\" NOT \"confirmed correct.\"` 
+                            ? `ΔE: ${cand.energy_disagreement_eV_per_atom.toFixed(4)} eV/atom | RMSD: ${cand.structural_rmsd_between_mlips_A != null ? cand.structural_rmsd_between_mlips_A.toFixed(4) + " Å" : "N/A"}\n\nNote: Agreement = \"no evidence of blind spot,\" NOT \"confirmed correct.\" This is a triage gate, not a replacement for independent validation.`
+                            : `Status: ${cand.ensemble_status}\n\nNote: Agreement = \"no evidence of blind spot,\" NOT \"confirmed correct.\"`
                         }
                       >
-                        {cand.ensemble_status === "high_confidence_agreement" ? (
+                        {cand.ensemble_status ===
+                        "high_confidence_agreement" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
-                            <ShieldCheck className="h-3 w-3 text-emerald-500" /> Agreed
+                            <ShieldCheck className="h-3 w-3 text-emerald-500" />{" "}
+                            Agreed
                           </span>
                         ) : cand.ensemble_status === "moderate_agreement" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-[10px]">
-                            <ShieldCheck className="h-3 w-3 text-amber-500" /> Moderate
+                            <ShieldCheck className="h-3 w-3 text-amber-500" />{" "}
+                            Moderate
                           </span>
-                        ) : cand.ensemble_status === "requires_independent_validation" ? (
+                        ) : cand.ensemble_status ===
+                          "requires_independent_validation" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-bold text-[10px]">
-                            <ShieldCheck className="h-3 w-3 text-rose-500" /> Held for DFT
+                            <ShieldCheck className="h-3 w-3 text-rose-500" />{" "}
+                            Held for DFT
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-500/10 border border-zinc-500/20 text-zinc-500 font-medium text-[10px]">
@@ -446,26 +542,33 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                         )}
                         {cand.energy_disagreement_eV_per_atom != null && (
                           <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">
-                            ΔE: {cand.energy_disagreement_eV_per_atom.toFixed(3)} eV
+                            ΔE:{" "}
+                            {cand.energy_disagreement_eV_per_atom.toFixed(3)} eV
                           </div>
                         )}
                       </div>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground italic">—</span>
+                      <span className="text-[10px] text-muted-foreground italic">
+                        —
+                      </span>
                     )}
                   </td>
 
                   {/* Synthesis Route & Feasibility */}
                   <td className="p-2.5">
                     {cand.synthesis_route ? (
-                      <div title={`Route: ${cand.synthesis_route}\nPrecursors: ${(cand.synthesis_precursors || []).join(', ')}\nEst. Temp: ${cand.synthesis_estimated_temp_c ? cand.synthesis_estimated_temp_c + ' °C' : 'N/A'}`}>
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
-                          cand.synthesis_feasibility === "high"
-                            ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
-                            : cand.synthesis_feasibility === "medium"
-                            ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300"
-                            : "bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300"
-                        }`}>
+                      <div
+                        title={`Route: ${cand.synthesis_route}\nPrecursors: ${(cand.synthesis_precursors || []).join(", ")}\nEst. Temp: ${cand.synthesis_estimated_temp_c ? cand.synthesis_estimated_temp_c + " °C" : "N/A"}`}
+                      >
+                        <span
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                            cand.synthesis_feasibility === "high"
+                              ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                              : cand.synthesis_feasibility === "medium"
+                                ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300"
+                                : "bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300"
+                          }`}
+                        >
                           {cand.synthesis_route.replace("_", " ")}
                         </span>
                         <div className="text-[9px] text-muted-foreground mt-0.5 capitalize">
@@ -473,18 +576,27 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                         </div>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground italic">—</span>
+                      <span className="text-[10px] text-muted-foreground italic">
+                        —
+                      </span>
                     )}
                   </td>
 
                   {/* Literature Novelty Check */}
                   <td className="p-2.5">
-                    {cand.literature_matches_count !== undefined && cand.literature_matches_count !== null ? (
-                      <div title={cand.literature_top_title || "Literature check"}>
+                    {cand.literature_matches_count !== undefined &&
+                    cand.literature_matches_count !== null ? (
+                      <div
+                        title={cand.literature_top_title || "Literature check"}
+                      >
                         {cand.literature_matches_count > 0 ? (
                           <div>
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-[10px] font-medium">
-                              <BookOpen className="h-3 w-3" /> {cand.literature_matches_count} {cand.literature_matches_count === 1 ? "paper" : "papers"}
+                              <BookOpen className="h-3 w-3" />{" "}
+                              {cand.literature_matches_count}{" "}
+                              {cand.literature_matches_count === 1
+                                ? "paper"
+                                : "papers"}
                             </span>
                             {cand.literature_top_doi && (
                               <div className="text-[9px] text-muted-foreground font-mono truncate max-w-[90px] mt-0.5">
@@ -499,13 +611,17 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                         )}
                       </div>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground italic">—</span>
+                      <span className="text-[10px] text-muted-foreground italic">
+                        —
+                      </span>
                     )}
                   </td>
 
                   {/* Tier 3 DFT / Δ-ML Band Gap */}
                   <td className="p-2.5">
-                    {cand.dft_status === "converged" || cand.dft_status === "done" || cand.dft_status === "success" ? (
+                    {cand.dft_status === "converged" ||
+                    cand.dft_status === "done" ||
+                    cand.dft_status === "success" ? (
                       <div className="flex flex-col gap-0.5">
                         {cand.dft_pbe_energy_eV === 0 ? (
                           <span
@@ -514,23 +630,34 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                           >
                             ⚡ Metallic (0.0 eV)
                           </span>
-                        ) : (
+                        ) : cand.dft_delta_ml_bandgap_eV !== null &&
+                          cand.dft_delta_ml_bandgap_eV !== undefined ? (
                           <span
                             title={`Δ-ML Corrected Gap (High-Fidelity Reference): ${cand.dft_delta_ml_bandgap_eV?.toFixed(2)} eV [${cand.dft_delta_ml_interval_low?.toFixed(2)}, ${cand.dft_delta_ml_interval_high?.toFixed(2)}]`}
                             className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded border border-emerald-500/30"
                           >
                             Δ-ML {cand.dft_delta_ml_bandgap_eV?.toFixed(2)} eV
                           </span>
-                        )}
-                        {cand.dft_pbe_energy_eV !== null && cand.dft_pbe_energy_eV !== undefined && (
-                          <span className="text-[9px] text-muted-foreground font-mono">
-                            PBE: {cand.dft_pbe_energy_eV.toFixed(2)} eV
+                        ) : (
+                          <span
+                            title="Δ-ML correction unavailable: candidate is outside calibration domain"
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border"
+                          >
+                            Δ-ML unavailable
                           </span>
                         )}
+                        {cand.dft_pbe_energy_eV !== null &&
+                          cand.dft_pbe_energy_eV !== undefined && (
+                            <span className="text-[9px] text-muted-foreground font-mono">
+                              PBE: {cand.dft_pbe_energy_eV.toFixed(2)} eV
+                            </span>
+                          )}
                       </div>
-                    ) : cand.dft_status === "running" || cand.dft_status === "queued" ? (
+                    ) : cand.dft_status === "running" ||
+                      cand.dft_status === "queued" ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
-                        <RefreshCw className="h-2.5 w-2.5 animate-spin" /> Computing (~25s)
+                        <RefreshCw className="h-2.5 w-2.5 animate-spin" />{" "}
+                        Computing (~25s)
                       </span>
                     ) : (
                       <Button
@@ -593,10 +720,12 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                 <Box className="h-5 w-5 text-primary animate-pulse" />
                 <div>
                   <h4 className="text-base font-bold text-foreground">
-                    Interactive 3D Crystal Lattice: {active3DmolCandidate.formula}
+                    Interactive 3D Crystal Lattice:{" "}
+                    {active3DmolCandidate.formula}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    Ball-and-stick atomic coordination spheres & unit cell geometry
+                    Ball-and-stick atomic coordination spheres & unit cell
+                    geometry
                   </p>
                 </div>
               </div>
@@ -609,15 +738,36 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
             </div>
 
             <Viewer3D
-              cifString={active3DmolCandidate.relaxed_structure_cif || active3DmolCandidate.structure_cif}
+              cifString={
+                active3DmolCandidate.relaxed_structure_cif ||
+                active3DmolCandidate.structure_cif
+              }
               formula={active3DmolCandidate.formula}
             />
 
             <div className="flex justify-between items-center pt-2 border-t border-border text-xs">
               <div className="flex items-center gap-3 text-muted-foreground font-mono">
-                <span>Density: <strong className="text-foreground">{active3DmolCandidate.density_g_cm3.toFixed(2)} g/cm³</strong></span>
-                <span>Free Vol: <strong className="text-foreground">{active3DmolCandidate.free_volume_A3.toFixed(1)} Å³</strong></span>
-                <span>Bottleneck: <strong className="text-foreground">{active3DmolCandidate.bottleneck_radius_A ? active3DmolCandidate.bottleneck_radius_A.toFixed(2) : "1.25"} Å</strong></span>
+                <span>
+                  Density:{" "}
+                  <strong className="text-foreground">
+                    {active3DmolCandidate.density_g_cm3.toFixed(2)} g/cm³
+                  </strong>
+                </span>
+                <span>
+                  Free Vol:{" "}
+                  <strong className="text-foreground">
+                    {active3DmolCandidate.free_volume_A3.toFixed(1)} Å³
+                  </strong>
+                </span>
+                <span>
+                  Bottleneck:{" "}
+                  <strong className="text-foreground">
+                    {active3DmolCandidate.bottleneck_radius_A
+                      ? active3DmolCandidate.bottleneck_radius_A.toFixed(2)
+                      : "1.25"}{" "}
+                    Å
+                  </strong>
+                </span>
               </div>
               <Button
                 variant="outline"
@@ -641,12 +791,14 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
                 <Activity className="h-5 w-5 text-emerald-500 animate-pulse" />
                 <div>
                   <h4 className="text-base font-bold text-foreground">
-                    Physics Relaxation Trajectory: {activeTrajectoryCandidate.formula}
+                    Physics Relaxation Trajectory:{" "}
+                    {activeTrajectoryCandidate.formula}
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     CHGNet + MACE Ensemble Relaxation Trace
                     <span className="block text-[9px] text-muted-foreground/70 mt-0.5">
-                      Note: Ensemble agreement = &quot;no evidence of blind spot,&quot; not &quot;confirmed correct.&quot;
+                      Note: Ensemble agreement = &quot;no evidence of blind
+                      spot,&quot; not &quot;confirmed correct.&quot;
                     </span>
                   </p>
                 </div>
@@ -662,19 +814,26 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
             {/* Metrics Breakdown */}
             <div className="grid grid-cols-3 gap-3 text-center text-xs">
               <div className="rounded-lg border border-border bg-muted/40 p-2.5">
-                <span className="text-muted-foreground block text-[10px]">Initial GNN E_f</span>
+                <span className="text-muted-foreground block text-[10px]">
+                  Initial GNN E_f
+                </span>
                 <span className="font-mono font-bold text-foreground">
                   {activeTrajectoryCandidate.gnn_prediction.toFixed(3)} eV/atom
                 </span>
               </div>
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5">
-                <span className="text-emerald-700 dark:text-emerald-300 block text-[10px]">MLIP Relaxed E_f</span>
+                <span className="text-emerald-700 dark:text-emerald-300 block text-[10px]">
+                  MLIP Relaxed E_f
+                </span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {activeTrajectoryCandidate.mlip_relaxed_energy_eV?.toFixed(3)} eV/atom
+                  {activeTrajectoryCandidate.mlip_relaxed_energy_eV?.toFixed(3)}{" "}
+                  eV/atom
                 </span>
               </div>
               <div className="rounded-lg border border-border bg-muted/40 p-2.5">
-                <span className="text-muted-foreground block text-[10px]">Mean Atomic Shift Δr</span>
+                <span className="text-muted-foreground block text-[10px]">
+                  Mean Atomic Shift Δr
+                </span>
                 <span className="font-mono font-bold text-foreground">
                   {activeTrajectoryCandidate.mean_displacement_A || "0.142"} Å
                 </span>
@@ -683,47 +842,73 @@ export function CandidateTable({ candidates, onTriggerValidation, isValidating, 
 
             {/* Step-by-Step Energy Convergence Plot (SVG) */}
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-foreground block">Energy Convergence (eV/atom vs Relaxation Step):</span>
+              <span className="text-xs font-semibold text-foreground block">
+                Energy Convergence (eV/atom vs Relaxation Step):
+              </span>
               <div className="rounded-lg border border-border bg-background p-3">
                 <svg viewBox="0 0 400 160" className="w-full h-32">
                   {/* Grid Lines */}
-                  <line x1="40" y1="130" x2="380" y2="130" stroke="currentColor" className="text-border" strokeWidth="1" />
-                  <line x1="40" y1="20" x2="40" y2="130" stroke="currentColor" className="text-border" strokeWidth="1" />
+                  <line
+                    x1="40"
+                    y1="130"
+                    x2="380"
+                    y2="130"
+                    stroke="currentColor"
+                    className="text-border"
+                    strokeWidth="1"
+                  />
+                  <line
+                    x1="40"
+                    y1="20"
+                    x2="40"
+                    y2="130"
+                    stroke="currentColor"
+                    className="text-border"
+                    strokeWidth="1"
+                  />
 
                   {/* Plot Line */}
-                  {activeTrajectoryCandidate.mlip_trajectory && activeTrajectoryCandidate.mlip_trajectory.length > 0 && (() => {
-                    const traj = activeTrajectoryCandidate.mlip_trajectory;
-                    const energies = traj.map((t) => t.energy_per_atom);
-                    const minE = Math.min(...energies);
-                    const maxE = Math.max(...energies);
-                    const rangeE = maxE - minE || 0.1;
+                  {activeTrajectoryCandidate.mlip_trajectory &&
+                    activeTrajectoryCandidate.mlip_trajectory.length > 0 &&
+                    (() => {
+                      const traj = activeTrajectoryCandidate.mlip_trajectory;
+                      const energies = traj.map((t) => t.energy_per_atom);
+                      const minE = Math.min(...energies);
+                      const maxE = Math.max(...energies);
+                      const rangeE = maxE - minE || 0.1;
 
-                    const points = traj
-                      .map((pt, idx) => {
-                        const x = 40 + (idx / (traj.length - 1 || 1)) * 340;
-                        const y = 130 - ((pt.energy_per_atom - minE) / rangeE) * 100;
-                        return `${x},${y}`;
-                      })
-                      .join(" ");
+                      const points = traj
+                        .map((pt, idx) => {
+                          const x = 40 + (idx / (traj.length - 1 || 1)) * 340;
+                          const y =
+                            130 - ((pt.energy_per_atom - minE) / rangeE) * 100;
+                          return `${x},${y}`;
+                        })
+                        .join(" ");
 
-                    return (
-                      <polyline
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="2.5"
-                        points={points}
-                      />
-                    );
-                  })()}
+                      return (
+                        <polyline
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="2.5"
+                          points={points}
+                        />
+                      );
+                    })()}
                 </svg>
               </div>
             </div>
 
             {/* 3D Relaxed Structure Viewer */}
             <div className="space-y-1 pt-2 border-t border-border">
-              <span className="text-xs font-semibold text-foreground block">Relaxed 3D Crystal Geometry:</span>
+              <span className="text-xs font-semibold text-foreground block">
+                Relaxed 3D Crystal Geometry:
+              </span>
               <Viewer3D
-                cifString={activeTrajectoryCandidate.relaxed_structure_cif || activeTrajectoryCandidate.structure_cif}
+                cifString={
+                  activeTrajectoryCandidate.relaxed_structure_cif ||
+                  activeTrajectoryCandidate.structure_cif
+                }
                 formula={activeTrajectoryCandidate.formula}
               />
             </div>

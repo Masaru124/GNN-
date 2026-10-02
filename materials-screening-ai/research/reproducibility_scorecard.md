@@ -109,7 +109,7 @@ Push-Location materials-screening-ai
 Pop-Location
 ```
 
-Both runs completed with 58 passed tests. The first large pre-paper training run did not deadlock in the model: it was interrupted during epoch 1 after throughput collapsed to about 0.76 steps/s. The configuration used the 50k-structure, 128-hidden-dimension, 3-layer model with `num_workers=0`, `fast_mode=False`, and 5,000 batches per epoch; this made graph construction and CPU-side collation the bottleneck, so the nominal overnight estimate was invalid. No checkpoint was written before the interruption because the run saves `best.pt` only after a completed validation epoch.
+Current non-QE run completes with 53 passed and 7 skipped. QE run requires pipeline-discovered `pw.exe`. The first large pre-paper training run did not deadlock in the model: it was interrupted during epoch 1 after throughput collapsed to about 0.76 steps/s. The configuration used the 50k-structure, 128-hidden-dimension, 3-layer model with `num_workers=0`, `fast_mode=False`, and 5,000 batches per epoch; this made graph construction and CPU-side collation the bottleneck, so the nominal overnight estimate was invalid. No checkpoint was written before the interruption because the run saves `best.pt` only after a completed validation epoch.
 
 - `research/metrics.json`: Dynamically generated metrics with zero hardcoded literals and parent commit hash.
 - `research/canonical_leverage_table.csv`: Statistical leverage matrix for $N=9, p=7$.

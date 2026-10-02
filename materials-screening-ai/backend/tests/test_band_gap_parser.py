@@ -547,6 +547,17 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert result["status"] == "anion_matched_mean_delta"
         assert result["corrected_gap_eV"] == reference["corrected_gap_eV"]
 
+    def test_cspbi3_pinned_corrected_gap(self):
+        """Pin deployed I-site correction for CsPbI3 at PBE 1.50 eV."""
+        # I-site delta = mean((1.73 - 1.323), (1.57 - 1.3787)) = 0.29915 eV.
+        # 1.50 + 0.29915 = 1.79915, rounded by API to 1.7992 eV.
+        result = get_delta_ml_corrector().predict_corrected_gap(
+            1.50, "CsPbI3", {"eps_inf": 5.0}
+        )
+
+        assert result["status"] == "anion_matched_mean_delta"
+        assert result["corrected_gap_eV"] == 1.7992
+
     def test_c4h24n4pb4i12_matches_mapbi3_gap(self):
         """C4H24N4Pb4I12 reduces to MAPbI3 and keeps its corrected gap."""
         corrector = get_delta_ml_corrector()
@@ -659,6 +670,61 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert candidate.dft_delta_ml_gap_eV == result["corrected_gap_eV"]
         assert candidate.dft_delta_ml_interval_lower == result["interval_lower"]
         assert candidate.dft_delta_ml_interval_upper == result["interval_upper"]
+        assert db.committed is True
+
+    def test_delta_ml_api_rejects_nacl_gap_without_scissor_fallback(self, monkeypatch):
+        """NaCl with PBE gap returns out_of_domain and persists no correction."""
+        from app.api import dft
+
+        candidate = type(
+            "Candidate",
+            (),
+            {
+                "dft_pbe_gap_eV": 5.12,
+                "formula": "NaCl",
+                "dft_delta_ml_gap_eV": None,
+                "dft_delta_ml_interval_lower": None,
+                "dft_delta_ml_interval_upper": None,
+                "dft_delta_ml_q_hat": None,
+                "dft_delta_ml_training_provenance": None,
+                "dft_dielectric_const_pbe": None,
+            },
+        )()
+
+        class FakeQuery:
+            def filter(self, _condition):
+                return self
+
+            def first(self):
+                return candidate
+
+        class FakeDb:
+            committed = False
+
+            def query(self, _model):
+                return FakeQuery()
+
+            def commit(self):
+                self.committed = True
+
+            def close(self):
+                pass
+
+        db = FakeDb()
+        monkeypatch.setattr(dft, "get_db", lambda: iter([db]))
+
+        result = dft.apply_delta_ml_correction(123, dft.DeltaMLRequest(eps_inf=2.54))
+
+        assert result["status"] == "out_of_domain"
+        assert result["method"] == "out_of_domain"
+        assert result["corrected_gap_eV"] is None
+        assert result["interval_lower"] is None
+        assert result["interval_upper"] is None
+        assert result["reason"] == "not a Pb ABX3 halide perovskite"
+        assert candidate.dft_delta_ml_gap_eV is None
+        assert candidate.dft_delta_ml_interval_lower is None
+        assert candidate.dft_delta_ml_interval_upper is None
+        assert candidate.dft_delta_ml_q_hat is None
         assert db.committed is True
 
     def test_a_site_composition_equivalence_to_short_names(self):

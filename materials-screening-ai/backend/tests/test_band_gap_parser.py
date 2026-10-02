@@ -667,6 +667,7 @@ class TestSyntheticOpenShellAndDomainSafety:
 
         assert result["status"] == "anion_matched_mean_delta"
         assert result["corrected_gap_eV"] is not None
+        assert result["q_tilde"] == pytest.approx(0.2157, abs=1e-4)
         assert result["coverage_level"] == 0.80
         assert candidate.dft_delta_ml_gap_eV == result["corrected_gap_eV"]
         assert candidate.dft_delta_ml_interval_lower == result["interval_lower"]

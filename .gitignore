@@ -49,6 +49,8 @@ crystal_gnn/checkpoints/
 *.pth
 !crystal_gnn/model_inference.pt
 !model_inference.pt
+crystal_gnn/model_inference.pt
+qe_download.zip
 
 # Results
 results/*
@@ -70,3 +72,6 @@ materials-screening-ai/research/literature/combined.md
 
 # Graphify generated index and cache
 graphify-out/
+
+# Skills lock file (generated)
+skills-lock.json

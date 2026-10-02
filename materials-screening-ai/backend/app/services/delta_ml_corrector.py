@@ -408,7 +408,7 @@ class DeltaMLGapCorrector:
         # Conformal calibration for n=6 Pb-only:
         # 80% coverage: k = ceil((6 + 1) * 0.80) = 6 <= 6 (valid finite-sample order statistic!)
         # 90% coverage: k = ceil((6 + 1) * 0.90) = 7 > 6 (strictly undefined without extrapolation!)
-        self.q_tilde_in_family_80 = self.anion_q_tilde_80  # Deployed valid 80% quantile
+        self.q_tilde_in_family_80 = self.anion_q_80_unweighted  # Deployed valid 80% quantile
         self.q_tilde_in_family = self.q_tilde_in_family_80
 
         # 2. Cross-family normalized scores (LOCO for Ridge)
@@ -1104,7 +1104,7 @@ class DeltaMLGapCorrector:
                 alternative_methods["ridge_alpha_1"] = round(pbe_gap_ev + ridge_d, 4)
 
             calibration_regime = "in_family_loocv"
-            q_tilde_active = getattr(self, "anion_q_tilde_80", getattr(self, "q_tilde_in_family", 0.1552))
+            q_tilde_active = getattr(self, "q_tilde_in_family_80", 0.2157)
             family_fallback_reason = None
 
             # Ridge query leverage for deployed halide model

@@ -2,9 +2,9 @@
   "git_dirty": false,
   "metadata": {
     "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
-    "git_commit": "501fa872bfe74be7ad0ec4a5fd9d9a10b97d7c8a",
+    "git_commit": "d77d995f819524e7775fc01c2270fcf73868708c",
     "git_dirty": false,
-    "parent_git_commit": "e068e3d9e3e89da96bf703e7d2ab4aae9dca4f46",
+    "parent_git_commit": "a3a72f28c897836dba96a34de4133296a12385db",
     "calibration_records_sha256": "0f880519c51af76f33c5edb76272078a91a3d33f5a27143a75260a8f06a3a3d6",
     "num_evaluated_samples": 9,
     "num_families": 3,
@@ -39,13 +39,20 @@
     "in_family_ridge_loocv_mae": 0.1474,
     "in_family_linear_pbe_loocv_mae": 0.1669,
     "in_family_constant_scissor_loocv_mae": 0.3077,
+    "fapbi3_role": "validation point (used in the model-selection rule)",
+    "in_family_fapbi3_validation_point_errors": {
+      "anion_matched_mean_delta": 0.0848,
+      "linear_pbe_scissor": 0.1364,
+      "ridge_alpha_1": 0.2004,
+      "constant_scissor": 0.4693
+    },
     "in_family_fapbi3_heldout_errors": {
       "anion_matched_mean_delta": 0.0848,
       "linear_pbe_scissor": 0.1364,
       "ridge_alpha_1": 0.2004,
       "constant_scissor": 0.4693
     },
-    "decision_rule_outcome": "Anion-matched mean delta is within 0.05 eV of Ridge on LOOCV (0.1296 vs 0.1474 eV) and no worse on FAPbI3 (0.0848 vs 0.2004 eV); deployed as primary in-family predictor with Ridge retained as documented alternative."
+    "decision_rule_outcome": "Anion-matched mean delta is within 0.05 eV of Ridge on LOOCV (0.1296 vs 0.1474 eV) and no worse on validation point FAPbI3 (used in the model-selection rule) (0.0848 vs 0.2004 eV); deployed as primary in-family predictor with Ridge retained as documented alternative."
   },
   "baselines": {
     "mean_delta_loocv_mae": 0.4840388888888889,
@@ -336,6 +343,7 @@
     "benchmark_candidates": [
       {
         "formula": "FAPbI3",
+        "role": "validation point (used in the model-selection rule)",
         "pbe_gap_eV": 1.2656,
         "target_gap_eV": 1.48,
         "domain_class": "in_domain_lead_halide",

@@ -15,6 +15,7 @@ Tests scenarios with synthetic QE output:
 
 import sys
 import os
+import time
 import tempfile
 from pathlib import Path
 sys.path.insert(0, r"c:\Users\User\Desktop\GNN\materials-screening-ai\backend")
@@ -462,6 +463,8 @@ class TestSyntheticOpenShellAndDomainSafety:
             ("CsPb2Br5", "non-ABX3 stoichiometry"),
             ("Cs0.5FA0.5PbI3", "mixed A-site"),
             ("MA0.5FA0.5PbI3", "mixed A-site"),
+            ("CH6NPbI3.5", "non-ABX3 stoichiometry"),
+            ("(CH6N)0.5CsPbI3", "mixed A-site"),
         ]
         for form, expected_reason_substr in out_of_domain_cases:
             res = corrector.predict_corrected_gap(pbe_gap_ev=1.50, formula=form, features={"eps_inf": 5.0})
@@ -479,4 +482,45 @@ class TestSyntheticOpenShellAndDomainSafety:
             assert res["status"] == "anion_matched_mean_delta", f"{form}: expected in-domain status 'anion_matched_mean_delta', got {res.get('status')}"
             assert res.get("out_of_domain") is not True, f"{form}: expected in-domain"
             assert res["corrected_gap_eV"] is not None, f"{form}: expected numerical corrected_gap_eV"
+
+    def test_a_site_composition_equivalence_to_short_names(self):
+        """In-domain compositional forms work and give identical corrected gap to short names."""
+        corrector = get_delta_ml_corrector()
+        pbe_gap = 1.30
+        features = {"eps_inf": 5.0}
+
+        # MA variants (C1 H6 N1)
+        res_mapbi3 = corrector.predict_corrected_gap(pbe_gap, "MAPbI3", features)
+        res_ch6n = corrector.predict_corrected_gap(pbe_gap, "CH6NPbI3", features)
+        res_ch3nh3 = corrector.predict_corrected_gap(pbe_gap, "CH3NH3PbI3", features)
+        assert res_ch6n["status"] == "anion_matched_mean_delta"
+        assert res_ch3nh3["status"] == "anion_matched_mean_delta"
+        assert res_ch6n["corrected_gap_eV"] == res_mapbi3["corrected_gap_eV"]
+        assert res_ch3nh3["corrected_gap_eV"] == res_mapbi3["corrected_gap_eV"]
+
+        # FA variants (C1 H5 N2)
+        res_fapbi3 = corrector.predict_corrected_gap(pbe_gap, "FAPbI3", features)
+        res_ch5n2 = corrector.predict_corrected_gap(pbe_gap, "CH5N2PbI3", features)
+        assert res_ch5n2["status"] == "anion_matched_mean_delta"
+        assert res_ch5n2["corrected_gap_eV"] == res_fapbi3["corrected_gap_eV"]
+
+        # Cs variants (Cs1)
+        res_cspbi3 = corrector.predict_corrected_gap(pbe_gap, "CsPbI3", features)
+        res_csi3pb = corrector.predict_corrected_gap(pbe_gap, "CsI3Pb", features)
+        assert res_csi3pb["status"] == "anion_matched_mean_delta"
+        assert res_csi3pb["corrected_gap_eV"] == res_cspbi3["corrected_gap_eV"]
+
+    def test_adversarial_formula_length_cap_and_timing(self):
+        """Formulas >40 chars are rejected out_of_domain immediately; 10,000 char string returns in <0.1 s."""
+        corrector = get_delta_ml_corrector()
+        adv_string = "Cs" * 5000
+        t0 = time.perf_counter()
+        res_adv = corrector.predict_corrected_gap(1.5, adv_string, {"eps_inf": 5.0})
+        elapsed = time.perf_counter() - t0
+
+        assert elapsed < 0.1, f"Expected timing < 0.1s, took {elapsed:.6f}s"
+        assert res_adv["status"] == "out_of_domain"
+        assert res_adv.get("out_of_domain") is True
+        assert res_adv["corrected_gap_eV"] is None
+        assert res_adv.get("reason") == "Formula length exceeds 40 characters"
 

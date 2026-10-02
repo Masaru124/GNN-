@@ -636,6 +636,34 @@ class DeltaMLGapCorrector:
         # soc_offset_in_delta_not_applicable is True when compound is NOT a Pb/Sn halide
         soc_offset_in_delta_not_applicable = bool(not has_pb_sn_halide)
 
+        # Check formula length cap (max 40 characters; longer -> out_of_domain)
+        if formula and len(formula) > 40:
+            return {
+                "formula": formula[:40] + "...",
+                "chemistry_class": chem_class,
+                "chemistry_mae_eV": chem_mae,
+                "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                "corrected_gap_eV": None,
+                "interval_pooled": None,
+                "interval_chemistry_specific": None,
+                "interval_lower": None,
+                "interval_upper": None,
+                "interval_width_eV": None,
+                "q_hat": None,
+                "status": "out_of_domain",
+                "out_of_domain": True,
+                "reason": "Formula length exceeds 40 characters",
+                "label": "Formula length exceeds 40 characters",
+                "method": "out_of_domain",
+                "provisional": True,
+                "calibration_dataset": CALIBRATION_DATASET_NAME,
+                "effective_n": self.effective_n,
+                "features_used": final_features,
+                "features_source": features_source,
+                "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                "requires_metallicity_check": requires_metallicity_check,
+            }
+
         # Check Sn out-of-domain boundary (Item 3)
         if formula and ("Sn" in formula or (chem_class == "halide_perovskite" and "Sn" in formula)):
             return {
@@ -830,73 +858,85 @@ class DeltaMLGapCorrector:
             halide = None
 
             if formula:
-                try:
-                    if "Pb" not in formula:
-                        is_valid_domain = False
-                        domain_rejection_reason = "Non-Pb B-site: in-family domain restricted to pure lead halide perovskites"
-                    else:
-                        m = re.match(r"^(.+?)(Pb\d*\.?\d*)((?:[A-Za-z\d\.]+)+)$", formula)
-                        if not m:
-                            is_valid_domain = False
-                            domain_rejection_reason = "non-ABX3 stoichiometry: failed to parse ABX3 structure"
-                        else:
-                            a_part, pb_part, x_part = m.groups()
-
-                            # 1. Pb count must be 1
-                            pb_count_match = re.match(r"^Pb(\d*\.?\d*)$", pb_part)
-                            pb_count = float(pb_count_match.group(1)) if (pb_count_match and pb_count_match.group(1)) else 1.0
-                            if abs(pb_count - 1.0) > 1e-4:
-                                is_valid_domain = False
-                                domain_rejection_reason = f"non-ABX3 stoichiometry: Pb count is {pb_count:g}, expected 1"
-
-                            # 2. X part (halide): exactly one pure halide from {Cl, Br, I} with count 3
-                            if is_valid_domain:
-                                halogens = re.findall(r"(F|Cl|Br|I)(\d*\.?\d*)", x_part)
-                                if not halogens or sum(len(h[0]) + len(h[1]) for h in halogens) != len(x_part):
-                                    is_valid_domain = False
-                                    domain_rejection_reason = "non-ABX3 stoichiometry: invalid halide stoichiometry"
-                                elif any(h[0] == "F" for h in halogens):
-                                    is_valid_domain = False
-                                    domain_rejection_reason = "Fluoride halide out of calibration domain: pure {Cl, Br, I} required"
-                                else:
-                                    distinct_halides = set(h[0] for h in halogens)
-                                    if len(distinct_halides) > 1:
-                                        is_valid_domain = False
-                                        mixed_str = "/".join(sorted(distinct_halides))
-                                        domain_rejection_reason = f"Mixed halide ({mixed_str}) out of calibration domain: pure single halide required"
-                                    else:
-                                        halide = list(distinct_halides)[0]
-                                        total_x_count = sum(float(h[1]) if h[1] else 1.0 for h in halogens)
-                                        if abs(total_x_count - 3.0) > 1e-4:
-                                            is_valid_domain = False
-                                            domain_rejection_reason = f"non-ABX3 stoichiometry: halide count is {total_x_count:g}, expected 3"
-
-                            # 3. A part: exactly one A-site species (Cs, MA or FA, not a mixture) with count 1
-                            if is_valid_domain:
-                                a_species = re.findall(r"(Cs|MA|FA|CH3NH3|CH5N2|[A-Z][a-z]?)(\d*\.?\d*)", a_part)
-                                if not a_species or sum(len(s[0]) + len(s[1]) for s in a_species) != len(a_part):
-                                    is_valid_domain = False
-                                    domain_rejection_reason = "non-ABX3 stoichiometry: invalid A-site stoichiometry"
-                                else:
-                                    allowed_a = {"Cs", "MA", "FA", "CH3NH3", "CH5N2"}
-                                    uncalibrated = [s[0] for s in a_species if s[0] not in allowed_a]
-                                    if uncalibrated:
-                                        uncal_str = "/".join(sorted(set(uncalibrated)))
-                                        is_valid_domain = False
-                                        domain_rejection_reason = f"Uncalibrated A-site cation ({uncal_str}): in-family domain restricted to {{Cs, MA, FA}}"
-                                    elif len(a_species) > 1:
-                                        is_valid_domain = False
-                                        species_names = "/".join(s[0] for s in a_species)
-                                        domain_rejection_reason = f"mixed A-site ({species_names}) out of calibration domain: pure single A-site {{Cs, MA, FA}} required"
-                                    else:
-                                        a_name, a_count_str = a_species[0]
-                                        a_count = float(a_count_str) if a_count_str else 1.0
-                                        if abs(a_count - 1.0) > 1e-4:
-                                            is_valid_domain = False
-                                            domain_rejection_reason = f"non-ABX3 stoichiometry: A-site count is {a_count:g}, expected 1"
-                except Exception as e:
+                if len(formula) > 40:
                     is_valid_domain = False
-                    domain_rejection_reason = f"Failed to parse formula composition: {e}"
+                    domain_rejection_reason = "Formula length exceeds 40 characters"
+                else:
+                    try:
+                        # Normalize short names MA and FA to parenthesized molecular formulas for Composition
+                        f_sub = formula.replace("MA", "(CH3NH3)").replace("FA", "(CH5N2)")
+                        comp = Composition(f_sub)
+                        el_dict = {el.symbol: float(amt) for el, amt in comp.items()}
+
+                        # 1. B-site must be pure Pb with count 1
+                        if "Pb" not in el_dict:
+                            is_valid_domain = False
+                            domain_rejection_reason = "Non-Pb B-site: in-family domain restricted to pure lead halide perovskites"
+                        else:
+                            other_metals = set(el_dict.keys()) & {"Sn", "Ge", "Bi", "Sb", "Ti", "Zr", "Fe", "Co", "Ni", "Cu", "Zn"}
+                            if other_metals:
+                                met_str = "/".join(sorted(other_metals))
+                                is_valid_domain = False
+                                domain_rejection_reason = f"B-site alloy/non-Pb metal ({met_str}): in-family domain restricted to pure lead halide perovskites"
+                            else:
+                                pb_count = el_dict["Pb"]
+                                if abs(pb_count - 1.0) > 1e-4:
+                                    is_valid_domain = False
+                                    domain_rejection_reason = f"non-ABX3 stoichiometry: Pb count is {pb_count:g}, expected 1"
+
+                        # 2. X part (halide): exactly one pure halide from {Cl, Br, I} with count 3
+                        if is_valid_domain:
+                            halogens = {sym: el_dict[sym] for sym in ("F", "Cl", "Br", "I") if sym in el_dict}
+                            if "F" in halogens:
+                                is_valid_domain = False
+                                domain_rejection_reason = "Fluoride halide out of calibration domain: pure {Cl, Br, I} required"
+                            elif not halogens:
+                                is_valid_domain = False
+                                domain_rejection_reason = "No valid halide in {Cl, Br, I} found"
+                            elif len(halogens) > 1:
+                                hal_names = "/".join(sorted(halogens.keys()))
+                                is_valid_domain = False
+                                domain_rejection_reason = f"Mixed halide ({hal_names}) out of calibration domain: pure single halide required"
+                            else:
+                                halide, x_count = list(halogens.items())[0]
+                                if abs(x_count - 3.0) > 1e-4:
+                                    is_valid_domain = False
+                                    domain_rejection_reason = f"non-ABX3 stoichiometry: halide count is {x_count:g}, expected 3"
+
+                        # 3. A-site: classify by composition counts:
+                        # Cs: Cs1
+                        # MA: C1 H6 N1
+                        # FA: C1 H5 N2
+                        if is_valid_domain:
+                            a_dict = {sym: el_dict[sym] for sym in el_dict if sym not in {"Pb", "Cl", "Br", "I"}}
+                            allowed_a_elements = {"Cs", "C", "H", "N"}
+                            uncal_elements = set(a_dict.keys()) - allowed_a_elements
+                            if uncal_elements:
+                                uncal_str = "/".join(sorted(uncal_elements))
+                                is_valid_domain = False
+                                domain_rejection_reason = f"Uncalibrated A-site cation ({uncal_str}): in-family domain restricted to {{Cs, MA, FA}}"
+                            elif set(a_dict.keys()) == {"Cs"}:
+                                cs_count = a_dict["Cs"]
+                                if abs(cs_count - 1.0) > 1e-4:
+                                    is_valid_domain = False
+                                    domain_rejection_reason = f"non-ABX3 stoichiometry: A-site count is {cs_count:g}, expected 1"
+                            elif set(a_dict.keys()) == {"C", "H", "N"}:
+                                c, h, n = a_dict["C"], a_dict["H"], a_dict["N"]
+                                if (abs(c - 1.0) < 1e-4 and abs(h - 6.0) < 1e-4 and abs(n - 1.0) < 1e-4) or \
+                                   (abs(c - 1.0) < 1e-4 and abs(h - 5.0) < 1e-4 and abs(n - 2.0) < 1e-4):
+                                    pass
+                                else:
+                                    is_valid_domain = False
+                                    domain_rejection_reason = f"mixed A-site or non-ABX3 stoichiometry: A-site composition (C{c:g}H{h:g}N{n:g}) does not match MA (C1H6N1) or FA (C1H5N2)"
+                            elif "Cs" in a_dict and any(sym in {"C", "H", "N"} for sym in a_dict):
+                                is_valid_domain = False
+                                domain_rejection_reason = "mixed A-site out of calibration domain: pure single A-site {Cs, MA, FA} required"
+                            else:
+                                is_valid_domain = False
+                                domain_rejection_reason = "non-ABX3 stoichiometry: invalid A-site composition"
+                    except Exception as e:
+                        is_valid_domain = False
+                        domain_rejection_reason = f"Failed to parse formula composition: {e}"
 
             if not is_valid_domain:
                 return {

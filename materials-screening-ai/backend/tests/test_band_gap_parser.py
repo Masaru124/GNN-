@@ -21,6 +21,7 @@ from pathlib import Path
 
 import pytest
 import numpy as np
+from fastapi import HTTPException
 from pymatgen.core import Structure, Lattice
 from app.services.dft_validation import DFTValidationService
 from app.services.simulation_service import generate_crystal_prototype
@@ -483,6 +484,87 @@ class TestSyntheticOpenShellAndDomainSafety:
             assert res["status"] == "anion_matched_mean_delta", f"{form}: expected in-domain status 'anion_matched_mean_delta', got {res.get('status')}"
             assert res.get("out_of_domain") is not True, f"{form}: expected in-domain"
             assert res["corrected_gap_eV"] is not None, f"{form}: expected numerical corrected_gap_eV"
+
+    @pytest.mark.parametrize(
+        ("formula", "expected_status"),
+        [
+            ("Cs4Pb4I12", "anion_matched_mean_delta"),
+            ("C4H24N4Pb4I12", "anion_matched_mean_delta"),
+            ("Cs2PbI4", "out_of_domain"),
+            ("C2H12N2PbI3", "out_of_domain"),
+            ("Cs0.5FA0.5PbI3", "out_of_domain"),
+        ],
+    )
+    def test_pb_x_count_gate_cases(self, formula, expected_status):
+        """Validate Pb/X counts, supercell reduction, and mixed-A-site rejection."""
+        corrector = get_delta_ml_corrector()
+        result = corrector.predict_corrected_gap(
+            pbe_gap_ev=1.50,
+            formula=formula,
+            features={"eps_inf": 5.0},
+        )
+
+        assert result["status"] == expected_status
+        if expected_status == "out_of_domain":
+            assert result["out_of_domain"] is True
+            assert result["corrected_gap_eV"] is None
+        else:
+            assert result.get("out_of_domain") is not True
+            reference_formula = "CsPbI3" if formula == "Cs4Pb4I12" else "MAPbI3"
+            reference = corrector.predict_corrected_gap(
+                1.50, reference_formula, {"eps_inf": 5.0}
+            )
+            assert result["corrected_gap_eV"] == reference["corrected_gap_eV"]
+
+    @pytest.mark.parametrize(
+        ("formula", "reason"),
+        [
+            ("NaCl", "not a Pb ABX3 halide perovskite"),
+            ("MgO", "not a Pb ABX3 halide perovskite"),
+            ("SrTiO3", "not a Pb ABX3 halide perovskite"),
+            ("BaTiO3", "not a Pb ABX3 halide perovskite"),
+            ("Si", "not a Pb ABX3 halide perovskite"),
+            ("LiCoO2", "not a Pb ABX3 halide perovskite"),
+        ],
+    )
+    def test_known_non_domain_materials(self, formula, reason):
+        """Known non-domain materials are rejected with an explicit reason."""
+        result = get_delta_ml_corrector().predict_corrected_gap(
+            pbe_gap_ev=2.0,
+            formula=formula,
+            features={"eps_inf": 5.0},
+        )
+
+        assert result["status"] == "out_of_domain"
+        assert result["out_of_domain"] is True
+        assert result["reason"] == reason
+        assert result["corrected_gap_eV"] is None
+
+    def test_delta_ml_api_rejects_missing_pbe_gap_without_scissor_fallback(self, monkeypatch):
+        """The API path rejects a missing PBE gap before Delta-ML can apply a fallback."""
+        from app.api import dft
+
+        class FakeQuery:
+            def filter(self, _condition):
+                return self
+
+            def first(self):
+                return type("Candidate", (), {"dft_pbe_gap_eV": None, "formula": "CsPbI3"})()
+
+        class FakeDb:
+            def query(self, _model):
+                return FakeQuery()
+
+            def close(self):
+                pass
+
+        monkeypatch.setattr(dft, "get_db", lambda: iter([FakeDb()]))
+
+        with pytest.raises(HTTPException) as exc_info:
+            dft.apply_delta_ml_correction(123, dft.DeltaMLRequest())
+
+        assert exc_info.value.status_code == 400
+        assert "No PBE gap available" in exc_info.value.detail
 
     def test_a_site_composition_equivalence_to_short_names(self):
         """In-domain compositional forms work and give identical corrected gap to short names."""

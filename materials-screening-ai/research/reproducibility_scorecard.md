@@ -3,20 +3,20 @@
 **Project**: Materials Screening AI — Quantum ESPRESSO DFT & $\Delta$-ML Calibration Pipeline  
 **Audit Date**: September 30, 2026  
 **Evaluator**: Antigravity Computational Reproducibility Reviewer  
-**Standard**: 6 Pillars of Computational Reproducibility + DFT/ML Verification Standard (`research/dft-pipeline-verification-guide.md`)  
+**Standard**: 6 Pillars of Computational Reproducibility + DFT/ML Verification Standard (`research/dft-pipeline-verification-guide.md`)
 
 ---
 
 ## 1. Six Pillars Audit Summary
 
-| Verification Pillar | Requirement | Audit Finding | Status |
-|---|---|---|---|
-| **1. Deterministic Execution & Random Seeds** | Global seeds set across all RNG engines; deterministic CV splits | Fixed seed (`seed=42`) used in evaluation protocol; Ridge LOOCV/LOCO regression strictly deterministic. | Verified (Deterministic) |
-| **2. Explicit Dependency Pinning** | Environment lockfile with exact versions and hashes | Python 3.11 (`.venv311`), Quantum ESPRESSO 7.5 native Windows build, pymatgen 2024.x, scikit-learn 1.5.x, ASE 3.23. | Verified (Pinned) |
-| **3. Data Provenance & Immutability** | Self-consistent inputs computed with internal pipeline; verified targets quoted verbatim from local literature text/PDF | Strict single-fidelity refit on $N=9$ verified experimental optical band gaps (with $\text{CsSnCl}_3$ excluded to out-of-domain Sn scope). All active targets verified against verbatim table cells in local hashed corpus (`combined.md` SHA256: `3bbf35118c8c36e1f2b5fc7b1f714d38522e2100a9961b34512259c2f1795c3c`). 9 unsourced entries and 2 theory-only entries moved to `EXCLUDED_UNVERIFIED_RECORDS`. Dielectric constants $\epsilon_\infty$ noted as DFPT/SSSP proxies (not tabulated in gap source tables). | Verified (Audited) |
-| **4. Path Portability** | Relative path resolution without local machine hardcoding | SSSP pseudopotentials and QE binaries resolved via environment variables (`QE_BIN_DIR`, `SSSP_PP_DIR`) with workspace relative fallbacks (`Path(__file__).resolve()`). | Verified (Portable) |
-| **5. Automated Pipeline Execution** | One-click reproduction of calibration and figures | `python backend/scripts/eval_protocol.py` dynamically computes all metrics and exports `metrics.json` (zero hardcoded values); `pytest backend/tests` validates regression and parity suites. | Verified (Automated) |
-| **6. Output Parity** | Result numbers match documented claims exactly | All metrics in documentation match dynamically generated `metrics.json` exactly: Linear PBE Scissor LOCO MAE = **0.6597 eV**, Nested Ridge LOCO MAE = **1.0190 eV**, Paired $\Delta\text{MAE} = \mathbf{+0.3593\text{ eV}}$, Ridge LOOCV MAE = **0.4561 eV**, In-Family Pb Perovskite Anion-Matched Mean $\Delta$ MAE = **0.1296 eV** (Ridge alternative **0.1474 eV**). | Verified (Exact Match) |
+| Verification Pillar                           | Requirement                                                                                                             | Audit Finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Status                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **1. Deterministic Execution & Random Seeds** | Global seeds set across all RNG engines; deterministic CV splits                                                        | Fixed seed (`seed=42`) used in evaluation protocol; Ridge LOOCV/LOCO regression strictly deterministic.                                                                                                                                                                                                                                                                                                                                                                                                              | Verified (Deterministic) |
+| **2. Explicit Dependency Pinning**            | Environment lockfile with exact versions and hashes                                                                     | Python 3.11 (`.venv311`), Quantum ESPRESSO 7.5 native Windows build, pymatgen 2024.x, scikit-learn 1.5.x, ASE 3.23.                                                                                                                                                                                                                                                                                                                                                                                                  | Verified (Pinned)        |
+| **3. Data Provenance & Immutability**         | Self-consistent inputs computed with internal pipeline; verified targets quoted verbatim from local literature text/PDF | Strict single-fidelity refit on $N=9$ verified experimental optical band gaps (with $\text{CsSnCl}_3$ excluded to out-of-domain Sn scope). All active targets verified against verbatim table cells in local hashed corpus (`combined.md` SHA256: `3bbf35118c8c36e1f2b5fc7b1f714d38522e2100a9961b34512259c2f1795c3c`). 9 unsourced entries and 2 theory-only entries moved to `EXCLUDED_UNVERIFIED_RECORDS`. Dielectric constants $\epsilon_\infty$ noted as DFPT/SSSP proxies (not tabulated in gap source tables). | Verified (Audited)       |
+| **4. Path Portability**                       | Relative path resolution without local machine hardcoding                                                               | SSSP pseudopotentials and QE binaries resolved via environment variables (`QE_BIN_DIR`, `SSSP_PP_DIR`) with workspace relative fallbacks (`Path(__file__).resolve()`).                                                                                                                                                                                                                                                                                                                                               | Verified (Portable)      |
+| **5. Automated Pipeline Execution**           | One-click reproduction of calibration and figures                                                                       | `python backend/scripts/eval_protocol.py` dynamically computes all metrics and exports `metrics.json` (zero hardcoded values); `pytest backend/tests` validates regression and parity suites.                                                                                                                                                                                                                                                                                                                        | Verified (Automated)     |
+| **6. Output Parity**                          | Result numbers match documented claims exactly                                                                          | All metrics in documentation match dynamically generated `metrics.json` exactly: Linear PBE Scissor LOCO MAE = **0.6597 eV**, Nested Ridge LOCO MAE = **1.0190 eV**, Paired $\Delta\text{MAE} = \mathbf{+0.3593\text{ eV}}$, Ridge LOOCV MAE = **0.4561 eV**, In-Family Pb Perovskite Anion-Matched Mean $\Delta$ MAE = **0.1296 eV** (Ridge alternative **0.1474 eV**).                                                                                                                                             | Verified (Exact Match)   |
 
 ---
 
@@ -33,7 +33,7 @@
 - **MAPbI3**: Production PBE **1.3787 eV** (Target: 1.57 eV, $\Delta = +0.1913$ eV; pipeline QE at Mosconi geometry)
 - **MAPbBr3**: Production PBE **1.5954 eV** (Target: 2.33 eV, $\Delta = +0.7346$ eV; pipeline QE at Mosconi geometry)
 - **MAPbCl3**: Production PBE **2.0994 eV** (Target: 3.11 eV, $\Delta = +1.0106$ eV; pipeline QE at Mosconi geometry)
-- *CsSnCl3* (Production PBE 0.799 eV, Target 2.60 eV): Excluded from deployed Pb-only fit due to Sn/SOC domain boundary.
+- _CsSnCl3_ (Production PBE 0.799 eV, Target 2.60 eV): Excluded from deployed Pb-only fit due to Sn/SOC domain boundary.
 
 ---
 
@@ -49,15 +49,16 @@ $$H_{\text{ridge}} = \frac{1}{n} \mathbf{1}\mathbf{1}^T + Z (Z^T Z + \alpha I)^{
 ## 4. Deployed Predictor Decision & Cross-Validation Metrics (`metrics.json`)
 
 ### Deployed Predictor Rule
+
 - **Out-of-Family / Cross-Family**: Deploy **Linear PBE Scissor** ($E_{\text{exp}} = 1.4840 \cdot E_{\text{PBE}} + 0.0251$, LOCO MAE **0.6597 eV**).
 - **In-Family (Pb-only Halide Perovskites $n=6$)**: Deploy **Anion-Matched Mean $\Delta$ Scissor** because on LOOCV it achieves MAE **0.1296 eV** (beating Ridge **0.1474 eV**, 2-parameter linear scissor **0.1669 eV**, and constant scissor **0.3077 eV**) and on validation point $\text{FAPbI}_3$ (used in the model-selection rule) achieves error **0.0848 eV** (beating Ridge **0.2004 eV**). Per the decision rule (simple baseline within 0.05 eV of Ridge on LOOCV and no worse on validation point), Anion-Matched Mean $\Delta$ is deployed and Ridge is retained as a documented alternative.
 
-| Method / Regime | LOOCV MAE (eV) | LOCO MAE (eV) | In-Family (Pb Perovskites $n=6$) MAE | $\text{FAPbI}_3$ Validation Error (eV) | Deployed Role |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Anion-Matched Mean $\Delta$** | **0.1296** | n/a | **0.1296** | **0.0848** | **Deployed In-Family (Pb Perovskites)** |
-| **Ridge ($\alpha=1.0$, No $\epsilon_\infty$)** | 0.1474 | 1.1896 | 0.1474 | 0.2004 | Documented In-Family Alternative |
-| **Linear PBE Scissor (2-param)** | 0.1669 | **0.6597** | 0.1669 | 0.1364 | **Deployed Out-of-Family** |
-| **Constant Scissor (Mean $\Delta$)** | 0.3077 | 0.8955 | 0.3077 | 0.4693 | Baseline Reference |
+| Method / Regime                                | LOOCV MAE (eV) | LOCO MAE (eV) | In-Family (Pb Perovskites $n=6$) MAE | $\text{FAPbI}_3$ Validation Error (eV) | Deployed Role                           |
+| :--------------------------------------------- | :------------: | :-----------: | :----------------------------------: | :------------------------------------: | :-------------------------------------- |
+| **Anion-Matched Mean $\Delta$**                |   **0.1296**   |      n/a      |              **0.1296**              |               **0.0848**               | **Deployed In-Family (Pb Perovskites)** |
+| **Ridge ($\alpha=1.0$, No $\epsilon_\infty$)** |     0.1474     |    1.1896     |                0.1474                |                 0.2004                 | Documented In-Family Alternative        |
+| **Linear PBE Scissor (2-param)**               |     0.1669     |  **0.6597**   |                0.1669                |                 0.1364                 | **Deployed Out-of-Family**              |
+| **Constant Scissor (Mean $\Delta$)**           |     0.3077     |    0.8955     |                0.3077                |                 0.4693                 | Baseline Reference                      |
 
 ---
 
@@ -78,22 +79,37 @@ $$H_{\text{ridge}} = \frac{1}{n} \mathbf{1}\mathbf{1}^T + Z (Z^T Z + \alpha I)^{
 
 All active calibration records are verified against verbatim lines in the local corpus (`combined.md` SHA256: `3bbf35118c8c36e1f2b5fc7b1f714d38522e2100a9961b34512259c2f1795c3c`):
 
-| Formula | Family | PBE (eV) | Target Gap (eV) | Target Level | Reconciled Literature Source | Table / Citation in Corpus | Level of Theory & SOC |
-| :--- | :--- | :---: | :---: | :--- | :--- | :--- | :--- |
-| **MgO** | alkaline_earth_oxide | 4.475 | 7.22 | Experimental | Heyd et al., J. Chem. Phys. 123, 174101 (2005) | Table V, p. 174101-6 | Experimental optical |
-| **SrTiO3** | transition_metal_perovskite | 2.179 | 3.25 | Experimental | Piskunov et al., Comput. Mater. Sci. 29, 165–178 (2004) | Table 4, p. 173 | Experimental indirect |
-| **BaTiO3** | transition_metal_perovskite | 2.068 | 3.20 | Experimental | Piskunov et al., Comput. Mater. Sci. 29, 165–178 (2004) | Table 4, p. 173 | Experimental |
-| **CsPbI3** | halide_perovskite | 1.323 | 1.73 | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) | Table I (also Wiktor 2017 Table 6) | Experimental optical |
-| **CsPbBr3** | halide_perovskite | 1.532 | 2.36 | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017) | Table 6, p. 5511 (ref 38) | Experimental optical |
-| **CsPbCl3** | halide_perovskite | 1.919 | 2.85 | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017) | Table 6, p. 5511 (ref 39; 2.85 eV verified) | Experimental optical |
-| **MAPbI3** | halide_perovskite | 1.3787 | 1.57 | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) / Mosconi (2013) | Table I / Table 1 (1.55–1.57 eV verified) | Experimental optical |
-| **MAPbBr3** | halide_perovskite | 1.5954 | 2.33 | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) / Mosconi (2013) | Table I / Table 1 (2.33 eV verified) | Experimental optical |
-| **MAPbCl3** | halide_perovskite | 2.0994 | 3.11 | Experimental | Mosconi et al., J. Phys. Chem. C 117, 13902–13913 (2013) | Table 1, p. 13907 (3.11 eV verified) | Experimental optical |
-| *CsSnCl3* | halide_perovskite | 0.799 | 2.60 | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017) | Table 6, p. 5511 (ref 40) | Excluded (Sn/SOC domain) |
+| Formula     | Family                      | PBE (eV) | Target Gap (eV) | Target Level | Reconciled Literature Source                                  | Table / Citation in Corpus                  | Level of Theory & SOC    |
+| :---------- | :-------------------------- | :------: | :-------------: | :----------- | :------------------------------------------------------------ | :------------------------------------------ | :----------------------- |
+| **MgO**     | alkaline_earth_oxide        |  4.475   |      7.22       | Experimental | Heyd et al., J. Chem. Phys. 123, 174101 (2005)                | Table V, p. 174101-6                        | Experimental optical     |
+| **SrTiO3**  | transition_metal_perovskite |  2.179   |      3.25       | Experimental | Piskunov et al., Comput. Mater. Sci. 29, 165–178 (2004)       | Table 4, p. 173                             | Experimental indirect    |
+| **BaTiO3**  | transition_metal_perovskite |  2.068   |      3.20       | Experimental | Piskunov et al., Comput. Mater. Sci. 29, 165–178 (2004)       | Table 4, p. 173                             | Experimental             |
+| **CsPbI3**  | halide_perovskite           |  1.323   |      1.73       | Experimental | Castelli et al., APL Mater. 2, 081514 (2014)                  | Table I (also Wiktor 2017 Table 6)          | Experimental optical     |
+| **CsPbBr3** | halide_perovskite           |  1.532   |      2.36       | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017)       | Table 6, p. 5511 (ref 38)                   | Experimental optical     |
+| **CsPbCl3** | halide_perovskite           |  1.919   |      2.85       | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017)       | Table 6, p. 5511 (ref 39; 2.85 eV verified) | Experimental optical     |
+| **MAPbI3**  | halide_perovskite           |  1.3787  |      1.57       | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) / Mosconi (2013) | Table I / Table 1 (1.55–1.57 eV verified)   | Experimental optical     |
+| **MAPbBr3** | halide_perovskite           |  1.5954  |      2.33       | Experimental | Castelli et al., APL Mater. 2, 081514 (2014) / Mosconi (2013) | Table I / Table 1 (2.33 eV verified)        | Experimental optical     |
+| **MAPbCl3** | halide_perovskite           |  2.0994  |      3.11       | Experimental | Mosconi et al., J. Phys. Chem. C 117, 13902–13913 (2013)      | Table 1, p. 13907 (3.11 eV verified)        | Experimental optical     |
+| _CsSnCl3_   | halide_perovskite           |  0.799   |      2.60       | Experimental | Wiktor et al., J. Phys. Chem. Lett. 8, 5507–5512 (2017)       | Table 6, p. 5511 (ref 40)                   | Excluded (Sn/SOC domain) |
 
 ---
 
 ## 7. Artifacts & Environment Audit
+
+### Test commands and interrupted-run diagnosis
+
+The full test suite was run from both required working directories:
+
+```powershell
+$env:PYTHONPATH=(Join-Path $PWD 'materials-screening-ai\backend')
+.venv311\Scripts\python.exe -m pytest materials-screening-ai\backend\tests --junitxml=materials-screening-ai\research\junit_root.xml *> materials-screening-ai\research\pytest_root.log
+
+Push-Location materials-screening-ai
+..\.venv311\Scripts\python.exe -m pytest --junitxml=research\junit.xml *> research\pytest.log
+Pop-Location
+```
+
+Both runs completed with 58 passed tests. The first large pre-paper training run did not deadlock in the model: it was interrupted during epoch 1 after throughput collapsed to about 0.76 steps/s. The configuration used the 50k-structure, 128-hidden-dimension, 3-layer model with `num_workers=0`, `fast_mode=False`, and 5,000 batches per epoch; this made graph construction and CPU-side collation the bottleneck, so the nominal overnight estimate was invalid. No checkpoint was written before the interruption because the run saves `best.pt` only after a completed validation epoch.
 
 - `research/metrics.json`: Dynamically generated metrics with zero hardcoded literals and parent commit hash.
 - `research/canonical_leverage_table.csv`: Statistical leverage matrix for $N=9, p=7$.

@@ -614,8 +614,32 @@ class DeltaMLGapCorrector:
                 is_open_shell, _ = _check_open_shell_tm(formula)
                 if is_open_shell:
                     requires_metallicity_check = True
-            except Exception:
-                pass
+            except Exception as exc:
+                return {
+                    "formula": formula,
+                    "chemistry_class": chem_class,
+                    "chemistry_mae_eV": chem_mae,
+                    "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                    "corrected_gap_eV": None,
+                    "interval_pooled": None,
+                    "interval_chemistry_specific": None,
+                    "interval_lower": None,
+                    "interval_upper": None,
+                    "interval_width_eV": None,
+                    "q_hat": None,
+                    "status": "out_of_domain",
+                    "out_of_domain": True,
+                    "reason": f"Failed to parse formula composition: {exc}",
+                    "label": f"Formula composition out of domain: {exc}",
+                    "method": "out_of_domain",
+                    "provisional": True,
+                    "calibration_dataset": CALIBRATION_DATASET_NAME,
+                    "effective_n": self.effective_n,
+                    "features_used": derived_features,
+                    "features_source": features_source,
+                    "soc_offset_in_delta_not_applicable": True,
+                    "requires_metallicity_check": requires_metallicity_check,
+                }
 
         # Use user-provided features if passed, else fallback to derived
         final_features = {}

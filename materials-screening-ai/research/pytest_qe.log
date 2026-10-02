@@ -1,4 +1,4 @@
-git rev-parse HEAD: 45f9951c3368642443249f3dbafff41264dc42c0
+git rev-parse HEAD: 5f932c5944299f27d1f809786aa0d42b17860f2f
 ============================= test session starts =============================
 platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
 rootdir: ./materials-screening-ai
@@ -86,14 +86,14 @@ backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benc
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 - generated xml file: ./materials-screening-ai\research\junit_qe.xml -
 ============================ slowest 10 durations =============================
-136.70s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_dfpt_born_charges_benchmark
-70.12s call     backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
-8.82s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
-5.71s call     backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
-5.66s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
-4.28s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
-3.86s call     backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+131.44s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_dfpt_born_charges_benchmark
+69.94s call     backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+8.55s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+5.59s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+4.99s call     backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+4.15s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+3.77s call     backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
 0.46s call     backend/tests/test_dft_benchmark_regression.py::test_kpoint_even_mesh_guarantee
 0.17s call     backend/tests/test_dft_benchmark_regression.py::test_delta_ml_domain_safety_and_loocv
 0.04s call     backend/tests/test_dft_benchmark_regression.py::test_kpoint_symmetry_scope_and_candidate_audit
-================= 10 passed, 52 warnings in 243.40s (0:04:03) =================
+================= 10 passed, 52 warnings in 237.82s (0:03:57) =================

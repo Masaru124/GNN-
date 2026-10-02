@@ -1,16 +1,16 @@
-git rev-parse HEAD: 45f9951c3368642443249f3dbafff41264dc42c0
+git rev-parse HEAD: 5f932c5944299f27d1f809786aa0d42b17860f2f
 ============================= test session starts =============================
 platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
 rootdir: ./materials-screening-ai
 configfile: pytest.ini
 plugins: anyio-4.13.0, cov-7.1.0
-collected 62 items
+collected 64 items
 
 materials-screening-ai\backend\tests\test_band_gap_parser.py ........... [ 17%]
-........................                                                 [ 56%]
-materials-screening-ai\backend\tests\test_cathodes_pipeline.py ....      [ 62%]
-materials-screening-ai\backend\tests\test_cross_artifact_parity.py ..... [ 70%]
-........                                                                 [ 83%]
+..........................                                               [ 57%]
+materials-screening-ai\backend\tests\test_cathodes_pipeline.py ....      [ 64%]
+materials-screening-ai\backend\tests\test_cross_artifact_parity.py ..... [ 71%]
+........                                                                 [ 84%]
 materials-screening-ai\backend\tests\test_dft_benchmark_regression.py .. [ 87%]
 ........                                                                 [100%]
 
@@ -107,14 +107,14 @@ backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benc
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 - generated xml file: ./materials-screening-ai\research\junit_root.xml -
 ============================ slowest 10 durations =============================
-137.54s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_dfpt_born_charges_benchmark
-70.89s call     backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
-8.68s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
-5.74s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
-4.74s call     backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
-4.31s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
-3.95s call     backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+131.60s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_dfpt_born_charges_benchmark
+68.75s call     backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
+8.87s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
+6.25s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
+4.89s call     backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
+4.60s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
+4.07s call     backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
+0.57s call     backend/tests/test_cathodes_pipeline.py::test_physics_validation_trajectory
 0.46s call     backend/tests/test_dft_benchmark_regression.py::test_kpoint_even_mesh_guarantee
-0.45s call     backend/tests/test_cathodes_pipeline.py::test_physics_validation_trajectory
-0.32s call     backend/tests/test_band_gap_parser.py::TestBandGapParserMetallicity::test_clean_insulating_gap
-================= 62 passed, 91 warnings in 246.97s (0:04:06) =================
+0.34s call     backend/tests/test_band_gap_parser.py::TestSyntheticOpenShellAndDomainSafety::test_candidate_hardcoded_literals_eliminated
+================= 64 passed, 91 warnings in 241.82s (0:04:01) =================

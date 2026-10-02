@@ -800,3 +800,112 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert res_adv["corrected_gap_eV"] is None
         assert res_adv.get("reason") == "Formula length exceeds 40 characters"
 
+    def test_cspbfluoride_uncalibrated_anion_returns_without_keyerror(self):
+        """In-domain Pb halide with uncalibrated F anion returns cleanly, no KeyError."""
+        corrector = get_delta_ml_corrector()
+        res = corrector.predict_corrected_gap(
+            pbe_gap_ev=1.4, formula="CsPbF3", features={"eps_inf": 5.0}
+        )
+        assert res["status"] == "out_of_domain"
+        assert "Fluoride halide out of calibration domain" in res["reason"]
+        assert res.get("corrected_gap_eV") is None
+        assert res.get("q_tilde") is None
+
+    def test_all_corrector_statuses_q_tilde_contract(self, monkeypatch):
+        """Inventory every corrector status and assert q_tilde presence per status."""
+        import re
+        import app.services.delta_ml_corrector as delta_ml_corrector_mod
+
+        in_domain_statuses = {
+            "anion_matched_mean_delta",
+            "delta_ml_ridge",
+            "mean_correction_fallback",
+        }
+        all_statuses = in_domain_statuses | {
+            "out_of_domain",
+            "pbe_plus_u_direct",
+            "pbe_metallic_hse_undetermined",
+            "pbe_insufficient_bands_hse_undetermined",
+            "pending_metallicity_check",
+            "features_required",
+            "out_of_domain_delta_nonpositive",
+        }
+
+        src = Path(delta_ml_corrector_mod.__file__).read_text(encoding="utf-8")
+        source_statuses = set(re.findall(r'"status":\s*"([a-z0-9_]+)"', src))
+        source_statuses |= set(re.findall(r'status = "([a-z0-9_]+)"', src))
+        source_statuses |= set(re.findall(r'method = "([a-z0-9_]+)"', src))
+        assert source_statuses == all_statuses, (
+            "Corrector status inventory drift: "
+            f"source={sorted(source_statuses)} test={sorted(all_statuses)}"
+        )
+
+        def assert_contract(result):
+            status = result["status"]
+            if status in in_domain_statuses:
+                assert "q_tilde" in result, f"{status} must return q_tilde"
+                assert isinstance(result["q_tilde"], (int, float)), (
+                    f"{status} q_tilde={result['q_tilde']!r} must be numeric"
+                )
+                assert result["coverage_level"] == 0.80, (
+                    f"{status} coverage_level={result.get('coverage_level')!r} != 0.80"
+                )
+            else:
+                assert result.get("q_tilde") is None, f"{status} must not return q_tilde"
+            return status
+
+        corrector = get_delta_ml_corrector()
+        probes = [
+            (dict(pbe_gap_ev=1.323, formula="CsPbI3", features={"eps_inf": 5.8}), "anion_matched_mean_delta"),
+            (dict(pbe_gap_ev=1.4, formula="CsPbF3", features={"eps_inf": 5.0}), "out_of_domain"),
+            (dict(pbe_gap_ev=4.475, formula="MgO", features={"eps_inf": 3.0}), "out_of_domain"),
+            (dict(pbe_gap_ev=0.0, formula="CsPbI3", features={"eps_inf": 5.8}), "pbe_metallic_hse_undetermined"),
+            (dict(pbe_gap_ev=1.5, formula="KZrCl3", features={"eps_inf": 4.0}), "pending_metallicity_check"),
+            (
+                dict(pbe_gap_ev=None, formula="CsPbI3", features={"eps_inf": 5.8}, pbe_gap_type="insufficient_bands"),
+                "pbe_insufficient_bands_hse_undetermined",
+            ),
+            (dict(pbe_gap_ev=1.4, formula="CsPbI3", features={"eps_inf": 5.8}, is_pbe_plus_u=True), "pbe_plus_u_direct"),
+        ]
+        seen = set()
+        for kwargs, expected in probes:
+            result = corrector.predict_corrected_gap(**kwargs)
+            assert result["status"] == expected, (
+                f"{kwargs}: status={result['status']} expected={expected} reason={result.get('reason')}"
+            )
+            seen.add(assert_contract(result))
+
+        # Force the remaining in-domain / diagnostic branches on the singleton.
+        deltas = dict(corrector.anion_mean_deltas)
+        monkeypatch.setattr(corrector, "anion_mean_deltas", {**deltas, "I": -0.1})
+        result = corrector.predict_corrected_gap(1.323, "CsPbI3", {"eps_inf": 5.8})
+        assert result["status"] == "out_of_domain_delta_nonpositive"
+        seen.add(assert_contract(result))
+
+        monkeypatch.setattr(corrector, "anion_mean_deltas", {k: v for k, v in deltas.items() if k != "I"})
+        result = corrector.predict_corrected_gap(1.323, "CsPbI3", {"eps_inf": 5.8})
+        assert result["status"] == "delta_ml_ridge"
+        seen.add(assert_contract(result))
+
+        monkeypatch.setattr(corrector, "_is_fitted", False)
+        result = corrector.predict_corrected_gap(1.323, "CsPbI3", {"eps_inf": 5.8})
+        assert result["status"] == "mean_correction_fallback"
+        seen.add(assert_contract(result))
+
+        # `features_required` is unreachable (the halide gate returns first),
+        # so assert its return block statically: no q_tilde key there,
+        # while the shared in-domain (status=method) return defines q_tilde.
+        idx = src.index('"status": "features_required"')
+        assert '"q_tilde"' not in src[idx:idx + 2500], (
+            "features_required return must not define q_tilde"
+        )
+        idx = src.index('"status": method')
+        assert '"q_tilde"' in src[max(0, idx - 4000):idx], (
+            "in-domain (status=method) return must define q_tilde"
+        )
+
+        unreachable = {"features_required"}
+        assert seen == all_statuses - unreachable, (
+            f"missing live coverage: {sorted(all_statuses - unreachable - seen)}"
+        )
+

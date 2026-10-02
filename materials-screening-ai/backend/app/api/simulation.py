@@ -235,6 +235,7 @@ def run_dft_calculation(req: DFTCalculationRequest):
             "delta_ml_chemistry_mae_eV": ml_res.get("chemistry_mae_eV"),
             "delta_ml_disclosure": ml_res.get("disclosure"),
             "delta_ml_q_hat": ml_res.get("q_hat"),
+            "delta_ml_coverage_level": ml_res.get("coverage_level"),
             "delta_ml_label": ml_res.get("label"),
             "delta_ml_status": ml_res.get("status"),
             "calibration_dataset": ml_res.get("calibration_dataset"),
@@ -342,10 +343,11 @@ def ai_lab_assistant_chat(req: AIChatRequest):
             gtype = last_res.get("gap_type", "direct")
             low = last_res.get("delta_ml_interval_lower", 0.0)
             high = last_res.get("delta_ml_interval_upper", 0.0)
+            cov_pct = (last_res.get("delta_ml_coverage_level") or 0.80) * 100
             reply = (
                 f"Based on our active **Tier 3 Quantum ESPRESSO DFT calculation** for **{formula}**:\n\n"
                 f"- **PBE Band Gap**: `{pbe_g:.2f} eV` ({gtype.capitalize()})\n"
-                f"- **Δ-ML Corrected HSE06 Gap**: `{dml_g:.2f} eV` (90% Conformal Interval: `[{low:.2f}, {high:.2f}] eV`)\n"
+                f"- **Δ-ML Corrected HSE06 Gap**: `{dml_g:.2f} eV` ({cov_pct:.0f}% Conformal Interval: `[{low:.2f}, {high:.2f}] eV`)\n"
                 f"- **Valence Band Maximum (VBM)**: `{last_res.get('vbm_eV')} eV`\n"
                 f"- **Conduction Band Minimum (CBM)**: `{last_res.get('cbm_eV')} eV`\n"
                 f"- **SCF Total Energy**: `{last_res.get('scf_total_energy_eV')} eV`\n\n"

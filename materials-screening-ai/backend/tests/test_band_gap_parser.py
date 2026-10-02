@@ -388,11 +388,26 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert res_oxide["status"] == "out_of_domain"
         assert res_oxide["reason"] == "not a Pb ABX3 halide perovskite"
 
-    def test_candidate_hardcoded_literals_eliminated(self):
+    def test_candidate_hardcoded_literals_eliminated(self, monkeypatch):
         """Assert candidate dicts constructed via orchestrator path have vbm_vs_vacuum_eV, synthesizability_score, is_solar_optimal as None unless computed."""
         from pymatgen.core import Structure, Lattice
         from app.services.job_orchestrator import DiscoveryJobOrchestrator
         from app.services.pareto_ranker import ParetoRanker
+        import app.services.job_orchestrator as job_orchestrator_mod
+
+        # GNN weights (crystal_gnn/model_inference.pt, 77 MB) are intentionally not tracked in git.
+        # Stub the predictor so this record-construction test is hermetic in fresh worktrees.
+        class _StubPredictor:
+            def predict(self, _struct):
+                return {
+                    "predicted_formation_energy_per_atom_eV": -1.75,
+                    "evidential_std_eV": 0.05,
+                    "conformal_90_interval_eV": [-1.95, -1.55],
+                }
+
+        monkeypatch.setattr(
+            job_orchestrator_mod, "GNNPredictorService", lambda: _StubPredictor()
+        )
 
         orchestrator = DiscoveryJobOrchestrator()
 
@@ -673,6 +688,7 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert candidate.dft_delta_ml_interval_lower == result["interval_lower"]
         assert candidate.dft_delta_ml_interval_upper == result["interval_upper"]
         assert candidate.dft_delta_ml_q_hat == result["q_tilde"]
+        assert candidate.dft_delta_ml_q_hat == pytest.approx(0.2157, abs=1e-4)
         assert db.committed is True
 
     def test_delta_ml_api_rejects_nacl_gap_without_scissor_fallback(self, monkeypatch):

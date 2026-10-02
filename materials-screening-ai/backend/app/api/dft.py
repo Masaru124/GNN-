@@ -150,7 +150,10 @@ def queue_pbe_job(
                             _cand.dft_delta_ml_interval_lower = ml_result.get("interval_lower")
                             _cand.dft_delta_ml_interval_upper = ml_result.get("interval_upper")
                             # Persist q_tilde explicitly for in-domain results (no fallback chain)
-                            _cand.dft_delta_ml_q_hat = ml_result.get("q_tilde")
+                            if ml_result.get("method") == "out_of_domain":
+                                _cand.dft_delta_ml_q_hat = None
+                            else:
+                                _cand.dft_delta_ml_q_hat = ml_result["q_tilde"]
                             _cand.dft_delta_ml_training_provenance = (
                                 f"delta_ml_ridge + conformal_calibration (method={ml_result.get('method')})"
                             )
@@ -391,7 +394,10 @@ def apply_delta_ml_correction(candidate_id: int, req: DeltaMLRequest) -> Dict[st
         cand.dft_delta_ml_gap_eV = result["corrected_gap_eV"]
         cand.dft_delta_ml_interval_lower = result["interval_lower"]
         cand.dft_delta_ml_interval_upper = result["interval_upper"]
-        q_hat = result["q_tilde"]
+        if result.get("method") == "out_of_domain":
+            q_hat = None
+        else:
+            q_hat = result["q_tilde"]
         cand.dft_delta_ml_q_hat = q_hat
         cand.dft_delta_ml_training_provenance = f"delta_ml_ridge (method={result['method']}, q_hat={q_hat})"
         if req.eps_inf is not None:

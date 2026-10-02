@@ -747,7 +747,7 @@ function VirtualLabContent() {
                               {simResult.simulation_result.delta_ml_gap_eV.toFixed(2)} eV
                             </span>
                             <span className="text-[9px] text-foreground font-mono block">
-                              [{simResult.simulation_result.delta_ml_interval_lower?.toFixed(2)}, {simResult.simulation_result.delta_ml_interval_upper?.toFixed(2)}] eV (90% conf)
+                              [{simResult.simulation_result.delta_ml_interval_lower?.toFixed(2)}, {simResult.simulation_result.delta_ml_interval_upper?.toFixed(2)}] eV ({((simResult.simulation_result.delta_ml_coverage_level ?? 0.8) * 100).toFixed(0)}% conf)
                             </span>
                             {simResult.simulation_result.delta_ml_chemistry_mae_eV && (
                               <span className="text-[8px] text-emerald-700/90 dark:text-emerald-300/90 block leading-tight font-sans">

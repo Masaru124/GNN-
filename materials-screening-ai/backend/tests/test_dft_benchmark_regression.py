@@ -278,6 +278,13 @@ def test_delta_ml_domain_safety_and_loocv():
     assert "out of Δ-ML training domain" in res_u["label"]
     assert "atomic projectors" in res_u["disclosure"]
 
+    # In-domain Pb halide perovskite: verify q_tilde persistence and confidence_level == 0.80
+    res_pbi3 = corrector.predict_corrected_gap(1.323, formula="CsPbI3")
+    assert res_pbi3["status"] == "anion_matched_mean_delta", f"Expected anion_matched_mean_delta, got {res_pbi3['status']}"
+    assert res_pbi3["q_tilde"] is not None, "q_tilde should be persisted for in-domain results"
+    assert abs(res_pbi3["q_tilde"] - 0.2157) < 0.01, f"Expected q_tilde ≈ 0.2157, got {res_pbi3['q_tilde']}"
+    assert res_pbi3["coverage_level"] == 0.80, f"Expected coverage_level == 0.80, got {res_pbi3['coverage_level']}"
+
 
 # ---------------------------------------------------------------------------
 # 8. Monkhorst-Pack Even-N Zone Boundary Guarantee

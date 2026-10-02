@@ -18,7 +18,6 @@ import os
 import time
 import tempfile
 from pathlib import Path
-sys.path.insert(0, r"c:\Users\User\Desktop\GNN\materials-screening-ai\backend")
 
 import pytest
 import numpy as np
@@ -290,12 +289,13 @@ class TestSyntheticOpenShellAndDomainSafety:
             corrector.anion_mean_deltas = orig_deltas
 
     def test_features_source_provenance_and_provisional_flag(self):
-        """All predictions include features_source and provisional: True flag, and require eps_inf."""
+        """All predictions include features_source and provisional: True flag, and non-perovskite is out_of_domain."""
         corrector = get_delta_ml_corrector()
         
-        # 1. Missing eps_inf returns features_required
+        # 1. Non-perovskite (NaCl) returns out_of_domain
         res_missing = corrector.predict_corrected_gap(pbe_gap_ev=5.106, formula="NaCl")
-        assert res_missing["status"] == "features_required"
+        assert res_missing["status"] == "out_of_domain"
+        assert res_missing["reason"] == "not a Pb ABX3 halide perovskite"
         assert res_missing["provisional"] is True
         assert res_missing["corrected_gap_eV"] is None
 
@@ -309,10 +309,11 @@ class TestSyntheticOpenShellAndDomainSafety:
         for key in ["chi_diff", "r_ratio", "Z_avg", "eps_inf"]:
             assert key in res_in["features_source"]
 
-        # Out-of-family (alkali halide) deploys linear_pbe_scissor
+        # Out-of-family non-perovskite (NaCl) returns out_of_domain
         res_out = corrector.predict_corrected_gap(pbe_gap_ev=5.106, formula="NaCl", features={"eps_inf": 2.54})
         assert res_out["provisional"] is True
-        assert res_out["status"] == "linear_pbe_scissor"
+        assert res_out["status"] == "out_of_domain"
+        assert res_out["reason"] == "not a Pb ABX3 halide perovskite"
 
     def test_conformal_half_width_strictly_increases_with_leverage(self):
         """Verify conformal half-width strictly increases with leverage h_test: W(h) = q_tilde * sqrt(1 + h)."""
@@ -327,11 +328,11 @@ class TestSyntheticOpenShellAndDomainSafety:
         h_nom = res_nom["leverage_hii"]
         w_nom = res_nom["half_width_eV"]
 
-        # High leverage out-of-family point (LiF)
+        # High leverage in-family point (CsPbCl3 at high PBE gap)
         res_high = corrector.predict_corrected_gap(
-            pbe_gap_ev=9.241,
-            formula="LiF",
-            features={"eps_inf": 1.96}
+            pbe_gap_ev=3.50,
+            formula="CsPbCl3",
+            features={"eps_inf": 3.50}
         )
         h_high = res_high["leverage_hii"]
         w_high = res_high["half_width_eV"]
@@ -365,7 +366,7 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert _composition_features("FakeElement123") == (0.0, 1.0, 0.0)
 
     def test_calibration_regimes_routing(self):
-        """Verify n_family >= 9 routes to in_family_loocv, while n_family < 9 routes to cross_family_loco."""
+        """Verify in-family routes to in_family_loocv, while non-perovskite is out_of_domain."""
         corrector = get_delta_ml_corrector()
         
         # Halide perovskite (n=10 >= 9) -> in_family_loocv
@@ -377,14 +378,14 @@ class TestSyntheticOpenShellAndDomainSafety:
         assert res_pero["calibration_regime"] == "in_family_loocv"
         assert res_pero["family_interval_applied"] is True
 
-        # Alkaline earth oxide (n=3 < 9) -> cross_family_loco
+        # Alkaline earth oxide (MgO) is out_of_domain
         res_oxide = corrector.predict_corrected_gap(
             pbe_gap_ev=4.475,
             formula="MgO",
             features={"eps_inf": 3.00}
         )
-        assert res_oxide["calibration_regime"] == "cross_family_loco"
-        assert res_oxide["family_interval_applied"] is False
+        assert res_oxide["status"] == "out_of_domain"
+        assert res_oxide["reason"] == "not a Pb ABX3 halide perovskite"
 
     def test_candidate_hardcoded_literals_eliminated(self):
         """Assert candidate dicts constructed via orchestrator path have vbm_vs_vacuum_eV, synthesizability_score, is_solar_optimal as None unless computed."""
@@ -509,6 +510,15 @@ class TestSyntheticOpenShellAndDomainSafety:
         res_csi3pb = corrector.predict_corrected_gap(pbe_gap, "CsI3Pb", features)
         assert res_csi3pb["status"] == "anion_matched_mean_delta"
         assert res_csi3pb["corrected_gap_eV"] == res_cspbi3["corrected_gap_eV"]
+
+        # Supercell formulas reduce to in-domain ABX3 and match CsPbI3/MAPbI3
+        res_cs4 = corrector.predict_corrected_gap(pbe_gap, "Cs4Pb4I12", features)
+        assert res_cs4["status"] == "anion_matched_mean_delta"
+        assert res_cs4["corrected_gap_eV"] == res_cspbi3["corrected_gap_eV"]
+
+        res_c4h24 = corrector.predict_corrected_gap(pbe_gap, "C4H24N4Pb4I12", features)
+        assert res_c4h24["status"] == "anion_matched_mean_delta"
+        assert res_c4h24["corrected_gap_eV"] == res_mapbi3["corrected_gap_eV"]
 
     def test_adversarial_formula_length_cap_and_timing(self):
         """Formulas >40 chars are rejected out_of_domain immediately; 10,000 char string returns in <0.1 s."""

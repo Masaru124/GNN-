@@ -768,9 +768,66 @@ class DeltaMLGapCorrector:
                 "requires_metallicity_check": requires_metallicity_check,
             }
 
-        # Check for unrepresented chemistry family or pending metallicity check (open-shell TM)
-        if requires_metallicity_check or chem_class not in self.CALIBRATED_FAMILIES:
-            status_val = "pending_metallicity_check" if requires_metallicity_check else "out_of_domain_unrepresented_family"
+        # Check domain: only Pb ABX3 halide perovskites are in domain
+        if chem_class != "halide_perovskite":
+            # Open-shell transition metal halide (e.g. KZrCl3) flags pending_metallicity_check
+            if requires_metallicity_check and "halide" in chem_class:
+                return {
+                    "formula": formula,
+                    "chemistry_class": chem_class,
+                    "chemistry_mae_eV": None,
+                    "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                    "corrected_gap_eV": None,
+                    "interval_pooled": None,
+                    "interval_chemistry_specific": None,
+                    "interval_lower": None,
+                    "interval_upper": None,
+                    "interval_width_eV": None,
+                    "q_hat": None,
+                    "status": "pending_metallicity_check",
+                    "provisional": True,
+                    "label": "Out of domain: pending_metallicity_check",
+                    "should_escalate_to_r2scan": True,
+                    "escalation_reason": (
+                        f"Compound {formula} belongs to '{chem_class}' with open-shell d-electron configuration (0 < d < 10). "
+                        "Scissor correction cannot be applied without prior metallicity validation."
+                    ),
+                    "method": "out_of_domain",
+                    "calibration_dataset": CALIBRATION_DATASET_NAME,
+                    "effective_n": self.effective_n,
+                    "features_used": final_features,
+                    "features_source": features_source,
+                    "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                    "requires_metallicity_check": requires_metallicity_check,
+                }
+            return {
+                "formula": formula,
+                "chemistry_class": chem_class,
+                "chemistry_mae_eV": chem_mae,
+                "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                "corrected_gap_eV": None,
+                "interval_pooled": None,
+                "interval_chemistry_specific": None,
+                "interval_lower": None,
+                "interval_upper": None,
+                "interval_width_eV": None,
+                "q_hat": None,
+                "status": "out_of_domain",
+                "out_of_domain": True,
+                "reason": "not a Pb ABX3 halide perovskite",
+                "label": "Out of domain: not a Pb ABX3 halide perovskite",
+                "method": "out_of_domain",
+                "provisional": True,
+                "calibration_dataset": CALIBRATION_DATASET_NAME,
+                "effective_n": self.effective_n,
+                "features_used": final_features,
+                "features_source": features_source,
+                "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                "requires_metallicity_check": requires_metallicity_check,
+            }
+
+        # Check for pending metallicity check (open-shell TM in halide perovskite, e.g. KZrCl3)
+        if requires_metallicity_check:
             return {
                 "formula": formula,
                 "chemistry_class": chem_class,
@@ -783,14 +840,13 @@ class DeltaMLGapCorrector:
                 "interval_upper": None,
                 "interval_width_eV": None,
                 "q_hat": None,
-                "status": status_val,
+                "status": "pending_metallicity_check",
                 "provisional": True,
-                "label": f"Out of domain: {status_val}",
+                "label": "Out of domain: pending_metallicity_check",
                 "should_escalate_to_r2scan": True,
                 "escalation_reason": (
-                    f"Compound {formula} belongs to '{chem_class}' with open-shell d-electron configuration (0 < d < 10) "
-                    f"or unrepresented family in the calibration dataset (n=21 covers alkali halides, alkaline earth oxides, "
-                    f"halide perovskites, and TM perovskites). Scissor correction cannot be applied without prior metallicity validation."
+                    f"Compound {formula} belongs to '{chem_class}' with open-shell d-electron configuration (0 < d < 10). "
+                    "Scissor correction cannot be applied without prior metallicity validation."
                 ),
                 "method": "out_of_domain",
                 "calibration_dataset": CALIBRATION_DATASET_NAME,
@@ -865,7 +921,7 @@ class DeltaMLGapCorrector:
                     try:
                         # Normalize short names MA and FA to parenthesized molecular formulas for Composition
                         f_sub = formula.replace("MA", "(CH3NH3)").replace("FA", "(CH5N2)")
-                        comp = Composition(f_sub)
+                        comp = Composition(f_sub).reduced_composition
                         el_dict = {el.symbol: float(amt) for el, amt in comp.items()}
 
                         # 1. B-site must be pure Pb with count 1
@@ -1044,27 +1100,31 @@ class DeltaMLGapCorrector:
             is_high_leverage = bool(h_ii > cutoff_ridge)
 
         else:
-            # Out-of-Family Regime: Linear PBE Scissor
-            if hasattr(self, "lin_coeff") and hasattr(self, "lin_intercept"):
-                corrected = float(self.lin_coeff * pbe_gap_ev + self.lin_intercept)
-                corrected = max(0.0, min(corrected, 20.0))
-                method = "linear_pbe_scissor"
-            else:
-                corrected = pbe_gap_ev + PBE_MEAN_UNDERESTIMATE_EV
-                method = "mean_correction_fallback"
-
-            calibration_regime = "cross_family_loco"
-            q_tilde_active = getattr(self, "q_tilde_cross_family_linear", getattr(self, "q_tilde_cross_family", 0.8707))
-            family_fallback_reason = (
-                f"Family '{chem_class}' has n_family={n_fam} < {self.MIN_FAMILY_N_FOR_CONFORMAL} required for 90% finite-sample "
-                f"conformal coverage; deployed Linear PBE Scissor calibrated against cross-family LOCO residuals."
-            )
-
-            # Linear model query leverage
-            pbe_m = getattr(self, "pbe_mean", 3.19)
-            pbe_s = getattr(self, "pbe_ss", 100.0)
-            h_ii = float((1.0 / self.effective_n) + ((pbe_gap_ev - pbe_m)**2) / max(pbe_s, 1e-6))
-            is_high_leverage = bool(h_ii > (2.0 * 2.0 / self.effective_n))
+            return {
+                "formula": formula,
+                "chemistry_class": chem_class,
+                "chemistry_mae_eV": chem_mae,
+                "pbe_gap_eV": round(pbe_gap_ev, 4) if pbe_gap_ev is not None else None,
+                "corrected_gap_eV": None,
+                "interval_pooled": None,
+                "interval_chemistry_specific": None,
+                "interval_lower": None,
+                "interval_upper": None,
+                "interval_width_eV": None,
+                "q_hat": None,
+                "status": "out_of_domain",
+                "out_of_domain": True,
+                "reason": "not a Pb ABX3 halide perovskite",
+                "label": "Out of domain: not a Pb ABX3 halide perovskite",
+                "method": "out_of_domain",
+                "provisional": True,
+                "calibration_dataset": CALIBRATION_DATASET_NAME,
+                "effective_n": self.effective_n,
+                "features_used": final_features,
+                "features_source": features_source,
+                "soc_offset_in_delta_not_applicable": soc_offset_in_delta_not_applicable,
+                "requires_metallicity_check": requires_metallicity_check,
+            }
 
         # Conformal half-width strictly increases with leverage: W(h_test) = q_tilde * sqrt(1 + h_test)
         half_width = float(q_tilde_active * np.sqrt(1.0 + max(h_ii, 0.0)))

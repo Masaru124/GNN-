@@ -2,9 +2,9 @@
   "git_dirty": false,
   "metadata": {
     "dataset_name": "MatScreen-SingleFidelity-Experimental-v1",
-    "git_commit": "3fae881b0a1b1c729a27938312dc8af606cfc63e",
+    "git_commit": "edbb58a21cca50f1f62990b2dc341214fca0560b",
     "git_dirty": false,
-    "parent_git_commit": "95f7e1ba9c934a2c90b6f69744b1e30196708276",
+    "parent_git_commit": "6c55e7a52c669caa34a0ce5bf4ad89a94112987a",
     "calibration_records_sha256": "0f880519c51af76f33c5edb76272078a91a3d33f5a27143a75260a8f06a3a3d6",
     "num_evaluated_samples": 9,
     "num_families": 3,
@@ -351,10 +351,10 @@
         "predicted_gap_eV": 1.5648,
         "absolute_error_eV": 0.0848,
         "conformal_interval_80_eV": [
-          1.3575,
-          1.772
+          1.2544,
+          1.8751
         ],
-        "interval_width_eV": 0.4145,
+        "interval_width_eV": 0.6207,
         "is_covered": true,
         "coverage_statement": "1/1 held-out point inside the interval (not a coverage validation)",
         "source_target": "Target: Castelli et al. (2014) Table I; Lattice a=6.362 A: literature value (unverified in corpus), unrelaxed"

@@ -31,7 +31,9 @@ from app.services.novelty_checker import NoveltyChecker
 from app.services.pareto_ranker import ParetoRanker
 from app.services.physics_validation import PhysicsValidationLayer
 from app.services.stability_analysis import StabilityAnalysisService, DiscoveryRunReportService
-from app.services.bandgap_estimator import BandGapEstimatorService
+# NOTE: BandGapEstimatorService is deliberately NOT used here. The band-gap
+# heuristic (median 90% interval half-width 3.35 eV) is excluded from screening,
+# ranking and filtering; only Tier C DFT / Delta-ML fills a band gap.
 from app.services.generation_engine import SCAFFOLD_TEMPLATES
 from app.services.literature_check import get_literature_checker
 from app.services.synthesis_service import get_synthesis_service
@@ -56,7 +58,6 @@ class DiscoveryJobOrchestrator:
         self.mf_orchestrator = MultiFidelityOrchestrator()
         self.al_service = ActiveLearningService()
         self.stability_service = StabilityAnalysisService()
-        self.bandgap_estimator = BandGapEstimatorService.get_instance()
         self.literature_checker = get_literature_checker()
         self.synthesis_service = get_synthesis_service()
         self.retrain_buffer = get_retrain_buffer()
@@ -123,6 +124,7 @@ class DiscoveryJobOrchestrator:
             "gnn_prediction": pred_val,
             "predicted_band_gap_eV": None,
             "is_solar_optimal": None,
+            "band_gap_status": "unavailable",
             "vbm_vs_vacuum_eV": None,
             "synthesizability_score": None,
             "gnn_uncertainty_low": q_low,
@@ -212,28 +214,22 @@ class DiscoveryJobOrchestrator:
                     item["hull_classification"] = "hull_construction_failed"
                     item["decomposition_products_json"] = "[]"
 
-            # 5.6. Stage 6.6: Tier B Band Gap Estimation (optical-relevant scaffolds only)
-            scaffold_meta = SCAFFOLD_TEMPLATES.get(scaffold, {})
-            is_optical_scaffold = scaffold_meta.get("optical_relevant", False)
-
-            if is_optical_scaffold:
-                print(f"[BandGapTierB] Scaffold '{scaffold}' is optical-relevant — running Tier B band gap estimation.")
-                for item in processed_candidates:
-                    try:
-                        struct = Structure.from_str(item["structure_cif"], fmt="cif")
-                        bg_result = self.bandgap_estimator.estimate_band_gap(struct)
-                        # Item 3: Tier B band gap estimate for triage
-                        item["estimated_band_gap_eV"] = bg_result.get("estimated_band_gap_eV")
-                        item["bandgap_estimate_source"] = bg_result.get("source_model")
-                        item["bandgap_estimate_tier"] = bg_result.get("tier")
-                        # is_solar_optimal must derive only from DFT/Delta-ML gap flagged in-domain, otherwise None
-                        item["is_solar_optimal"] = None
-                        item["predicted_band_gap_eV"] = bg_result.get("estimated_band_gap_eV")
-                    except Exception as e:
-                        print(f"[BandGapTierB] Error estimating band gap for {item['formula']}: {e}")
-                        item["estimated_band_gap_eV"] = None
-                        item["bandgap_estimate_source"] = None
-                        item["bandgap_estimate_tier"] = None
+            # 5.6. Stage 6.6: band gap is NOT estimated during screening.
+            # The Tier B electronegativity/matgl heuristic carries a median 90%
+            # interval half-width of 3.35 eV, so it is excluded from ranking,
+            # filtering and UI (see bandgap_estimator.py). Candidates are marked
+            # unavailable; Tier C DFT / Delta-ML fills the field on demand.
+            for item in processed_candidates:
+                item["estimated_band_gap_eV"] = None
+                item["bandgap_estimate_source"] = None
+                item["bandgap_estimate_tier"] = "unavailable"
+                item["predicted_band_gap_eV"] = None
+                item["is_solar_optimal"] = None
+                item["band_gap_status"] = "unavailable"
+                item["band_gap_unavailable_reason"] = (
+                    "Band-gap heuristic excluded from screening (median 90% interval "
+                    "half-width 3.35 eV); requires Tier C DFT / Delta-ML."
+                )
 
             # 5.7. Compute S.U.N. Rate for this discovery run
             sun_report = DiscoveryRunReportService.compute_sun_rate(processed_candidates)

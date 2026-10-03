@@ -54,8 +54,17 @@ export interface PredictionResult {
   scale_attention: ScaleAttention;
 }
 
+export interface ConformalCoverageGate {
+  chemistry_class: string;
+  n_cal: number;
+  min_n_cal: number;
+  status: "calibrated" | "under_calibrated" | "no_calibration";
+  claim_scope: string;
+}
+
 export interface PredictResponsePayload {
   material_info: MaterialInfo;
+  conformal_coverage_gate?: ConformalCoverageGate;
   prediction: PredictionResult;
 }
 

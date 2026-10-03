@@ -59,9 +59,10 @@ class NaturalLanguageQueryParser:
         elif any(kw in p_lower for kw in ["solar", "photovoltaic", "solar absorber", "pv absorber"]):
             scaffold = "perovskite_solar_halide"
             target_ion = "None"
-            min_band_gap_eV = 1.1
-            max_band_gap_eV = 1.7
-            parsed_constraints.append({"term": "solar absorber", "mapped_to": "Scaffold: Lead-Free Halide Perovskite (CsSnI3), Target Band Gap: 1.1–1.7 eV (Shockley-Queisser Limit)"})
+            # No band-gap filter: the only screening band gap was a heuristic with a
+            # 3.35 eV median 90% half-width, so the 1.1-1.7 eV window is recorded as
+            # intent only. Gating happens on Tier C DFT / Delta-ML gaps later.
+            parsed_constraints.append({"term": "solar absorber", "mapped_to": "Scaffold: Lead-Free Halide Perovskite (CsSnI3); target band gap 1.1-1.7 eV (Shockley-Queisser) is NOT screened here - requires Tier C DFT / Delta-ML"})
 
         # 2. Density / Weight Recognition
         if any(kw in p_lower for kw in ["lightweight", "light weight", "low density"]):

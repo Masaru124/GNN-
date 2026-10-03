@@ -331,15 +331,27 @@ class GNNPredictorService:
 
         confidence_score = float(max(0.0, min(100.0, 100.0 * (1.0 - (sigma / 0.5)))))
 
-        # Compute multi-task band gap prediction
-        bg_res = self.predict_band_gap(structure)
+        # Band gap: NOT predicted here. The electronegativity/M3GNet heuristic is
+        # unfit for screening (90% interval median half-width 3.35 eV), so it is
+        # excluded from ranking, filtering and UI. Only Tier C DFT / Delta-ML may
+        # fill predicted_band_gap_eV (see job_orchestrator / dft API).
+        BAND_GAP_UNAVAILABLE = {
+            "predicted_band_gap_eV": None,
+            "band_gap_status": "unavailable",
+            "band_gap_unavailable_reason": (
+                "Band-gap heuristic excluded from screening: median 90% interval "
+                "half-width 3.35 eV. Requires Tier C DFT / Delta-ML."
+            ),
+            "is_solar_optimal": None,
+            "solar_absorption_status": "Unavailable without Tier C DFT",
+        }
 
         result = {
             "predicted_formation_energy_per_atom_eV": round(mu_val, 4),
-            "predicted_band_gap_eV": bg_res["predicted_band_gap_eV"],
-            "band_gap_conformal_90_interval_eV": bg_res["conformal_90_interval_eV"],
-            "is_solar_optimal": bg_res["is_solar_optimal"],
-            "solar_absorption_status": bg_res["solar_absorption_status"],
+            "band_gap_status": "unavailable",
+            "band_gap_unavailable_reason": BAND_GAP_UNAVAILABLE["band_gap_unavailable_reason"],
+            "is_solar_optimal": None,
+            "solar_absorption_status": "Unavailable without Tier C DFT",
             "evidential_std_eV": round(sigma, 4),
             "aleatoric_std_eV": round(sigma_aleatoric, 4),
             "epistemic_std_eV": round(sigma_epistemic, 4),
@@ -471,43 +483,31 @@ class GNNPredictorService:
 
     def predict_band_gap(self, structure: Structure) -> Dict[str, Any]:
         """
-        Multi-Task Band Gap Predictor Head (Eg in eV) delegated to BandGapEstimatorService.
-        Evaluates Shockley-Queisser solar absorption feasibility window (1.1 - 1.7 eV)
-        with calibrated uncertainty disclosure.
+        DEPRECATED for screening, filtering, ranking and UI.
+
+        Returns a hard "unavailable" record. The underlying electronegativity /
+        matgl heuristic carries a median 90% interval half-width of 3.35 eV, so any
+        ranking or filter built on it is meaningless. Kept only so callers get an
+        explicit unavailable marker instead of a fabricated number; Tier C DFT /
+        Delta-ML (app/api/dft.py) is the only supported band-gap path.
         """
-        try:
-            from app.services.bandgap_estimator import BandGapEstimatorService
-            estimator = BandGapEstimatorService.get_instance()
-            res = estimator.estimate_band_gap(structure)
-            return {
-                "predicted_band_gap_eV": res.get("estimated_band_gap_eV"),
-                "evidential_std_eV": res.get("estimation_error_1sigma_eV", 0.4),
-                "conformal_90_interval_eV": res.get("conformal_90_interval_eV", [1.0, 1.8]),
-                "is_solar_optimal": res.get("is_solar_optimal", False),
-                "solar_absorption_status": res.get("solar_absorption_status", "Unspecified"),
-                "tier": res.get("tier", "Tier B (ML/Heuristic Estimate)"),
-                "disclosed_error_note": res.get("disclosed_error_note", "")
-            }
-        except Exception:
-            # Fallback inline if import issue occurs
-            comp = structure.composition
-            species = [s.symbol for s in comp.elements]
-            base_eg = 1.30 if "I" in species else (2.10 if "Br" in species else (2.90 if "Cl" in species else 3.20))
-            if "Sn" in species: base_eg -= 0.35
-            if "Zr" in species: base_eg += 1.40
-            if "Ti" in species: base_eg += 1.20
-            if "K" in species: base_eg += 0.15
-            eg_val = round(max(0.0, base_eg), 3)
-            # 90% half-width = split-conformal q (5.5833, see bandgap_estimator) ×
-            # fallback σ (0.40) ≈ 2.23 eV — HEURISTIC triage band, wide by design.
-            return {
-                "predicted_band_gap_eV": eg_val,
-                "evidential_std_eV": 0.40,
-                "conformal_90_interval_eV": [round(max(0.0, eg_val - 2.23), 3), round(eg_val + 2.23, 3)],
-                "is_solar_optimal": 1.1 <= eg_val <= 1.7,
-                "solar_absorption_status": "Optimal Shockley-Queisser Solar Absorber (1.1–1.7 eV)" if 1.1 <= eg_val <= 1.7 else "Non-optimal Solar Absorber",
-                "tier": "Tier B (Calibrated Heuristic)"
-            }
+        return {
+            "predicted_band_gap_eV": None,
+            "evidential_std_eV": None,
+            "conformal_90_interval_eV": None,
+            "is_solar_optimal": None,
+            "solar_absorption_status": "Unavailable without Tier C DFT",
+            "tier": "unavailable",
+            "band_gap_status": "unavailable",
+            "band_gap_unavailable_reason": (
+                "Band-gap heuristic excluded from screening: median 90% interval "
+                "half-width 3.35 eV. Requires Tier C DFT / Delta-ML."
+            ),
+            "disclosed_error_note": (
+                "No band-gap estimate is produced: the calibrated heuristic interval "
+                "has median half-width 3.35 eV and is not decision-grade."
+            ),
+        }
 
     def compare_single_vs_multi(self, structure: Structure) -> Dict[str, Any]:
         """Compare Multi-Scale GNN vs Single-Scale GNN prediction for explainability.

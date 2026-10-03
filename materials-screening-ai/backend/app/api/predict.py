@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.services.cif_parser import CIFParserService
+from app.services.chemistry_class import class_calibration_status, classify
 from app.services.predictor import GNNPredictorService
 from app.database.db import get_db
 from app.database.models import PredictionRecord
@@ -59,6 +60,8 @@ async def predict_single(
         raise HTTPException(status_code=500, detail=f"GNN Inference failed: {str(e)}")
 
     # Assemble response
+    chem_class = classify(parsed.get("formula_pretty") or parsed.get("formula"))
+    chem_gate = class_calibration_status(chem_class)
     response_payload = {
         "material_info": {
             "filename": parsed["filename"],
@@ -72,6 +75,7 @@ async def predict_single(
             "sites": parsed["sites"],
             "cif_string": parsed["cif_string"]
         },
+        "conformal_coverage_gate": chem_gate,
         "prediction": pred_res
     }
 

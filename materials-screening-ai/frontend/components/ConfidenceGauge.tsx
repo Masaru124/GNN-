@@ -105,7 +105,7 @@ export const ConfidenceGauge: React.FC<ConfidenceGaugeProps> = ({ prediction }) 
 
         <div className="rounded-lg border border-border bg-muted/50 p-3.5">
           <p className="text-[11px] font-medium text-muted-foreground">
-            Conformal 90% interval (i.i.d. marginal)
+            Conformal 90% interval (86% LOCO coverage, one held-out cluster n=7178)
           </p>
           <p className="mt-1 font-mono text-xs font-semibold text-accent">
             [{conformal_90_interval_eV[0]}, {conformal_90_interval_eV[1]}] eV

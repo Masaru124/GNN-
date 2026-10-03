@@ -2,18 +2,20 @@
 
 import React from "react";
 import { Zap, Cpu, Flame, Target } from "lucide-react";
-import { PredictionResult, MaterialInfo } from "@/lib/types";
+import { PredictionResult, MaterialInfo, ConformalCoverageGate } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface PredictionCardProps {
   materialInfo: MaterialInfo;
   prediction: PredictionResult;
+  conformalCoverageGate?: ConformalCoverageGate;
 }
 
 export const PredictionCard: React.FC<PredictionCardProps> = ({
   materialInfo,
   prediction,
+  conformalCoverageGate,
 }) => {
   const {
     predicted_formation_energy_per_atom_eV,
@@ -68,10 +70,22 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
         </div>
 
         <div className="shrink-0">
-          <p className="micro-label">Conformal 90% Bounds (i.i.d. marginal)</p>
+          <p className="micro-label">Conformal 90% Bounds (86% LOCO coverage, one held-out cluster n=7178)</p>
           <p className="mt-0.5 font-mono text-sm font-semibold text-accent">
             [{conformal_90_interval_eV[0]}, {conformal_90_interval_eV[1]}] eV
           </p>
+          {conformalCoverageGate && (
+            <p
+              className="mt-1 text-[11px] text-muted-foreground"
+              title={`Class-level coverage claims need at least ${conformalCoverageGate.min_n_cal} calibration points. This class has n_cal = ${conformalCoverageGate.n_cal}.`}
+            >
+              Class: {conformalCoverageGate.chemistry_class} · n_cal ={" "}
+              {conformalCoverageGate.n_cal} ·{" "}
+              {conformalCoverageGate.status === "calibrated"
+                ? "class-level coverage permitted"
+                : "marginal coverage only"}
+            </p>
+          )}
         </div>
       </div>
 

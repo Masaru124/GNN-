@@ -93,6 +93,7 @@ export default function Page() {
             <PredictionCard
               materialInfo={result.material_info}
               prediction={result.prediction}
+              conformalCoverageGate={result.conformal_coverage_gate}
             />
 
             <Viewer3D

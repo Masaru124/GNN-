@@ -146,20 +146,24 @@ The deployed predictor therefore reports an **80% prediction interval** calibrat
 
 ## 7. Deployed GNN Interval & Tier-B Band-Gap Heuristic Interval (deterministic serving, v1.0.1)
 
-### 7.1 MultiScaleGNN A7 formation-energy interval — "i.i.d. marginal 90%"
+### 7.1 MultiScaleGNN A7 formation-energy interval — 86% measured coverage (n=7178), nominal 90%
 
 - **Form**: $\hat{\mu} \pm q \cdot \sigma$, with $\sigma$ the DER total std and the deterministic serving forward (`deterministic=True`, MCDropout gated to $p=0$, `model.training=False`).
 - **Calibration split**: the production checkpoint's own validation split (chemistry-grouped `soap_loco` indices filtered to $i < 50000$, $n=4289$), which is index-disjoint from train ($n=37531$) and test ($n=7178$) — pairwise overlap counts are all zero.
 - **Shipped quantile**: $q = 1.0254$.
 - **Measured coverage on the LOCO test split** ($n=7178$): $0.8605$ (Wilson 95% CI $[0.8523, 0.8684]$) against a nominal $0.90$. Per-chemistry-class (Wilson 95%): pb_halide $n=13 \to 1.0000$ $[0.7719, 1.0000]$; alkaline_earth_oxide $n=324 \to 0.9043$; halide_other $n=272 \to 0.8676$; other_oxide $n=1284 \to 0.8699$; transition_metal_oxide $n=3758 \to 0.8630$; other $n=1527 \to 0.8350$.
-- **Why the label is "i.i.d. marginal 90%" and not class-conditional**: a Mondrian (per-class) $q$ fit on the same validation split reproduced the global $q$ within noise and made halide_other *worse* (test coverage $0.8088$), so no per-class guarantee is claimed.
+- **Advertised coverage**: UI, API, CSV headers and chat replies state the measured figure — "86% LOCO coverage, one held-out cluster n=7178" — rather than the nominal 90%. The nominal target and the measured value are both reported; no class-conditional guarantee is claimed.
+- **Per-class n_cal gate** (`app/services/chemistry_class.py`): class-level statements require $\ge 30$ calibration points on the production val split. `pb_halide` has $n_{cal} = 11$, so Pb-halide predictions are gated to the marginal claim and the API/UI report `status: under_calibrated` with $n$.
+- **Why no per-class claim**: a Mondrian (per-class) $q$ fit on the same validation split reproduced the global $q$ within noise and made halide_other *worse* (test coverage $0.8088$), so no per-class guarantee is claimed.
 - **Exchangeability check** (test split halved with rng seed 42, calibrate on half A / evaluate on half B): $q_A = 1.1316 \to 0.8922$ $[0.8816, 0.9019]$ on the held-out half — consistent with the 90% marginal claim when data are exchangeable; the $0.8605$ figure drops because the LOCO split shifts chemistry distributions, not because the quantile is miscalibrated.
 - **Interval width**: median half-width $0.1273\text{ eV}$ (mean $0.1467\text{ eV}$) on the test split.
 - **History**: the earlier $q=1.0002$ was fit on the random `structures[:20000]` validation split (seed 42), $81.4\%$ of whose indices overlap production **train** — contaminated (test coverage $0.8515$); the legacy $0.4954$ achieved only $0.5103$.
 
-### 7.2 Tier-B band-gap interval — HEURISTIC (labeled in UI and API disclosure)
+### 7.2 Band-gap heuristic — REMOVED from screening (v1.0.2)
 
-- The BandGapEstimatorService 90% band is a **heuristic triage interval, not DFT-grade**. Its quantile $q = 5.5833$ (90% quantile of $|\text{gap} - \text{est}|/\sigma$) was recalibrated on the same production validation split; LOCO test coverage $0.7699$ (the previous random-split $q=4.875$ gave $0.6245$ there; its $0.910$ figure held only on the original in-distribution random split).
-- **Median half-width $3.35\text{ eV}$ (mean $3.4417\text{ eV}$)** — far above the ~1 eV heuristic-labeling threshold, which is why every surface labels it heuristic: discovery CandidateTable tooltip, `Tier B (Heuristic Estimate — NOT DFT-grade)` tier tag, and the API `disclosed_error_note`.
-- The matgl/M3GNet branch reports a plain Gaussian $1.645\sigma$ band (no conformal data available for M3GNet here) and is likewise tagged `Tier B (ML Estimate — NOT DFT-grade)`.
+- The band-gap heuristic (electronegativity model with matgl/M3GNet fallback) is **no longer used for ranking, filtering or display**. Its 90% interval has median half-width $3.35\text{ eV}$ (mean $3.4417\text{ eV}$) — an order of magnitude wider than the ~1 eV threshold at which a band becomes decision-grade — and its LOCO coverage was $0.7699$ at $q = 5.5833$ ($0.6245$ at the old random-split $q = 4.875$).
+- Consequence: `predictor.predict()` no longer returns a band gap; `GNNPredictorService.predict_band_gap()` returns an explicit `band_gap_status: unavailable` record; `job_orchestrator` no longer calls the estimator during screening (candidates are persisted with `estimated_band_gap_eV = NULL`, `bandgap_estimate_tier = "unavailable"`); the discovery API reports `band_gap_status: unavailable` with a reason string; the discovery UI column reads "unavailable (needs DFT)". The solar-window scaffold in `nl_query_parser` records the 1.1-1.7 eV intent but applies **no** band-gap filter.
+- Pareto axes are unchanged (formation energy, cost, free volume, energy above hull) — the band gap was never an objective, so no ranking result depended on it.
+- The only supported band gap is Tier C DFT / Delta-ML (`app/api/dft.py`), which is computed on demand and is gated by domain checks.
+- `bandgap_estimator.py` remains as a library for offline analysis (e.g. the LOCO study in `research/coverage_reports/`) but nothing in the screening path calls it.
 

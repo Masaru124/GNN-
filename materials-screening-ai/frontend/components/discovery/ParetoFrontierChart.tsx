@@ -33,11 +33,11 @@ export interface CandidateItem {
   e_above_hull_eV?: number | null;
   hull_classification?: string | null;
   decomposition_products?: string[];
-  // Item 3: Tier B Band Gap
-  estimated_band_gap_eV?: number | null;
-  bandgap_estimate_source?: string | null;
-  bandgap_estimate_tier?: string | null;
-  is_solar_optimal?: boolean;
+  // Item 3: band gap is not screened (heuristic excluded). Tier C DFT / Delta-ML only.
+  predicted_band_gap_eV?: number | null;
+  band_gap_status?: string | null;
+  band_gap_unavailable_reason?: string | null;
+  is_solar_optimal?: boolean | null;
   // Ensemble Disagreement Gate (CHGNet + MACE)
   mace_relaxed_energy_eV?: number | null;
   energy_disagreement_eV_per_atom?: number | null;

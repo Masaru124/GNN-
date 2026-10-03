@@ -115,10 +115,17 @@ def get_discovery_job_status(job_id: str, db: Session = Depends(get_db)):
             # Item 1: Energy Above Hull
             "e_above_hull_eV": getattr(c, "e_above_hull_eV", None),
             "hull_classification": getattr(c, "hull_classification", None),
-            # Item 3: Band Gap (Tier B triage)
-            "estimated_band_gap_eV": getattr(c, "estimated_band_gap_eV", None),
-            "bandgap_estimate_source": getattr(c, "bandgap_estimate_source", None),
-            "is_solar_optimal": getattr(c, "is_solar_optimal", False),
+            # Item 3: Band gap is not screened. Heuristic estimates (median 90%
+            # interval half-width 3.35 eV) are excluded; only Tier C DFT / Delta-ML
+            # fills predicted_band_gap_eV below.
+            "estimated_band_gap_eV": None,
+            "bandgap_estimate_source": None,
+            "band_gap_status": "unavailable",
+            "band_gap_unavailable_reason": (
+                "Band-gap heuristic excluded from screening (median 90% interval "
+                "half-width 3.35 eV); requires Tier C DFT / Delta-ML."
+            ),
+            "is_solar_optimal": None,
             # Item 8: Synthesis Feasibility & Route
             "synthesis_route": getattr(c, "synthesis_route", None),
             "synthesis_feasibility": getattr(c, "synthesis_feasibility", None),

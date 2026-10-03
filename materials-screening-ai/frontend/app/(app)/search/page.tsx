@@ -198,6 +198,7 @@ export default function Page() {
               <PredictionCard
                 materialInfo={screenedResult.material_info}
                 prediction={screenedResult.prediction}
+                conformalCoverageGate={screenedResult.conformal_coverage_gate}
               />
               <Viewer3D
                 cifString={screenedResult.material_info.cif_string}

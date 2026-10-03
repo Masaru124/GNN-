@@ -286,8 +286,8 @@ export function CandidateTable({
               <th className="p-2.5">Charge Gate</th>
               <th className="p-2.5">Tier 1 GNN E_f</th>
               <th className="p-2.5">E Above Hull</th>
-              <th className="p-2.5">Band Gap (Tier B / C)</th>
-              <th className="p-2.5">Conformal 90% Interval (i.i.d. marginal)</th>
+              <th className="p-2.5">Band Gap (unavailable)</th>
+              <th className="p-2.5">Conformal 90% Interval (86% LOCO coverage, one held-out cluster n=7178)</th>
               <th className="p-2.5">Novelty</th>
               <th className="p-2.5">Cost ($/kg)</th>
               <th className="p-2.5">Bottleneck (Å)</th>
@@ -413,37 +413,17 @@ export function CandidateTable({
                     )}
                   </td>
 
-                  {/* Honestly Labeled Band Gap Column (Item 3 Tier B / C) */}
+                  {/* Band gap: heuristic excluded from screening (Item 3) */}
                   <td className="p-2.5">
-                    {cand.estimated_band_gap_eV !== null &&
-                    cand.estimated_band_gap_eV !== undefined ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span
-                          title={`Tier B ML/Heuristic Estimate (${cand.bandgap_estimate_source || "calibrated"}). Disclosed error ~0.3-0.5 eV vs DFT. Heuristic 90% band is wide by design (median half-width ~3.35 eV) — triage only, not DFT-grade.`}
-                          className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-dashed border-amber-500/40"
-                        >
-                          {cand.estimated_band_gap_eV.toFixed(2)} eV (Tier B)
-                        </span>
-                        {cand.is_solar_optimal === true && (
-                          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
-                            🌞 Solar Optimal (1.1-1.7 eV)
-                          </span>
-                        )}
-                        {(cand.is_solar_optimal === null ||
-                          cand.is_solar_optimal === undefined) && (
-                          <span className="text-[9px] text-muted-foreground italic">
-                            —
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span
-                        title="Stability & Cost Screened Only — Band Gap Not Yet Evaluated (Requires Tier C DFT)"
-                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-muted px-2 py-0.5 rounded border border-border"
-                      >
-                        Requires DFT (Tier C)
-                      </span>
-                    )}
+                    <span
+                      title={
+                        cand.band_gap_unavailable_reason ||
+                        "Band-gap heuristic excluded from screening: median 90% interval half-width 3.35 eV. Requires Tier C DFT / Delta-ML."
+                      }
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-muted px-2 py-0.5 rounded border border-border"
+                    >
+                      unavailable (needs DFT)
+                    </span>
                   </td>
 
                   {/* Conformal 90% Interval */}

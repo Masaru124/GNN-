@@ -4,7 +4,7 @@ Multi-Fidelity Information-Gain Orchestrator.
 
 Intelligently routes discovery candidates between Tier 1 GNN screening and Tier 2 MLIP Physics Validation
 based on Expected Information Gain (Expected Improvement heuristic):
-  - Evaluates GNN Uncertainty Interval Width (conformal 90% width, i.i.d. marginal)
+  - Evaluates GNN Uncertainty Interval Width (conformal 90% width, 86% LOCO coverage (one held-out cluster, n=7178))
   - Evaluates proximity to target constraint boundaries
   - Returns decision policy:
       * 'promote_to_tier2': Promoted for expensive Tier 2 MLIP physics relaxation

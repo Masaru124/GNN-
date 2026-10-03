@@ -610,7 +610,7 @@ function VirtualLabContent() {
                   </div>
 
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Runs self-consistent field (SCF) DFT via native Windows Quantum ESPRESSO 7.5 (24 OpenMP cores). Computes valence band maximum (VBM), conduction band minimum (CBM), exact PBE gap, and applies conformal-calibrated Δ-ML correction for experimental-quality band gaps with 90% uncertainty intervals.
+                    Runs self-consistent field (SCF) DFT via native Windows Quantum ESPRESSO 7.5 (24 OpenMP cores). Computes valence band maximum (VBM), conduction band minimum (CBM), exact PBE gap, and applies conformal-calibrated Δ-ML correction for experimental-quality band gaps with 80% uncertainty intervals (in-domain).
                   </p>
                 </div>
               )}

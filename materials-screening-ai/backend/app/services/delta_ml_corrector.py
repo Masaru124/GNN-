@@ -7,8 +7,11 @@ toward mixed-fidelity reference gap quality (HSE03, GLLB-SC, QSGW+SOC, Exp.),
 using physics-informed features.
 
 The key novelty: wraps the correction in split conformal calibration,
-producing a per-prediction 90% calibrated interval rather than a bare point
+producing a per-prediction calibrated interval rather than a bare point
 estimate — matching the same rigorous UQ machinery used in the GNN tier.
+Deployed in-family coverage target is 80% (see coverage_level / q_tilde);
+the default confidence_level 0.90 applies only when no family interval is
+fitted.
 
 Features used for correction:
   1. PBE gap itself (eV)

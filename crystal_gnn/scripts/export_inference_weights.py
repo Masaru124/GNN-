@@ -8,7 +8,7 @@ scheduler history, split index arrays) from the 221 MB best.pt checkpoint.
 Saves a compact `model_inference.pt` (~35 MB) containing ONLY:
   - PyTorch model state_dict
   - Model architecture config
-  - Conformal calibration parameters (q_hat_90 = 1.0002)
+  - Conformal calibration parameters (q_hat_90 = 1.0254)
 
 Resulting file is under GitHub's 100 MB limit and can be tracked in Git.
 """
@@ -48,7 +48,7 @@ def main():
                 "target": ckpt["config"]["data"].get("target", "formation_energy_per_atom")
             }
         },
-        "conformal_q_hat_90": 1.0002,
+        "conformal_q_hat_90": 1.0254,
         "best_val_mae": ckpt.get("best_val_mae", 0.0644),
     }
 

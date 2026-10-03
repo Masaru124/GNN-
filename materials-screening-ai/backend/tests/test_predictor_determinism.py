@@ -5,7 +5,9 @@ Guards the MCDropout gating added because MCDropout is always-on (ignores eval m
 which previously made every predict() call sample a fresh dropout mask (±0.06 eV/atom).
 """
 import inspect
+import threading
 
+import numpy as np
 import torch
 from pymatgen.core import Lattice, Structure
 
@@ -89,3 +91,68 @@ def test_mc_samples_reports_mean_and_std():
     # Gating is restored afterwards: point prediction is deterministic again.
     assert all(m.p == 0.0 for m in svc._mc_dropout_modules)
     assert svc.predict(struct) == svc.predict(struct)
+
+
+def test_two_threads_seeded_calls_identical_and_rng_isolated():
+    """Concurrent seeded predicts serialize on the inference lock and must equal
+    the single-threaded baseline; global RNG state must not leak."""
+    svc = _make_service(deterministic=True, dropout_rate=0.5)
+    struct = _make_structure()
+    baseline = svc.predict(struct, seed=7)
+
+    torch_state = torch.get_rng_state().clone()
+    np_state = np.random.get_state()
+    py_state = __import__("random").getstate()
+
+    results = [[], []]
+
+    def worker(slot):
+        for _ in range(4):
+            results[slot].append(svc.predict(struct, seed=7))
+
+    threads = [threading.Thread(target=worker, args=(i,)) for i in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert results[0] and results[1]
+    assert all(r == baseline for slot in range(2) for r in results[slot])
+    # Global RNG state unchanged by seeded calls (fork_rng + save/restore).
+    assert torch.equal(torch.get_rng_state(), torch_state)
+    np_now = np.random.get_state()
+    assert np_now[0] == np_state[0] and np.array_equal(np_now[1], np_state[1])
+    assert __import__("random").getstate() == py_state
+    # No module mutation escaped the lock.
+    assert all(m.p == 0.0 for m in svc._mc_dropout_modules)
+
+
+def test_concurrent_mc_samples_and_default_never_interleave():
+    """A thread doing mc_samples must not leak enabled dropout into default calls."""
+    svc = _make_service(deterministic=True, dropout_rate=0.5)
+    struct = _make_structure()
+    default_expected = svc.predict(struct)
+    errors = []
+
+    def mc_worker():
+        try:
+            for _ in range(3):
+                svc.predict(struct, seed=3, mc_samples=4)
+        except Exception as exc:  # pragma: no cover
+            errors.append(exc)
+
+    def default_worker():
+        try:
+            for _ in range(6):
+                if svc.predict(struct) != default_expected:
+                    errors.append("stochastic output leaked into default predict")
+        except Exception as exc:  # pragma: no cover
+            errors.append(exc)
+
+    threads = [threading.Thread(target=mc_worker), threading.Thread(target=default_worker)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not errors
+    assert all(m.p == 0.0 for m in svc._mc_dropout_modules)

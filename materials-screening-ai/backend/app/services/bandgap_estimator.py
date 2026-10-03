@@ -21,6 +21,7 @@ DISCLOSED LIMITATIONS (must accompany every reported estimate):
 """
 
 import logging
+import threading
 from typing import Any, Dict, Optional
 
 from pymatgen.core import Structure, Composition, Element
@@ -97,6 +98,7 @@ class BandGapEstimatorService:
     Uses matgl M3GNet when available, falls back to electronegativity heuristic.
     """
     _instance = None
+    _INSTANCE_LOCK = threading.Lock()
     _matgl_model = None
     _matgl_available = False
 
@@ -122,7 +124,9 @@ class BandGapEstimatorService:
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
-            cls._instance = BandGapEstimatorService()
+            with cls._INSTANCE_LOCK:
+                if cls._instance is None:
+                    cls._instance = BandGapEstimatorService()
         return cls._instance
 
     def estimate_band_gap(
@@ -245,11 +249,15 @@ class BandGapEstimatorService:
         is_solar = 1.1 <= estimated_gap <= 1.7
         solar_status = self._classify_solar_status(estimated_gap)
 
-        # Split-conformal 90% interval: q calibrated on the held-out val split
-        # (structures[:20000], random_split seed=42, n=2000) as the 90% quantile of
-        # |gap - est| / error_bar; measured test coverage 0.910 at target 0.90 (n=2000).
-        # The previous q=0.4954 achieved only 0.034 on that test split.
-        q_conformal_90 = 4.875
+        # HEURISTIC 90% interval (i.i.d. marginal, wide by design): q is the 90%
+        # quantile of |gap - est| / error_bar recalibrated on the production
+        # checkpoint's val split (soap_loco chemistry groups, n=4289, disjoint from
+        # train and test). Coverage on the LOCO test split (n=7178): 0.7699 at
+        # q=5.5833 vs 0.6245 at the old random-split q=4.875 (the old 0.910 figure
+        # held only on that in-distribution random split).
+        # Median half-width 3.35 eV (>> 1 eV) — labeled heuristic/triage in UI and
+        # docs (LIMITATIONS.md §7); not a DFT-grade interval.
+        q_conformal_90 = 5.5833
         return {
             "estimated_band_gap_eV": estimated_gap,
             "estimation_error_1sigma_eV": round(error_bar, 3),
@@ -274,7 +282,10 @@ class BandGapEstimatorService:
                 f"1σ error bar: ±{error_bar:.2f} eV for {halide_anion or 'this'} "
                 f"-based compositions. This is a coarse triage estimate — "
                 f"the error bar is large by design to be honest about the "
-                f"limitation. Not a substitute for DFT or experiment."
+                f"limitation. The 90% conformal band around this estimate is a "
+                f"HEURISTIC interval with median half-width ~3.35 eV (wide by "
+                f"design) — not a DFT-grade interval. Not a substitute for DFT "
+                f"or experiment."
             ),
         }
 

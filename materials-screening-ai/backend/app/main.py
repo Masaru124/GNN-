@@ -67,6 +67,6 @@ def healthcheck():
     return {
         "status": "online",
         "system": "MatScreen AI",
-        "model": "MultiScaleGNN A7 + DER + Conformal 90%",
+        "model": "MultiScaleGNN A7 + DER + i.i.d. marginal Conformal 90%",
         "version": "1.0.0"
     }

@@ -68,7 +68,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
         </div>
 
         <div className="shrink-0">
-          <p className="micro-label">Conformal 90% Bounds</p>
+          <p className="micro-label">Conformal 90% Bounds (i.i.d. marginal)</p>
           <p className="mt-0.5 font-mono text-sm font-semibold text-accent">
             [{conformal_90_interval_eV[0]}, {conformal_90_interval_eV[1]}] eV
           </p>

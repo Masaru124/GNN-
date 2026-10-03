@@ -69,9 +69,11 @@ class CrystalPredictor:
         self.model.eval()
 
         # Split-conformal quantile for the 90% interval (mu ± q·sigma, sigma = DER total
-        # std), calibrated on the held-out val split (seed=42, n=2000) with the deterministic
-        # forward; test coverage 0.897 at target 0.90 (n=2000). Old value 0.4954 -> 0.624.
-        self.q_hat_conformal = 1.0002
+        # std), calibrated on the production checkpoint's val split (soap_loco chemistry
+        # groups, n=4289) with the deterministic forward; LOCO test (n=7178) coverage
+        # 0.8605 at target 0.90 (i.i.d. marginal). Old value 0.4954 -> 0.5103;
+        # contaminated random-split q=1.0002 -> 0.8515. Median half-width 0.1273 eV.
+        self.q_hat_conformal = 1.0254
 
     def predict_structure(self, structure: Structure) -> dict:
         """Predict formation energy and uncertainty for a PyMatGen Structure."""

@@ -287,7 +287,7 @@ export function CandidateTable({
               <th className="p-2.5">Tier 1 GNN E_f</th>
               <th className="p-2.5">E Above Hull</th>
               <th className="p-2.5">Band Gap (Tier B / C)</th>
-              <th className="p-2.5">Conformal 90% Interval</th>
+              <th className="p-2.5">Conformal 90% Interval (i.i.d. marginal)</th>
               <th className="p-2.5">Novelty</th>
               <th className="p-2.5">Cost ($/kg)</th>
               <th className="p-2.5">Bottleneck (Å)</th>
@@ -419,7 +419,7 @@ export function CandidateTable({
                     cand.estimated_band_gap_eV !== undefined ? (
                       <div className="flex flex-col gap-0.5">
                         <span
-                          title={`Tier B ML/Heuristic Estimate (${cand.bandgap_estimate_source || "calibrated"}). Disclosed error ~0.3-0.5 eV vs DFT.`}
+                          title={`Tier B ML/Heuristic Estimate (${cand.bandgap_estimate_source || "calibrated"}). Disclosed error ~0.3-0.5 eV vs DFT. Heuristic 90% band is wide by design (median half-width ~3.35 eV) — triage only, not DFT-grade.`}
                           className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-dashed border-amber-500/40"
                         >
                           {cand.estimated_band_gap_eV.toFixed(2)} eV (Tier B)

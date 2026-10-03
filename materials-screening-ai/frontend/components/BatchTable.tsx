@@ -112,7 +112,7 @@ export const BatchTable: React.FC<BatchTableProps> = ({ candidates }) => {
                 <TableHead>Material</TableHead>
                 <TableHead className="text-right">Predicted E_f</TableHead>
                 <TableHead className="text-right">Evidential σ</TableHead>
-                <TableHead className="text-center">Conformal 90% Bounds</TableHead>
+                <TableHead className="text-center">Conformal 90% Bounds (i.i.d. marginal)</TableHead>
                 <TableHead className="text-center">Confidence</TableHead>
                 <TableHead className="text-center">Status</TableHead>
               </TableRow>

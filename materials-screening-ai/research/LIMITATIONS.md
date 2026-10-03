@@ -142,3 +142,24 @@ The deployed predictor therefore reports an **80% prediction interval** calibrat
    - $\text{FAPbI}_3$ (In-Domain Lead Halide): PBE $= 1.2656\text{ eV} \implies \hat{E}_g = 1.5951\text{ eV}$ (Target $1.48\text{ eV}$, error $0.1151\text{ eV}$). With $80\%$ interval half-width $\pm 0.2590\text{ eV}$, interval is $[1.336, 1.854]\text{ eV}$ (covered).
    - $\text{MASnI}_3$ (Out-of-Domain Tin Halide): Categorized as `out_of_domain` with reason `"Sn/SOC regime, 1 calibration point"`. Evaluating the un-gated Pb model on $\text{MASnI}_3$ yields $\hat{E}_g = 0.5269\text{ eV}$ (Target $1.20\text{ eV}$, error $0.6731\text{ eV}$), showing catastrophic failure when extrapolating across the relativistic SOC regime.
 
+---
+
+## 7. Deployed GNN Interval & Tier-B Band-Gap Heuristic Interval (deterministic serving, v1.0.1)
+
+### 7.1 MultiScaleGNN A7 formation-energy interval — "i.i.d. marginal 90%"
+
+- **Form**: $\hat{\mu} \pm q \cdot \sigma$, with $\sigma$ the DER total std and the deterministic serving forward (`deterministic=True`, MCDropout gated to $p=0$, `model.training=False`).
+- **Calibration split**: the production checkpoint's own validation split (chemistry-grouped `soap_loco` indices filtered to $i < 50000$, $n=4289$), which is index-disjoint from train ($n=37531$) and test ($n=7178$) — pairwise overlap counts are all zero.
+- **Shipped quantile**: $q = 1.0254$.
+- **Measured coverage on the LOCO test split** ($n=7178$): $0.8605$ (Wilson 95% CI $[0.8523, 0.8684]$) against a nominal $0.90$. Per-chemistry-class (Wilson 95%): pb_halide $n=13 \to 1.0000$ $[0.7719, 1.0000]$; alkaline_earth_oxide $n=324 \to 0.9043$; halide_other $n=272 \to 0.8676$; other_oxide $n=1284 \to 0.8699$; transition_metal_oxide $n=3758 \to 0.8630$; other $n=1527 \to 0.8350$.
+- **Why the label is "i.i.d. marginal 90%" and not class-conditional**: a Mondrian (per-class) $q$ fit on the same validation split reproduced the global $q$ within noise and made halide_other *worse* (test coverage $0.8088$), so no per-class guarantee is claimed.
+- **Exchangeability check** (test split halved with rng seed 42, calibrate on half A / evaluate on half B): $q_A = 1.1316 \to 0.8922$ $[0.8816, 0.9019]$ on the held-out half — consistent with the 90% marginal claim when data are exchangeable; the $0.8605$ figure drops because the LOCO split shifts chemistry distributions, not because the quantile is miscalibrated.
+- **Interval width**: median half-width $0.1273\text{ eV}$ (mean $0.1467\text{ eV}$) on the test split.
+- **History**: the earlier $q=1.0002$ was fit on the random `structures[:20000]` validation split (seed 42), $81.4\%$ of whose indices overlap production **train** — contaminated (test coverage $0.8515$); the legacy $0.4954$ achieved only $0.5103$.
+
+### 7.2 Tier-B band-gap interval — HEURISTIC (labeled in UI and API disclosure)
+
+- The BandGapEstimatorService 90% band is a **heuristic triage interval, not DFT-grade**. Its quantile $q = 5.5833$ (90% quantile of $|\text{gap} - \text{est}|/\sigma$) was recalibrated on the same production validation split; LOCO test coverage $0.7699$ (the previous random-split $q=4.875$ gave $0.6245$ there; its $0.910$ figure held only on the original in-distribution random split).
+- **Median half-width $3.35\text{ eV}$ (mean $3.4417\text{ eV}$)** — far above the ~1 eV heuristic-labeling threshold, which is why every surface labels it heuristic: discovery CandidateTable tooltip, `Tier B (Heuristic Estimate — NOT DFT-grade)` tier tag, and the API `disclosed_error_note`.
+- The matgl/M3GNet branch reports a plain Gaussian $1.645\sigma$ band (no conformal data available for M3GNet here) and is likewise tagged `Tier B (ML Estimate — NOT DFT-grade)`.
+

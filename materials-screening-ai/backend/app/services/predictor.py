@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple
 import os
 import random
 import sys
+import threading
 
 import numpy as np
 import torch
@@ -58,6 +59,12 @@ DEFAULT_CHECKPOINT_PATH = _find_checkpoint()
 
 class GNNPredictorService:
     _instance = None
+    # One reentrant inference lock for all instances: serializes MCDropout
+    # gating (mc_samples) and seeded forwards across threads, so module state
+    # and RNG draws can never interleave. Reentrant because
+    # compare_single_vs_multi routes through predict().
+    _PREDICT_LOCK = threading.RLock()
+    _INSTANCE_LOCK = threading.Lock()
 
     def __init__(
         self,
@@ -123,11 +130,18 @@ class GNNPredictorService:
 
         # Split-conformal scale factor for the 90% interval: mu ± q·sigma with
         # sigma = sqrt(DER total variance), exactly as computed in predict().
-        # Calibrated on the held-out val split (structures[:20000], random_split
-        # seed=42, n=2000) using the deterministic serving forward; measured on the
-        # untouched test split (n=2000): coverage 0.897 at target 0.90.
-        # (The previous hardcoded 0.4954 achieved only 0.624 on that test split.)
-        self.q_hat_conformal = 1.0002
+        # Calibrated on the production checkpoint's own val split (soap_loco
+        # chemistry-grouped indices filtered to i < max_structures=50000, n=4289)
+        # with the deterministic serving forward (deterministic=True, MCDropout p=0,
+        # model.training=False). train/val/test are internally disjoint (0 overlap).
+        # Measured on the LOCO test split (n=7178): coverage 0.8605 under an
+        # i.i.d. marginal 90% claim (chemistry shift costs ~4 pts); exchangeable
+        # half-split check within test: q_A=1.1316 -> 0.892 [0.8816, 0.9019] on the
+        # held-out half. Median half-width at this q: 0.1273 eV (mean 0.1467).
+        # Previous q=1.0002 was fit on the random structures[:20000] val, 81.4% of
+        # whose indices overlap production TRAIN -> contaminated (test 0.8515);
+        # legacy 0.4954 -> 0.5103.
+        self.q_hat_conformal = 1.0254
 
     def _configure_mc_dropout(self) -> None:
         """Collect MCDropout modules from both models and gate them per self.deterministic."""
@@ -155,7 +169,9 @@ class GNNPredictorService:
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
-            cls._instance = GNNPredictorService()
+            with cls._INSTANCE_LOCK:
+                if cls._instance is None:
+                    cls._instance = GNNPredictorService()
         return cls._instance
 
     def _build_graph_for_radius(self, structure: Structure, radius: float, max_neighbors: int = 32) -> Data:
@@ -203,17 +219,34 @@ class GNNPredictorService:
 
         Deterministic by default (MCDropout gated off in __init__), so identical inputs
         give identical outputs. Options:
-          - seed: reseed torch/numpy/random before the forward pass for reproducible sampling.
+          - seed: apply this seed for the forward pass for reproducible sampling.
           - mc_samples > 1: run T stochastic forwards (MCDropout temporarily re-enabled),
             report the mean formation energy with its MC std in mc_samples / mc_std_eV.
+
+        Thread-safe: every call serializes on the class inference lock; seeded calls
+        run inside torch.random.fork_rng plus numpy/random save-restore, so global RNG
+        state is never mutated and no module state escapes the lock.
         """
         mc_samples = int(mc_samples)
         if mc_samples < 1:
             raise ValueError("mc_samples must be >= 1")
-        eff_seed = seed if seed is not None else self.seed
-        if eff_seed is not None:
-            self._reseed(eff_seed)
+        with GNNPredictorService._PREDICT_LOCK:
+            eff_seed = seed if seed is not None else self.seed
+            if eff_seed is None:
+                return self._predict_impl(structure, mc_samples)
+            devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
+            with torch.random.fork_rng(devices=devices):
+                py_state = random.getstate()
+                np_state = np.random.get_state()
+                try:
+                    self._reseed(eff_seed)
+                    return self._predict_impl(structure, mc_samples)
+                finally:
+                    random.setstate(py_state)
+                    np.random.set_state(np_state)
 
+    def _predict_impl(self, structure: Structure, mc_samples: int) -> Dict[str, Any]:
+        """Single locked forward: graph build, optional MC passes, full result dict."""
         g_4 = self._build_graph_for_radius(structure, radius=4.0).to(self.device)
         g_6 = self._build_graph_for_radius(structure, radius=6.0).to(self.device)
         g_8 = self._build_graph_for_radius(structure, radius=8.0).to(self.device)
@@ -337,7 +370,13 @@ class GNNPredictorService:
         Constructs PyG Batch objects per cutoff radius (4Å, 6Å, 8Å) and runs
         a single forward pass per chunk of structures.
         Returns per-structure results in the identical order as input.
+        Thread-safe wrapper: serializes on the class inference lock.
         """
+        with GNNPredictorService._PREDICT_LOCK:
+            return self._predict_batch_impl(structures, chunk_size)
+
+    def _predict_batch_impl(self, structures: List[Structure], chunk_size: int = 64) -> List[Dict[str, Any]]:
+        """Locked batched forward."""
         if not structures:
             return []
 
@@ -459,18 +498,24 @@ class GNNPredictorService:
             if "Ti" in species: base_eg += 1.20
             if "K" in species: base_eg += 0.15
             eg_val = round(max(0.0, base_eg), 3)
-            # 90% half-width = split-conformal q (4.875, see bandgap_estimator) × fallback σ.
+            # 90% half-width = split-conformal q (5.5833, see bandgap_estimator) ×
+            # fallback σ (0.40) ≈ 2.23 eV — HEURISTIC triage band, wide by design.
             return {
                 "predicted_band_gap_eV": eg_val,
                 "evidential_std_eV": 0.40,
-                "conformal_90_interval_eV": [round(max(0.0, eg_val - 1.95), 3), round(eg_val + 1.95, 3)],
+                "conformal_90_interval_eV": [round(max(0.0, eg_val - 2.23), 3), round(eg_val + 2.23, 3)],
                 "is_solar_optimal": 1.1 <= eg_val <= 1.7,
                 "solar_absorption_status": "Optimal Shockley-Queisser Solar Absorber (1.1–1.7 eV)" if 1.1 <= eg_val <= 1.7 else "Non-optimal Solar Absorber",
                 "tier": "Tier B (Calibrated Heuristic)"
             }
 
     def compare_single_vs_multi(self, structure: Structure) -> Dict[str, Any]:
-        """Compare Multi-Scale GNN vs Single-Scale GNN prediction for explainability."""
+        """Compare Multi-Scale GNN vs Single-Scale GNN prediction for explainability.
+        Thread-safe wrapper (reentrant lock; routes through predict())."""
+        with GNNPredictorService._PREDICT_LOCK:
+            return self._compare_impl(structure)
+
+    def _compare_impl(self, structure: Structure) -> Dict[str, Any]:
         multi_res = self.predict(structure)
 
         g_4 = self._build_graph_for_radius(structure, radius=4.0).to(self.device)

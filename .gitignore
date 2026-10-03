@@ -82,3 +82,5 @@ skills-lock.json
 scratch_dft_test/
 *.egg-info/
 input_tmp.in
+# Local database backups (untracked, not reproducible from git)
+local_backups/

@@ -18,7 +18,10 @@ All production values are frozen and computed reproducibly by `eval_protocol.py`
 | **In-Family Halide Perovskite Constant Scissor MAE** | **0.3077 eV** | Constant Scissor (Mean $\Delta$) | Baseline | 6 (Pb-only) |
 | **Validation Point $\text{FAPbI}_3$ Absolute Error** | **0.0848 eV** | Anion-Matched Mean $\Delta$ (vs Ridge 0.2004 eV, Linear 0.1364 eV) | Prediction: 1.5648 eV (Target: 1.48 eV) | Validation point (used in the model-selection rule) |
 | **$\tilde{q}_{\text{in\_family}}$ (Halide Perovskite 80%)** | **0.2157 eV** | Finite-sample order statistic ($k = \lceil 7 \times 0.80 \rceil = 6 \le 6$) | $n=6$ Pb-only | 6 |
-| **Held-Out Benchmark Interval Coverage** | **1/1 inside interval** | 1/1 held-out point inside the interval (not a coverage validation) | Interval: $[1.3491, 1.7804]$ eV | 1 |
+| **Held-Out Benchmark Interval Coverage** | **1/1 inside interval** | 1/1 held-out point inside the interval (not a coverage validation) | Interval: $[1.2544, 1.8751]$ eV (half-width 0.3104 eV $=\tilde{q}_{80}\sqrt{1+h_{ii}}$, $h_{ii}=1.0699$) | 1 |
+
+> [!NOTE]
+> **Interval correction (v1.0.1)**: the interval previously published here, $[1.3491, 1.7804]$ eV (width 0.4145 eV), was not reproducible — it corresponds to $h_{ii}=0$ and understates the deployed in-family 80% half-width by ~33%. Re-running `eval_protocol.py` at `95f7e1b`, `94286c5` and `6c55e7a` all yield $[1.2544, 1.8751]$ eV. Point prediction (1.5648 eV), absolute error (0.0848 eV) and the coverage verdict are unchanged.
 
 ---
 

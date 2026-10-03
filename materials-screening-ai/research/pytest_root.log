@@ -1,19 +1,5 @@
-git rev-parse HEAD: 5f932c5944299f27d1f809786aa0d42b17860f2f
-============================= test session starts =============================
-platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
-rootdir: ./materials-screening-ai
-configfile: pytest.ini
-plugins: anyio-4.13.0, cov-7.1.0
-collected 64 items
-
-materials-screening-ai\backend\tests\test_band_gap_parser.py ........... [ 17%]
-..........................                                               [ 57%]
-materials-screening-ai\backend\tests\test_cathodes_pipeline.py ....      [ 64%]
-materials-screening-ai\backend\tests\test_cross_artifact_parity.py ..... [ 71%]
-........                                                                 [ 84%]
-materials-screening-ai\backend\tests\test_dft_benchmark_regression.py .. [ 87%]
-........                                                                 [100%]
-
+git rev-parse HEAD: 95f7e1ba9c934a2c90b6f69744b1e30196708276
+.....................................................................    [100%]
 ============================== warnings summary ===============================
 ..\.venv311\Lib\site-packages\torch\jit\_script.py:1488: 24 warnings
   ./.venv311\Lib\site-packages\torch\jit\_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
@@ -105,16 +91,4 @@ backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benc
     _set_no_error()
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-- generated xml file: ./materials-screening-ai\research\junit_root.xml -
-============================ slowest 10 durations =============================
-131.60s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_dfpt_born_charges_benchmark
-68.75s call     backend/tests/test_dft_benchmark_regression.py::test_licoo2_insulator_and_u_benchmark
-8.87s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_lattice_sensitivity
-6.25s call     backend/tests/test_dft_benchmark_regression.py::test_nacl_pbe_benchmark
-4.89s call     backend/tests/test_dft_benchmark_regression.py::test_silicon_pbe_benchmark
-4.60s call     backend/tests/test_dft_benchmark_regression.py::test_mgo_pbe_benchmark
-4.07s call     backend/tests/test_dft_benchmark_regression.py::test_copper_metal_benchmark
-0.57s call     backend/tests/test_cathodes_pipeline.py::test_physics_validation_trajectory
-0.46s call     backend/tests/test_dft_benchmark_regression.py::test_kpoint_even_mesh_guarantee
-0.34s call     backend/tests/test_band_gap_parser.py::TestSyntheticOpenShellAndDomainSafety::test_candidate_hardcoded_literals_eliminated
-================= 64 passed, 91 warnings in 241.82s (0:04:01) =================
+69 passed, 91 warnings in 253.63s (0:04:13)

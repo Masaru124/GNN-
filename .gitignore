@@ -49,7 +49,6 @@ crystal_gnn/checkpoints/
 *.pth
 !crystal_gnn/model_inference.pt
 !model_inference.pt
-crystal_gnn/model_inference.pt
 qe_download.zip
 
 # Results

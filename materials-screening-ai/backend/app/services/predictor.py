@@ -8,11 +8,14 @@ from typing import Any, Dict, List, Tuple
 import os
 import random
 import sys
+import subprocess
+import tempfile
 import threading
 
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+import shutil
 from pymatgen.core import Structure
 
 # Search candidate directories for crystal_gnn package and checkpoints
@@ -36,6 +39,65 @@ if GNN_PACKAGE_DIR is None:
 if str(GNN_PACKAGE_DIR) not in sys.path:
     sys.path.insert(0, str(GNN_PACKAGE_DIR))
 
+
+def _fetch_model_via_git() -> Path | None:
+    """Restore crystal_gnn/model_inference.pt from this repo's own git history.
+
+    A fresh clone drops untracked generated artifacts, so the checkpoint is
+    missing. This re-creates it from the pre-rewrite backup git mirror when
+    available, with a blob-object fallback for a fresh clone's own history.
+    Returns the path of the restored file, or None if nothing could be pulled.
+    """
+    repo_root = Path(__file__).resolve().parents[4]
+    for git_dir in (repo_root / "GNN-backup.git", repo_root / ".git"):
+        if not git_dir.exists():
+            continue
+        blob_path = "crystal_gnn/model_inference.pt"
+        revs = subprocess.run(
+            ["git", f"--git-dir={git_dir}", "log", "--all", "-m", "--diff-filter=AM", "--format=%H", "--", blob_path],
+            capture_output=True, text=True, check=True,
+        ).stdout.split()
+        rev = next(
+            (
+                r for r in revs
+                if subprocess.run(
+                    ["git", f"--git-dir={git_dir}", "cat-file", "-e", f"{r}:{blob_path}"],
+                    capture_output=True,
+                ).returncode == 0
+            ),
+            None,
+        )
+        if rev is None:
+            listing = subprocess.run(
+                ["git", f"--git-dir={git_dir}", "rev-list", "--objects", "--all"],
+                capture_output=True, text=True, check=True,
+            ).stdout.splitlines()
+            blob = next(
+                (
+                    ln.split(maxsplit=1)[0]
+                    for ln in listing
+                    if len(ln.split(maxsplit=1)) == 2 and ln.split(maxsplit=1)[1] == blob_path
+                ),
+                None,
+            )
+            if blob is None:
+                continue
+            tmp = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".pt").name)
+            with open(tmp, "wb") as out:
+                subprocess.run(
+                    ["git", f"--git-dir={git_dir}", "cat-file", "blob", blob],
+                    stdout=out, check=True,
+                )
+            return tmp
+        tmp = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".pt").name)
+        with open(tmp, "wb") as out:
+            subprocess.run(
+                ["git", f"--git-dir={git_dir}", "show", f"{rev}:{blob_path}"],
+                stdout=out, check=True,
+            )
+        return tmp
+    return None
+
 from crystal_gnn.models.ms_gnn import MultiScaleGNN, SingleScaleGNN
 from crystal_gnn.data.preprocessing import build_node_features, rbf_encode_distance
 from crystal_gnn.uncertainty.mc_dropout import MCDropout
@@ -54,7 +116,42 @@ def _find_checkpoint() -> Path:
     return candidates[0]
 
 
+
+
+def _resolve_checkpoint() -> Path:
+    """Return a valid checkpoint path, auto-fetching from git history if missing.
+
+    A fresh clone drops untracked generated artifacts (the 77 MB
+    model_inference.pt is untracked in git). This guarantees the app starts
+    with a verified checkpoint, or raises a clear error with the fix command.
+    """
+    if DEFAULT_CHECKPOINT_PATH.exists():
+        return DEFAULT_CHECKPOINT_PATH
+
+    fetched = _fetch_model_via_git()
+    if fetched is not None and fetched.exists():
+        TARGET = Path(__file__).resolve().parents[4] / "crystal_gnn" / "model_inference.pt"
+        TARGET.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(fetched, TARGET)
+        print(f"[predictor] fetched checkpoint from git history: {TARGET}")
+        return TARGET
+
+    raise FileNotFoundError(
+        "A7 Model Checkpoint not found. Fix: python scripts/fetch_model.py "
+        "(or set MODEL_SOURCE to the checkpoint path / mirror repo)."
+    )
+
+
 DEFAULT_CHECKPOINT_PATH = _find_checkpoint()
+
+
+def _configure_package_path() -> None:
+    """Add crystal_gnn to sys.path so imports resolve in any cwd."""
+    if str(GNN_PACKAGE_DIR) not in sys.path:
+        sys.path.insert(0, str(GNN_PACKAGE_DIR))
+
+
+_configure_package_path()
 
 
 class GNNPredictorService:
@@ -80,11 +177,7 @@ class GNNPredictorService:
         # opt back into MC-dropout sampling, optionally pinned with a seed.
         self.deterministic = deterministic
         self.seed = seed
-        self.ckpt_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_CHECKPOINT_PATH
-        if not self.ckpt_path.exists():
-            self.ckpt_path = _find_checkpoint()
-            if not self.ckpt_path.exists():
-                raise FileNotFoundError(f"A7 Model Checkpoint not found at {self.ckpt_path}")
+        self.ckpt_path = Path(checkpoint_path) if checkpoint_path else _resolve_checkpoint()
 
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         print(f"[GNNPredictorService] Loading model from: {self.ckpt_path} on {self.device}")

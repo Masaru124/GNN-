@@ -494,7 +494,7 @@ def main() -> None:
     log_training_params(
         lr=float(cfg["training"]["learning_rate"]),
         epochs=int(cfg["training"]["max_epochs"]),
-        model_arch=str(cfg["model"]["name"]),
+        model_arch=str(cfg["model"].get("name", "MultiScaleGNN")),
         batch_size=int(cfg["training"]["batch_size"]),
         n_train=len(train_ds),
         n_val=len(val_ds),

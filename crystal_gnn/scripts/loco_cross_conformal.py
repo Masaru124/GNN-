@@ -101,7 +101,9 @@ def load_folds(max_structures: int = 50000) -> list[dict]:
 
 
 def split_sha(fold: dict) -> str:
-    payload = json.dumps({k: sorted(v) for k, v in fold.items()}, sort_keys=True)
+    payload = json.dumps(
+        {k: (sorted(v) if isinstance(v, list) else v) for k, v in fold.items()}, sort_keys=True
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -275,6 +277,11 @@ def main() -> None:
     p.add_argument("--folds", type=str, default="0")
     p.add_argument("--seed", type=int, default=42)
 
+    p = sub.add_parser("manifest")
+    p.add_argument("--folds", type=str, required=True,
+                   help="write manifest rows for folds whose score arrays already exist")
+    p.add_argument("--seed", type=int, default=42)
+
     args = ap.parse_args()
 
     if args.cmd == "cache":
@@ -284,8 +291,41 @@ def main() -> None:
         return
 
     folds = load_folds()
-    ds, _ = build_dataset()
 
+    if args.cmd == "manifest":
+        for c in [int(x) for x in args.folds.split(",")]:
+            npz = OUT_DIR / f"fold{c}_scores.npz"
+            if not npz.exists():
+                print(f"[manifest] fold {c}: no score array, skipping")
+                continue
+            ckpt = PROD_CKPT if c == 0 else ROOT / "checkpoints" / f"loco_A7_soap_cluster{c}_seed{args.seed}" / "best.pt"
+            d = np.load(npz, allow_pickle=True)
+            score, sigma, y, mu = d["score"], d["sigma"], d["target"], d["mu"]
+            ck = torch.load(ckpt, map_location="cpu", weights_only=False)
+            row = {
+                "cluster": c,
+                "run_id": ck.get("run_id"),
+                "split_sha256": split_sha(folds[c]),
+                "n_test_index": len(folds[c]["test"]),
+                "n_test_scored": int(len(score)),
+                "checkpoint": str(ckpt.relative_to(REPO)).replace("\\", "/"),
+                "checkpoint_sha256": sha256_file(ckpt),
+                "seed": args.seed,
+                "wall_time_s": None,
+                "best_epoch": ck.get("epoch"),
+                "best_val_mae": ck.get("best_val_mae"),
+                "test_mae_eV_per_atom": float(np.abs(y - mu).mean()),
+                "score_quantile_90": float(np.quantile(score, COVERAGE)),
+                "score_quantile_80": float(np.quantile(score, 0.80)),
+                "median_half_width_eV_at_q1p0254": float(1.0254 * np.median(sigma)),
+                "coverage_at_shipped_q_1p0254": float((score <= 1.0254).mean()),
+                "note": "manifest rebuilt from stored score array; wall time not captured",
+            }
+            append_manifest(row)
+            print(json.dumps(row, indent=1))
+        return
+
+    ds, _ = build_dataset()
     for c in [int(x) for x in args.folds.split(",")]:
         fold = folds[c]
         t0 = time.time()

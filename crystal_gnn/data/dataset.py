@@ -1,4 +1,11 @@
-"""PyTorch dataset for multi-scale crystal graphs."""
+"""PyTorch dataset for multi-scale crystal graphs.
+
+NOTE: this copy is kept byte-identical with crystal_gnn/crystal_gnn/data/dataset.py
+because this directory also holds the on-disk data/ (raw, cache, splits). Some import
+resolutions pick this copy and others pick the packaged one; a divergent copy silently
+broke train.py split mapping (no orig_to_dataset_idx -> fallback to a random split).
+Edit crystal_gnn/crystal_gnn/data/dataset.py and copy it here.
+"""
 
 from __future__ import annotations
 
@@ -22,7 +29,7 @@ class MultiScaleDataset(Dataset):
 
     def __init__(
         self,
-        structures: Sequence[Any],
+        structures: Sequence[Structure],
         labels: Dict[str, Dict[str, float]],
         radii: List[float] | None = None,
         target: str = "formation_energy_per_atom",
@@ -34,28 +41,46 @@ class MultiScaleDataset(Dataset):
         self.max_neighbors = int(max_neighbors)
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        # Store entries as (material_id, raw_structure_dict_or_Structure)
-        self._entries: List[tuple[str, Any]] = []
+
+        self._entries: List[tuple[str, Structure]] = []
+        self._skipped_zero_neighbors = 0
+        self._skipped_zero_neighbor_examples: List[str] = []
+        self.orig_to_dataset_idx: Dict[int, int] = {}
+
+        dataset_idx = 0
         for idx, structure in enumerate(structures):
+            if isinstance(structure, dict):
+                try:
+                    structure = Structure.from_dict(structure)
+                except Exception as e:
+                    LOGGER.warning("Failed to deserialize structure dict at index %d: %s", idx, e)
+                    continue
             material_id = self._resolve_material_id(idx, labels, structure)
             if material_id is None:
                 continue
             if material_id not in labels or target not in labels[material_id]:
                 continue
-            self._entries.append((material_id, structure))
+            if self._smallest_radius_has_neighbors(structure):
+                self._entries.append((material_id, structure))
+                self.orig_to_dataset_idx[idx] = dataset_idx
+                dataset_idx += 1
+            else:
+                self._skipped_zero_neighbors += 1
+                if len(self._skipped_zero_neighbor_examples) < 10:
+                    self._skipped_zero_neighbor_examples.append(material_id)
+
+        if self._skipped_zero_neighbors > 0:
+            LOGGER.warning("Skipped %d structures with zero neighbors at smallest radius.", self._skipped_zero_neighbors)
+            for mid in self._skipped_zero_neighbor_examples:
+                LOGGER.warning("Zero-neighbor example at smallest radius: %s", mid)
 
         self.labels = labels
 
     @staticmethod
-    def _resolve_material_id(idx: int, labels: Dict[str, Dict[str, float]], structure: Any) -> str | None:
-        sid = None
-        # structure may be a dict (raw) or a pymatgen.Structure
-        if isinstance(structure, dict):
-            sid = structure.get("material_id") or (structure.get("properties") or {}).get("material_id")
-        else:
-            sid = getattr(structure, "material_id", None)
-            if sid is None and hasattr(structure, "properties"):
-                sid = structure.properties.get("material_id")
+    def _resolve_material_id(idx: int, labels: Dict[str, Dict[str, float]], structure: Structure) -> str | None:
+        sid = getattr(structure, "material_id", None)
+        if sid is None and hasattr(structure, "properties"):
+            sid = structure.properties.get("material_id")
         if sid is not None and str(sid) in labels:
             return str(sid)
         fallback = f"mp-fake-{idx}"
@@ -66,8 +91,17 @@ class MultiScaleDataset(Dataset):
             return keys[idx]
         return None
 
-    # Neighbor checks are performed during graph building inside worker processes to avoid
-    # creating pymatgen.Structure objects in the main process (which would bloat pickling)
+    def _smallest_radius_has_neighbors(self, structure: Structure) -> bool:
+        radius = float(min(self.radii))
+        try:
+            for i, site in enumerate(structure.sites):
+                neighs = structure.get_neighbors(site, radius)
+                if len(neighs) > 0:
+                    return True
+            return False
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning("Neighbor query failed at radius %.2f: %s", radius, exc)
+            return False
 
     def __len__(self) -> int:
         return len(self._entries)
@@ -77,10 +111,6 @@ class MultiScaleDataset(Dataset):
         return self.cache_dir / f"{material_id}_r{r}.pt"
 
     def _build_graph(self, material_id: str, structure: Structure, radius: float) -> Data:
-        # If a raw dict was passed, convert to Structure here (inside worker)
-        if isinstance(structure, dict):
-            structure = Structure.from_dict(structure)
-
         x = build_node_features(structure)
         pos = torch.tensor(structure.frac_coords, dtype=torch.float32)
         y = torch.tensor([float(self.labels[material_id][self.target])], dtype=torch.float32)
@@ -123,7 +153,6 @@ class MultiScaleDataset(Dataset):
 
     def __getitem__(self, idx: int) -> tuple[Data, Data, Data, torch.Tensor, str]:
         material_id, structure = self._entries[idx]
-        # Convert to Structure inside the worker when building graphs
         graphs = [self._load_or_build_graph(material_id, structure, r) for r in self.radii]
 
         if len(graphs) == 1:

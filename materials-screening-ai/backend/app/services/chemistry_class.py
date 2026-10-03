@@ -37,14 +37,15 @@ MIN_N_CAL = 30
 
 # Calibration-point counts measured on the production checkpoint's val split
 # (soap_loco chemistry groups, i < max_structures=50000, n=4289 total).
-# Regenerate with: python crystal_gnn/scripts/loco_cross_conformal.py report
+# Regenerate with: python crystal_gnn/scripts/coverage_reports.py n-cal
+# (writes research/coverage_reports/n_cal_by_class.json)
 N_CAL_TABLE: Dict[str, int] = {
-    "pb_halide": 11,
-    "halide_other": 227,
-    "transition_metal_oxide": 3086,
-    "alkaline_earth_oxide": 268,
-    "other_oxide": 1051,
-    "other": 1244,
+    "pb_halide": 25,
+    "halide_other": 641,
+    "transition_metal_oxide": 1057,
+    "alkaline_earth_oxide": 67,
+    "other_oxide": 226,
+    "other": 2273,
 }
 
 HALOGENS = {"F", "Cl", "Br", "I"}

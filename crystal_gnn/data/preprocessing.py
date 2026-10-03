@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
-from functools import lru_cache
 from typing import Iterable, List
 
 import numpy as np
@@ -33,31 +31,14 @@ def atomic_number_onehot(atomic_number: int, max_z: int = 118) -> np.ndarray:
     return onehot
 
 
-@lru_cache(maxsize=118)
-def _cached_atomic_number_onehot(atomic_number: int, max_z: int = 118) -> np.ndarray:
-    return atomic_number_onehot(atomic_number, max_z=max_z)
-
-
-@lru_cache(maxsize=118)
-def _cached_element_scalar_features(symbol: str) -> np.ndarray:
-    element = Element(symbol)
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="No Pauling electronegativity for .*",
-            category=UserWarning,
-        )
-        en = safe_float(element.X, default=0.0)
+def element_scalar_features(element: Element) -> np.ndarray:
+    """Return scalar chemistry features used with one-hot element encoding."""
+    en = safe_float(element.X, default=0.0)
     radius = safe_float(element.atomic_radius, default=0.0)
     group = safe_float(element.group, default=0.0)
     period = safe_float(element.row, default=0.0)
     atomic_mass = safe_float(element.atomic_mass, default=0.0)
     return np.array([en, radius, group, period, atomic_mass], dtype=np.float32)
-
-
-def element_scalar_features(element: Element) -> np.ndarray:
-    """Return scalar chemistry features used with one-hot element encoding."""
-    return _cached_element_scalar_features(str(element.symbol))
 
 
 def build_node_features(structure: Structure) -> torch.Tensor:
@@ -67,7 +48,7 @@ def build_node_features(structure: Structure) -> torch.Tensor:
         z = int(site.specie.Z)
         element = site.specie.element if hasattr(site.specie, "element") else site.specie
         vec = np.concatenate(
-            [_cached_atomic_number_onehot(z), element_scalar_features(element)],
+            [atomic_number_onehot(z), element_scalar_features(element)],
             axis=0,
         )
         if vec.shape[0] != _NODE_FEAT_DIM:

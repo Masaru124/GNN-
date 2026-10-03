@@ -75,18 +75,30 @@ def dataset_material_ids(ds):
     return [mid for mid, _ in ds._entries]
 
 
+def dataset_formulas(ds):
+    """material_id -> reduced formula, taken from the built pymatgen structures."""
+    out = {}
+    for mid, s in ds._entries:
+        try:
+            out[mid] = s.composition.reduced_formula
+        except Exception:
+            continue
+    return out
+
+
 def n_cal_command():
-    from chemistry_class import CLASSES, classify
+    from app.services.chemistry_class import CLASSES, classify
 
     structures, labels, ds, folds = load_all()
     mids = dataset_material_ids(ds)
+    formulas = dataset_formulas(ds)
     mapping = ds.orig_to_dataset_idx
     counts = {c: 0 for c in CLASSES}
     for i in folds[0]["val"]:
         di = mapping.get(i)
         if di is None:
             continue
-        cls = classify(labels[mids[di]].get("formula_pretty"))
+        cls = classify(formulas.get(mids[di]))
         counts[cls] = counts.get(cls, 0) + 1
     total = sum(counts.values())
     payload = {"source": "production val split (soap_loco fold 0, i<50000)", "total": total, "n_cal_by_class": counts}
@@ -198,11 +210,12 @@ def external_command(min_n: int = 100):
     from torch.utils.data import Subset
     from torch_geometric.loader import DataLoader
 
-    from chemistry_class import classify
+    from app.services.chemistry_class import classify
     from loco_cross_conformal import MultiScaleCollate, score_indices
 
     structures, labels, ds, folds = load_all()
     mids = dataset_material_ids(ds)
+    formulas = dataset_formulas(ds)
     mapping = ds.orig_to_dataset_idx
     train_ids = {
         mids[mapping[i]]
@@ -213,14 +226,12 @@ def external_command(min_n: int = 100):
 
     selected = []
     for mid, lab in labels.items():
-        if mid in train_ids:
+        if mid in train_ids or mid not in formulas:
             continue
-        f = lab.get("formula_pretty")
-        if not f or lab.get("formation_energy_per_atom") is None:
+        f = formulas[mid]
+        if lab.get("formation_energy_per_atom") is None:
             continue
-        if classify(f) not in ("pb_halide", "halide_other"):
-            continue
-        if "Pb" not in f:
+        if classify(f) != "pb_halide":
             continue
         selected.append((mid, f))
     print(f"[external] Pb/halide materials outside train: {len(selected)}")

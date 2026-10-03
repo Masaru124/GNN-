@@ -1,0 +1,12 @@
+{
+  "source": "production val split (soap_loco fold 0, i<50000)",
+  "total": 4289,
+  "n_cal_by_class": {
+    "pb_halide": 25,
+    "halide_other": 641,
+    "transition_metal_oxide": 1057,
+    "alkaline_earth_oxide": 67,
+    "other_oxide": 226,
+    "other": 2273
+  }
+}

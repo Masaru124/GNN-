@@ -84,3 +84,7 @@ scratch_dft_test/
 input_tmp.in
 # Local database backups (untracked, not reproducible from git)
 local_backups/
+
+# Local MLflow tracking db created by crystal_gnn/scripts/train.py
+crystal_gnn/mlflow.db
+crystal_gnn/mlruns/

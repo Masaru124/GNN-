@@ -3,7 +3,7 @@
 Native Windows Quantum ESPRESSO Installer (No WSL Required).
 
 Downloads and unpacks the precompiled native Windows Intel oneAPI / MS-MPI
-binaries of Quantum ESPRESSO 7.5 directly to c:\\Users\\User\\Desktop\\GNN\\qe.
+binaries of Quantum ESPRESSO 7.5 directly to <repo>/qe (override with QE_DIR env var).
 
 Release source:
   QMatSuite/quantum-espresso-windows-exe
@@ -15,10 +15,12 @@ import sys
 import shutil
 import zipfile
 import urllib.request
+from pathlib import Path
 
 QE_ZIP_URL = "https://github.com/QMatSuite/quantum-espresso-windows-exe/releases/download/qe-7.5-win-oneapi-msmpi/qe-7.5-win-oneapi-msmpi.zip"
-TARGET_DIR = r"c:\Users\User\Desktop\GNN\qe"
-ZIP_PATH = r"c:\Users\User\Desktop\GNN\qe_download.zip"
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+TARGET_DIR = os.environ.get("QE_DIR") or str(_REPO_ROOT / "qe")
+ZIP_PATH = str(_REPO_ROOT / "qe_download.zip")
 
 
 def download_with_progress(url: str, output_path: str):

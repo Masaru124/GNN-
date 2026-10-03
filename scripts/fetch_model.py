@@ -29,7 +29,7 @@ SIZE = 77454219
 REPO = Path(__file__).resolve().parents[1]
 TARGET = REPO / "crystal_gnn" / "model_inference.pt"
 BLOB_PATH = "crystal_gnn/model_inference.pt"
-DEFAULT_MIRRORS = [REPO.parent / "GNN-backup.git"]
+DEFAULT_MIRRORS = [REPO.parent / "GNN-backup.git", REPO / ".git"]
 
 
 def sha256(path: Path) -> str:
@@ -49,11 +49,9 @@ def verify(path: Path) -> bool:
 def extract_from_git(git_dir: Path) -> Path:
     """Extract the checkpoint from git history into a temp file."""
     revs = subprocess.run(
-        ["git", f"--git-dir={git_dir}", "log", "--all", "--diff-filter=AM", "--format=%H", "--", BLOB_PATH],
+        ["git", f"--git-dir={git_dir}", "log", "--all", "-m", "--diff-filter=AM", "--format=%H", "--", BLOB_PATH],
         capture_output=True, text=True, check=True,
     ).stdout.split()
-    if not revs:
-        raise FileNotFoundError(f"{git_dir} history has no {BLOB_PATH}")
     rev = next(
         (
             r for r in revs
@@ -64,8 +62,32 @@ def extract_from_git(git_dir: Path) -> Path:
         ),
         None,
     )
+    # Fallback: the blob may only be reachable through merge commits; look up the
+    # blob object directly (works for a fresh clone's own history too).
     if rev is None:
-        raise FileNotFoundError(f"{git_dir}: no revision actually contains {BLOB_PATH}")
+        listing = subprocess.run(
+            ["git", f"--git-dir={git_dir}", "rev-list", "--objects", "--all"],
+            capture_output=True, text=True, check=True,
+        ).stdout.splitlines()
+        blob = next(
+            (
+                ln.split(maxsplit=1)[0]
+                for ln in listing
+                if len(ln.split(maxsplit=1)) == 2 and ln.split(maxsplit=1)[1] == BLOB_PATH
+            ),
+            None,
+        )
+        if blob is None:
+            raise FileNotFoundError(f"{git_dir} history has no {BLOB_PATH}")
+        tmp = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".pt").name)
+        with open(tmp, "wb") as out:
+            subprocess.run(
+                ["git", f"--git-dir={git_dir}", "cat-file", "blob", blob],
+                stdout=out, check=True,
+            )
+        return tmp
+    if rev is None:
+        raise FileNotFoundError(f"{git_dir} history has no {BLOB_PATH}")
     tmp = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".pt").name)
     with open(tmp, "wb") as out:
         subprocess.run(

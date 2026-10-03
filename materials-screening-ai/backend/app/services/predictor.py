@@ -6,6 +6,7 @@ Loads A7 MultiScaleGNN pretrained checkpoint and computes property predictions w
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import os
+import random
 import sys
 
 import numpy as np
@@ -36,6 +37,7 @@ if str(GNN_PACKAGE_DIR) not in sys.path:
 
 from crystal_gnn.models.ms_gnn import MultiScaleGNN, SingleScaleGNN
 from crystal_gnn.data.preprocessing import build_node_features, rbf_encode_distance
+from crystal_gnn.uncertainty.mc_dropout import MCDropout
 from torch_geometric.data import Data, Batch
 
 def _find_checkpoint() -> Path:
@@ -57,7 +59,20 @@ DEFAULT_CHECKPOINT_PATH = _find_checkpoint()
 class GNNPredictorService:
     _instance = None
 
-    def __init__(self, checkpoint_path: Path | str | None = None, device: str | None = None):
+    def __init__(
+        self,
+        checkpoint_path: Path | str | None = None,
+        device: str | None = None,
+        deterministic: bool = True,
+        seed: int | None = None,
+    ):
+        # Deterministic by default: MCDropout layers are always-on by design in the
+        # crystal_gnn package (they ignore eval mode), which made every predict() call
+        # sample a different dropout mask (±0.06 eV/atom spread observed). Serving keeps
+        # them disabled; pass deterministic=False or use predict(..., mc_samples=T) to
+        # opt back into MC-dropout sampling, optionally pinned with a seed.
+        self.deterministic = deterministic
+        self.seed = seed
         self.ckpt_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_CHECKPOINT_PATH
         if not self.ckpt_path.exists():
             self.ckpt_path = _find_checkpoint()
@@ -104,8 +119,38 @@ class GNNPredictorService:
         ).to(self.device)
         self.single_model.eval()
 
-        # Conformal calibration scale factor (q_hat = 0.4954 for 90% empirical coverage)
-        self.q_hat_conformal = 0.4954
+        self._configure_mc_dropout()
+
+        # Split-conformal scale factor for the 90% interval: mu ± q·sigma with
+        # sigma = sqrt(DER total variance), exactly as computed in predict().
+        # Calibrated on the held-out val split (structures[:20000], random_split
+        # seed=42, n=2000) using the deterministic serving forward; measured on the
+        # untouched test split (n=2000): coverage 0.897 at target 0.90.
+        # (The previous hardcoded 0.4954 achieved only 0.624 on that test split.)
+        self.q_hat_conformal = 1.0002
+
+    def _configure_mc_dropout(self) -> None:
+        """Collect MCDropout modules from both models and gate them per self.deterministic."""
+        models = [self.model]
+        single = getattr(self, "single_model", None)
+        if single is not None:
+            models.append(single)
+        self._mc_dropout_modules = [
+            m for m in (mod for net in models for mod in net.modules()) if isinstance(m, MCDropout)
+        ]
+        self._mc_dropout_p = [m.p for m in self._mc_dropout_modules]
+        self._set_mc_dropout(enabled=not self.deterministic)
+
+    def _set_mc_dropout(self, enabled: bool) -> None:
+        """Enable (original p) or disable (p=0 → identity) always-on MC dropout."""
+        for m, p in zip(self._mc_dropout_modules, self._mc_dropout_p):
+            m.p = p if enabled else 0.0
+
+    @staticmethod
+    def _reseed(seed: int) -> None:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
 
     @classmethod
     def get_instance(cls):
@@ -146,8 +191,29 @@ class GNNPredictorService:
             y=torch.tensor([[0.0]], dtype=torch.float32)
         )
 
-    def predict(self, structure: Structure) -> Dict[str, Any]:
-        """Run GNN inference, DER uncertainty, Conformal 90% calibration, and scale attention extraction."""
+    def predict(
+        self,
+        structure: Structure,
+        *,
+        seed: int | None = None,
+        mc_samples: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        Run GNN inference, DER uncertainty, Conformal 90% calibration, and scale attention extraction.
+
+        Deterministic by default (MCDropout gated off in __init__), so identical inputs
+        give identical outputs. Options:
+          - seed: reseed torch/numpy/random before the forward pass for reproducible sampling.
+          - mc_samples > 1: run T stochastic forwards (MCDropout temporarily re-enabled),
+            report the mean formation energy with its MC std in mc_samples / mc_std_eV.
+        """
+        mc_samples = int(mc_samples)
+        if mc_samples < 1:
+            raise ValueError("mc_samples must be >= 1")
+        eff_seed = seed if seed is not None else self.seed
+        if eff_seed is not None:
+            self._reseed(eff_seed)
+
         g_4 = self._build_graph_for_radius(structure, radius=4.0).to(self.device)
         g_6 = self._build_graph_for_radius(structure, radius=6.0).to(self.device)
         g_8 = self._build_graph_for_radius(structure, radius=8.0).to(self.device)
@@ -156,13 +222,33 @@ class GNNPredictorService:
         b2 = Batch.from_data_list([g_6])
         b3 = Batch.from_data_list([g_8])
 
+        mc_std_val = None
         with torch.no_grad():
-            out = self.model(b1, b2, b3)
-            mu, v, alpha, beta = out
-            mu_val = float(mu.reshape(-1).cpu().item())
-            v_val = float(torch.clamp(v.reshape(-1), min=1e-4).cpu().item())
-            alpha_val = float(torch.clamp(alpha.reshape(-1), min=1.0001).cpu().item())
-            beta_val = float(torch.clamp(beta.reshape(-1), min=1e-4).cpu().item())
+            if mc_samples > 1:
+                self._set_mc_dropout(enabled=True)
+                try:
+                    mus, vs, alphas, betas = [], [], [], []
+                    for _ in range(mc_samples):
+                        mu_t, v_t, a_t, b_t = self.model(b1, b2, b3)
+                        mus.append(float(mu_t.reshape(-1).cpu().item()))
+                        vs.append(float(v_t.reshape(-1).cpu().item()))
+                        alphas.append(float(a_t.reshape(-1).cpu().item()))
+                        betas.append(float(b_t.reshape(-1).cpu().item()))
+                finally:
+                    if self.deterministic:
+                        self._set_mc_dropout(enabled=False)
+                mu_val = float(np.mean(mus))
+                mc_std_val = float(np.std(mus))
+                v_val = float(max(1e-4, vs[-1]))
+                alpha_val = float(max(1.0001, alphas[-1]))
+                beta_val = float(max(1e-4, betas[-1]))
+            else:
+                out = self.model(b1, b2, b3)
+                mu, v, alpha, beta = out
+                mu_val = float(mu.reshape(-1).cpu().item())
+                v_val = float(torch.clamp(v.reshape(-1), min=1e-4).cpu().item())
+                alpha_val = float(torch.clamp(alpha.reshape(-1), min=1.0001).cpu().item())
+                beta_val = float(torch.clamp(beta.reshape(-1), min=1e-4).cpu().item())
 
             # DER Uncertainty Decomposition
             var_aleatoric = float(beta_val / (alpha_val - 1.0))
@@ -215,7 +301,7 @@ class GNNPredictorService:
         # Compute multi-task band gap prediction
         bg_res = self.predict_band_gap(structure)
 
-        return {
+        result = {
             "predicted_formation_energy_per_atom_eV": round(mu_val, 4),
             "predicted_band_gap_eV": bg_res["predicted_band_gap_eV"],
             "band_gap_conformal_90_interval_eV": bg_res["conformal_90_interval_eV"],
@@ -240,6 +326,10 @@ class GNNPredictorService:
                 "raw_weights": [round(w, 4) for w in attn_weights]
             }
         }
+        if mc_std_val is not None:
+            result["mc_samples"] = mc_samples
+            result["mc_std_eV"] = round(mc_std_val, 4)
+        return result
 
     def predict_batch(self, structures: List[Structure], chunk_size: int = 64) -> List[Dict[str, Any]]:
         """
@@ -369,10 +459,11 @@ class GNNPredictorService:
             if "Ti" in species: base_eg += 1.20
             if "K" in species: base_eg += 0.15
             eg_val = round(max(0.0, base_eg), 3)
+            # 90% half-width = split-conformal q (4.875, see bandgap_estimator) × fallback σ.
             return {
                 "predicted_band_gap_eV": eg_val,
                 "evidential_std_eV": 0.40,
-                "conformal_90_interval_eV": [round(max(0.0, eg_val - 0.2), 3), round(eg_val + 0.2, 3)],
+                "conformal_90_interval_eV": [round(max(0.0, eg_val - 1.95), 3), round(eg_val + 1.95, 3)],
                 "is_solar_optimal": 1.1 <= eg_val <= 1.7,
                 "solar_absorption_status": "Optimal Shockley-Queisser Solar Absorber (1.1–1.7 eV)" if 1.1 <= eg_val <= 1.7 else "Non-optimal Solar Absorber",
                 "tier": "Tier B (Calibrated Heuristic)"

@@ -7,7 +7,7 @@ Generates research/loco_residuals_alpha_comparison.csv and computes:
 """
 import sys
 from pathlib import Path
-sys.path.insert(0, r"c:\Users\User\Desktop\GNN\materials-screening-ai\backend")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import csv
 import numpy as np
@@ -55,7 +55,7 @@ err_0_01 = y_delta - preds_0_01
 abs_err_0_01 = np.abs(err_0_01)
 
 # Write CSV
-out_csv = Path(r"c:\Users\User\Desktop\GNN\materials-screening-ai\research\loco_residuals_alpha_comparison.csv")
+out_csv = Path(__file__).resolve().parents[2] / "research" / "loco_residuals_alpha_comparison.csv"
 with open(out_csv, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow([

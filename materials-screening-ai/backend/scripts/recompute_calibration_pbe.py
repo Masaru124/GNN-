@@ -5,11 +5,12 @@ import time
 from pathlib import Path
 import numpy as np
 
-# Set environment
-os.environ["QE_BIN_DIR"] = r"c:\Users\User\Desktop\GNN\qe\bin"
-os.environ["SSSP_PP_DIR"] = r"c:\Users\User\Desktop\GNN\qe\pseudo"
+# Repo-relative defaults; pre-set env vars win.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ.setdefault("QE_BIN_DIR", str(_REPO_ROOT / "qe" / "bin"))
+os.environ.setdefault("SSSP_PP_DIR", str(_REPO_ROOT / "qe" / "pseudo"))
 
-sys.path.insert(0, r"c:\Users\User\Desktop\GNN\materials-screening-ai\backend")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pymatgen.core import Structure, Lattice
 from app.services.dft_validation import get_dft_service
@@ -55,7 +56,7 @@ structures = {
     "RbPbBr3": make_cubic_perovskite("Rb", "Pb", "Br", 5.80),
 }
 
-out_file = Path(r"c:\Users\User\Desktop\GNN\materials-screening-ai\backend\scripts\qe_pbe_calibration_results.json")
+out_file = Path(__file__).with_name("qe_pbe_calibration_results.json")
 results = {}
 if out_file.exists():
     try:

@@ -244,9 +244,10 @@ if __name__ == "__main__":
     fig.savefig(png_path)
     fig.savefig(pdf_path)
     
-    # Also save to artifact directory for display
-    artifact_dir = Path(r"C:\Users\User\.gemini\antigravity-ide\brain\6afe051c-794c-4ead-8e8b-6bff179594b5")
-    if artifact_dir.exists():
+    # Also save to an optional display-artifact directory (FIGURE_ARTIFACT_DIR env var).
+    artifact_env = os.environ.get("FIGURE_ARTIFACT_DIR")
+    artifact_dir = Path(artifact_env) if artifact_env else None
+    if artifact_dir is not None and artifact_dir.exists():
         fig.savefig(artifact_dir / "fig_delta_ml_validation_matrix.png")
 
     plt.close(fig)

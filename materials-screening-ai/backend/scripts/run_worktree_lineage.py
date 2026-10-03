@@ -1,4 +1,4 @@
-import os, sys, subprocess, shutil
+import os, sys, subprocess, shutil, tempfile
 import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
@@ -18,7 +18,7 @@ def run_worktree_audit():
         ("ef6f7717a20d307e10d5c710f401ed40cc126776", "Initial commit: Multi-Scale Evidential GNN")
     ]
     
-    scratch_dir = os.path.abspath("C:/Users/User/.gemini/antigravity-ide/brain/6afe051c-794c-4ead-8e8b-6bff179594b5/scratch")
+    scratch_dir = os.path.join(tempfile.gettempdir(), "gnn_worktree_lineage_scratch")
     
     for full_hash, desc in commits:
         wt_path = os.path.join(scratch_dir, f"wt_{full_hash[:10]}")

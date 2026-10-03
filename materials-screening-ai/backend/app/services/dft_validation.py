@@ -60,7 +60,8 @@ logger = logging.getLogger(__name__)
 QE_BIN_DIR = os.getenv("QE_BIN_DIR", "")
 SSSP_PP_DIR = os.getenv("SSSP_PP_DIR", "")
 
-PP_SUBDIR = Path(r"c:\Users\User\Desktop\GNN\qe\pseudo")
+# Repo-relative <root>/qe/pseudo; SSSP_PP_DIR env var overrides.
+PP_SUBDIR = Path(SSSP_PP_DIR) if SSSP_PP_DIR else Path(__file__).resolve().parents[4] / "qe" / "pseudo"
 SSSP_EFFICIENCY_URL_BASE = "https://pseudopotentials.quantum-espresso.org/upf_files/"
 
 # SSSP v1.3 efficiency set checksums + filenames for elements we commonly encounter
@@ -148,8 +149,6 @@ def _get_pw_binary() -> Optional[str]:
 
     # 3. Workspace / local directories (native Windows, no WSL needed)
     workspace_candidates = [
-        r"c:\Users\User\Desktop\GNN\qe\bin",
-        r"c:\Users\User\Desktop\GNN\qe",
         os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "qe", "bin")),
         os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "qe", "bin")),
         os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "qe", "bin")),
@@ -198,8 +197,8 @@ def _get_ph_binary() -> Optional[str]:
             return found
 
     workspace_candidates = [
-        r"c:\Users\User\Desktop\GNN\qe\bin",
-        r"c:\Users\User\Desktop\GNN\qe",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "qe", "bin")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "qe")),
         r"C:\QE\bin",
         r"C:\Program Files\Quantum ESPRESSO\bin",
     ]

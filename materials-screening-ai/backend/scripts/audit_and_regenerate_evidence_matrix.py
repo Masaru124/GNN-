@@ -301,7 +301,7 @@ targets_audit = [
 ]
 
 # Write verified_literature_targets.csv
-out_targets = Path(r"c:\Users\User\Desktop\GNN\materials-screening-ai\research\literature\verified_literature_targets.csv")
+out_targets = Path(__file__).resolve().parents[2] / "research" / "literature" / "verified_literature_targets.csv"
 with open(out_targets, "w", newline="", encoding="utf-8") as f:
     fieldnames = [
         "formula", "doi", "table_or_page", "verbatim_cell_text", "value_eV",
@@ -315,7 +315,7 @@ with open(out_targets, "w", newline="", encoding="utf-8") as f:
 print(f"[SUCCESS] Exported audited literature targets ({len(targets_audit)} rows) to: {out_targets}")
 
 # Regenerate evidence_matrix.csv matching the audited entries exactly
-out_evidence = Path(r"c:\Users\User\Desktop\GNN\materials-screening-ai\research\literature\evidence_matrix.csv")
+out_evidence = Path(__file__).resolve().parents[2] / "research" / "literature" / "evidence_matrix.csv"
 with open(out_evidence, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow([

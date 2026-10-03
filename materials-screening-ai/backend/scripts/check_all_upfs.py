@@ -1,7 +1,8 @@
+import os
 import re
 from pathlib import Path
 
-pp_dir = Path(r"c:\Users\User\Desktop\GNN\qe\pseudo")
+pp_dir = Path(os.environ.get("SSSP_PP_DIR") or Path(__file__).resolve().parents[3] / "qe" / "pseudo")
 for upf in pp_dir.glob("*.UPF"):
     text = upf.read_text(errors="ignore")[:4000]
     m = re.search(r'z_valence\s*=\s*"?([0-9\.eEdD\+\-]+)"?', text, re.IGNORECASE)

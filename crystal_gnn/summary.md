@@ -37,8 +37,8 @@ Command:
 
 ```powershell
 $env:PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 8 --max_neighbors 12 --max_structures 1000 --max_epochs 3 --val_every_epochs 3 --log_every_steps 100
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 8 --max_neighbors 12 --max_structures 1000 --max_epochs 3 --val_every_epochs 3 --log_every_steps 100
 ```
 
 Result:
@@ -53,8 +53,8 @@ Command:
 
 ```powershell
 $env:PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 8 --max_neighbors 12 --max_structures 5000 --max_epochs 8 --val_every_epochs 4 --log_every_steps 100
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 8 --max_neighbors 12 --max_structures 5000 --max_epochs 8 --val_every_epochs 4 --log_every_steps 100
 ```
 
 Result:
@@ -70,8 +70,8 @@ Command:
 
 ```powershell
 $env:PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 8 --max_neighbors 12 --max_structures 5000 --max_epochs 9 --val_every_epochs 4 --log_every_steps 50
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 8 --max_neighbors 12 --max_structures 5000 --max_epochs 9 --val_every_epochs 4 --log_every_steps 50
 ```
 
 Result:
@@ -89,7 +89,7 @@ Result:
 Command:
 
 ```powershell
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/evaluate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775286844\best.pt --device cuda --mc_samples 1 --log_every_batches 1 --max_structures 1000 --max_test_samples 100
+<repo>\.venv311\Scripts\python.exe -u scripts/evaluate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775286844\best.pt --device cuda --mc_samples 1 --log_every_batches 1 --max_structures 1000 --max_test_samples 100
 ```
 
 Result:
@@ -122,7 +122,7 @@ Notes:
 Command:
 
 ```powershell
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/conformal_calibrate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775286844\best.pt --device cuda --mc_samples 1 --max_structures 1000 --max_val_samples 100 --max_test_samples 100 --log_every_batches 1
+<repo>\.venv311\Scripts\python.exe -u scripts/conformal_calibrate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775286844\best.pt --device cuda --mc_samples 1 --max_structures 1000 --max_val_samples 100 --max_test_samples 100 --log_every_batches 1
 ```
 
 Result:
@@ -194,8 +194,8 @@ Command:
 
 ```powershell
 $env:PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 4 --max_neighbors 24 --max_structures 20000 --max_epochs 20 --hidden_dim 64 --num_encoder_layers 2 --val_every_epochs 5 --log_every_steps 200
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 4 --max_neighbors 24 --max_structures 20000 --max_epochs 20 --hidden_dim 64 --num_encoder_layers 2 --val_every_epochs 5 --log_every_steps 200
 ```
 
 Observed result highlights:
@@ -210,8 +210,8 @@ Observed result highlights:
 Command:
 
 ```powershell
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/evaluate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775292506\best.pt --device cuda --mc_samples 10 --log_every_batches 25 --max_structures 20000
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/evaluate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775292506\best.pt --device cuda --mc_samples 10 --log_every_batches 25 --max_structures 20000
 ```
 
 Result:
@@ -234,8 +234,8 @@ Result:
 Command:
 
 ```powershell
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/conformal_calibrate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775292506\best.pt --device cuda --mc_samples 10 --max_structures 20000 --log_every_batches 25
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/conformal_calibrate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775292506\best.pt --device cuda --mc_samples 10 --max_structures 20000 --log_every_batches 25
 ```
 
 Result:
@@ -265,8 +265,8 @@ Command:
 
 ```powershell
 $env:PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 4 --max_neighbors 24 --max_structures 20000 --max_epochs 60 --hidden_dim 64 --num_encoder_layers 2 --warm_up_epochs 5 --val_every_epochs 5 --log_every_steps 200
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/train.py --ablation A7 --split soap_loco --seed 42 --device cuda --fast_mode --num_workers 0 --batch_size 8 --accumulate_grad_batches 4 --max_neighbors 24 --max_structures 20000 --max_epochs 60 --hidden_dim 64 --num_encoder_layers 2 --warm_up_epochs 5 --val_every_epochs 5 --log_every_steps 200
 ```
 
 Observed result highlights:
@@ -280,8 +280,8 @@ Observed result highlights:
 Command:
 
 ```powershell
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/evaluate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775295575\best.pt --device cuda --mc_samples 10 --log_every_batches 25 --max_structures 20000
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/evaluate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775295575\best.pt --device cuda --mc_samples 10 --log_every_batches 25 --max_structures 20000
 ```
 
 Result:
@@ -306,8 +306,8 @@ Result:
 Command:
 
 ```powershell
-Push-Location C:\Users\User\Desktop\GNN\crystal_gnn
-C:\Users\User\Desktop\GNN\.venv311\Scripts\python.exe -u scripts/conformal_calibrate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775295575\best.pt --device cuda --mc_samples 10 --max_structures 20000 --log_every_batches 25
+Push-Location <repo>\crystal_gnn
+<repo>\.venv311\Scripts\python.exe -u scripts/conformal_calibrate.py --checkpoint checkpoints\A7_soap_loco_formation_energy_per_atom_1775295575\best.pt --device cuda --mc_samples 10 --max_structures 20000 --log_every_batches 25
 ```
 
 Result:

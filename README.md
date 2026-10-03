@@ -9,6 +9,8 @@ git clone https://github.com/Masaru124/GNN-.git
 cd GNN-
 ```
 
+> **Clone size:** expect ≈**346 MiB** of pack data (`git count-objects -vH` → `size-pack: 345.62 MiB`, ≈354 MiB with checkout overhead) and ≈**1.5 GB** working tree once checked out — the bulk is the Windows Quantum ESPRESSO binaries in `qe/bin` and research artifacts.
+
 ## 2. Prerequisites
 
 | Tool | Version | Needed for |

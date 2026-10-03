@@ -23,11 +23,12 @@ backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
-# Set QE environment defaults if not set
+# Set QE environment defaults (repo-relative) if not set
+_QE_ROOT = Path(__file__).resolve().parents[3] / "qe"
 if "QE_BIN_DIR" not in os.environ:
-    os.environ["QE_BIN_DIR"] = r"c:\Users\User\Desktop\GNN\qe\bin"
+    os.environ["QE_BIN_DIR"] = str(_QE_ROOT / "bin")
 if "SSSP_PP_DIR" not in os.environ:
-    os.environ["SSSP_PP_DIR"] = r"c:\Users\User\Desktop\GNN\qe\pseudo"
+    os.environ["SSSP_PP_DIR"] = str(_QE_ROOT / "pseudo")
 
 from pymatgen.core import Structure, Lattice
 from app.services.dft_validation import get_dft_service

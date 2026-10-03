@@ -1,0 +1,19 @@
+{
+  "definition": "Pb + (I/Br/Cl) structures with Materials Project PBE formation energy whose material index is absent from the production checkpoint's soap_loco train indices; the pool spans the whole 129k-record file, so most entries also lie beyond the checkpoint's data cutoff (i < 50000)",
+  "n_beyond_checkpoint_data_cutoff": 217,
+  "checkpoint": "paper_A7_soap_loco_formation_energy_per_atom/best.pt",
+  "inference": "deterministic default (MCDropout off, model.eval())",
+  "q_used": 1.0254,
+  "n": 235,
+  "n_requested_min": 100,
+  "mae_eV_per_atom": 0.0943,
+  "median_abs_error_eV_per_atom": 0.0703,
+  "rmse_eV_per_atom": 0.1228,
+  "coverage": 0.9277,
+  "coverage_ci95": [
+    0.8872,
+    0.9543
+  ],
+  "median_half_width_eV": 0.2573,
+  "mean_half_width_eV": 0.2485
+}

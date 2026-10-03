@@ -1,0 +1,198 @@
+{
+  "estimator": "band-gap heuristic (electronegativity / matgl fallback)",
+  "coverage_target": 0.9,
+  "shipped_q": 5.5833,
+  "per_fold": [
+    {
+      "cluster": 0,
+      "n_scored": 7178,
+      "median_interval_half_width_eV": 3.35,
+      "score_q90": 6.6667
+    },
+    {
+      "cluster": 1,
+      "n_scored": 6898,
+      "median_interval_half_width_eV": 3.4835,
+      "score_q90": 4.875
+    },
+    {
+      "cluster": 2,
+      "n_scored": 2527,
+      "median_interval_half_width_eV": 3.35,
+      "score_q90": 6.25
+    },
+    {
+      "cluster": 3,
+      "n_scored": 7678,
+      "median_interval_half_width_eV": 3.4835,
+      "score_q90": 3.8267
+    },
+    {
+      "cluster": 4,
+      "n_scored": 6103,
+      "median_interval_half_width_eV": 3.35,
+      "score_q90": 5.3333
+    },
+    {
+      "cluster": 5,
+      "n_scored": 101,
+      "median_interval_half_width_eV": 3.4835,
+      "score_q90": 4.1133
+    },
+    {
+      "cluster": 6,
+      "n_scored": 5332,
+      "median_interval_half_width_eV": 3.35,
+      "score_q90": 6.283
+    },
+    {
+      "cluster": 7,
+      "n_scored": 6066,
+      "median_interval_half_width_eV": 3.4835,
+      "score_q90": 4.723
+    },
+    {
+      "cluster": 8,
+      "n_scored": 6604,
+      "median_interval_half_width_eV": 3.35,
+      "score_q90": 5.9167
+    },
+    {
+      "cluster": 9,
+      "n_scored": 511,
+      "median_interval_half_width_eV": 3.35,
+      "score_q90": 5.3333
+    }
+  ],
+  "cross_conformal": [
+    {
+      "cluster": 0,
+      "n_test": 7178,
+      "q_cross_conformal": 5.6667,
+      "coverage": 0.7697,
+      "ci95": [
+        0.7598,
+        0.7793
+      ],
+      "coverage_at_shipped_q": 0.752
+    },
+    {
+      "cluster": 1,
+      "n_test": 6898,
+      "q_cross_conformal": 5.9167,
+      "coverage": 0.9685,
+      "ci95": [
+        0.9642,
+        0.9724
+      ],
+      "coverage_at_shipped_q": 0.9581
+    },
+    {
+      "cluster": 2,
+      "n_test": 2527,
+      "q_cross_conformal": 5.7815,
+      "coverage": 0.7436,
+      "ci95": [
+        0.7262,
+        0.7602
+      ],
+      "coverage_at_shipped_q": 0.7
+    },
+    {
+      "cluster": 3,
+      "n_test": 7678,
+      "q_cross_conformal": 5.9167,
+      "coverage": 0.9763,
+      "ci95": [
+        0.9726,
+        0.9795
+      ],
+      "coverage_at_shipped_q": 0.9695
+    },
+    {
+      "cluster": 4,
+      "n_test": 6103,
+      "q_cross_conformal": 5.9167,
+      "coverage": 0.9438,
+      "ci95": [
+        0.9377,
+        0.9493
+      ],
+      "coverage_at_shipped_q": 0.9176
+    },
+    {
+      "cluster": 5,
+      "n_test": 101,
+      "q_cross_conformal": 5.9149,
+      "coverage": 0.9802,
+      "ci95": [
+        0.9307,
+        0.9946
+      ],
+      "coverage_at_shipped_q": 0.9802
+    },
+    {
+      "cluster": 6,
+      "n_test": 5332,
+      "q_cross_conformal": 5.75,
+      "coverage": 0.7749,
+      "ci95": [
+        0.7635,
+        0.786
+      ],
+      "coverage_at_shipped_q": 0.732
+    },
+    {
+      "cluster": 7,
+      "n_test": 6066,
+      "q_cross_conformal": 5.9167,
+      "coverage": 0.9487,
+      "ci95": [
+        0.9429,
+        0.954
+      ],
+      "coverage_at_shipped_q": 0.941
+    },
+    {
+      "cluster": 8,
+      "n_test": 6604,
+      "q_cross_conformal": 5.8881,
+      "coverage": 0.8898,
+      "ci95": [
+        0.882,
+        0.8971
+      ],
+      "coverage_at_shipped_q": 0.8459
+    },
+    {
+      "cluster": 9,
+      "n_test": 511,
+      "q_cross_conformal": 5.9165,
+      "coverage": 0.9295,
+      "ci95": [
+        0.904,
+        0.9487
+      ],
+      "coverage_at_shipped_q": 0.9159
+    }
+  ],
+  "pooled_coverage_at_shipped_q": 0.8691,
+  "shift_aware_q": 6.25,
+  "shift_aware_q_definition": "8-th smallest per-fold 90% quantile (>=80% of folds reach 90%)",
+  "coverage_at_shift_aware_q_per_fold": {
+    "0": 0.8757,
+    "1": 0.9746,
+    "2": 0.9153,
+    "3": 0.9833,
+    "4": 0.9623,
+    "5": 0.9802,
+    "6": 0.8985,
+    "7": 0.9583,
+    "8": 0.9228,
+    "9": 0.9902
+  },
+  "folds_meeting_90pct_at_shift_aware_q": 8,
+  "n_folds": 10,
+  "median_interval_half_width_eV_across_folds": 3.35,
+  "pooled_n": 48998
+}

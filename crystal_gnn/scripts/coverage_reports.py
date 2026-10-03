@@ -111,13 +111,14 @@ def n_cal_command():
 
 def bandgap_command():
     """LOCO cross-conformal for the band-gap heuristic (analytic estimator)."""
-    from bandgap_estimator import BandGapEstimatorService
+    from app.services.bandgap_estimator import BandGapEstimatorService
 
     structures, labels, ds, folds = load_all()
     mids = dataset_material_ids(ds)
     mapping = ds.orig_to_dataset_idx
     est = BandGapEstimatorService.get_instance()
 
+    struct_by_mid = {mid: st for mid, st in ds._entries}
     fold_scores, fold_rows = {}, []
     for c, fold in enumerate(folds):
         scores, halves = [], []
@@ -126,15 +127,12 @@ def bandgap_command():
             if di is None:
                 continue
             mid = mids[di]
-            lab = labels[mid]
-            gap = lab.get("band_gap")
+            gap = labels[mid].get("band_gap")
             if gap is None:
                 continue
-            from pymatgen.core import Structure  # noqa: E402
-
-            s = structures[i]
-            if isinstance(s, dict):
-                s = Structure.from_dict(s)
+            s = struct_by_mid.get(mid)
+            if s is None:
+                continue
             res = est.estimate_band_gap(s)
             e = res["estimated_band_gap_eV"]
             sig = float(res.get("estimation_error_1sigma_eV") or 0.0)

@@ -1,0 +1,40 @@
+{
+  "score_definition": "|y - mu| / sigma(DER), model.eval() deterministic forward",
+  "q_shipped": 1.0254,
+  "coverage_target": 0.9,
+  "folds_available": [
+    0
+  ],
+  "n_folds": 1,
+  "pooled_n": 7178,
+  "pooled_coverage_at_shipped_q": 0.8605,
+  "shift_aware_q": 1.1504,
+  "shift_aware_q_definition": "1-th smallest per-fold 90% quantile (>=80% of folds reach 90%)",
+  "pooled_coverage_at_shift_aware_q": 0.8998,
+  "folds_meeting_90pct_at_shift_aware_q": 0,
+  "coverage_at_shift_aware_q_per_fold": {
+    "0": 0.8998
+  },
+  "median_half_width_eV_at_shift_aware_q": 0.1372,
+  "per_fold": [
+    {
+      "cluster": 0,
+      "n_test": 7178,
+      "test_mae_eV_per_atom": 0.074104942073209,
+      "median_half_width_eV_at_shipped_q": 0.12226698936447503,
+      "coverage_at_shipped_q_1p0254": 0.8605,
+      "ci95_at_shipped_q": [
+        0.8523,
+        0.8684
+      ],
+      "q_cross_conformal": 1.1504,
+      "coverage_cross_conformal": 0.9,
+      "ci95_cross_conformal": [
+        0.8928,
+        0.9067
+      ],
+      "own_fold_q90": 1.1504
+    }
+  ],
+  "caveat": "Each fold's model is trained on the other nine clusters only for the folds retrained here; fold 0 is the production checkpoint (also soap_loco fold 0). Folds share an identical wall-clock budget, so their budgets are equal but shorter than the production run."
+}

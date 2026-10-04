@@ -88,6 +88,36 @@ from crystal_gnn.losses.evidential import combined_loss
 from crystal_gnn.models.ms_gnn import MultiScaleGNN, SingleScaleGNN
 
 
+def boost_process_priority() -> None:
+    """Run this process (and its future DataLoader workers) at HIGH priority.
+
+    On memory-tight Windows boxes, desktop apps churn tens of thousands of
+    page faults/sec, the trainer's working set gets paged out, the GPU is
+    starved of host memory, SM clocks collapse (~780 MHz of 3105) and the
+    step rate drops ~5x (observed 4.7 -> 0.84 steps/s). High priority keeps
+    the working set resident. No effect on numerics.
+    """
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+        kernel32.SetPriorityClass.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        kernel32.SetPriorityClass.restype = ctypes.c_int
+        kernel32.GetPriorityClass.argtypes = [ctypes.c_void_p]
+        kernel32.GetPriorityClass.restype = ctypes.c_uint
+        HIGH_PRIORITY_CLASS = 0x00000080
+        kernel32.SetPriorityClass(kernel32.GetCurrentProcess(), HIGH_PRIORITY_CLASS)
+    except Exception:
+        pass
+
+
+# Must run before DataLoader workers spawn so they inherit the priority.
+boost_process_priority()
+
+
 def set_seed(seed: int) -> None:
     """Set deterministic seeds for reproducible training."""
     random.seed(seed)

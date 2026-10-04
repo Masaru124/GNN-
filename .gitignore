@@ -87,3 +87,10 @@ local_backups/
 # Local MLflow tracking db created by crystal_gnn/scripts/train.py
 crystal_gnn/mlflow.db
 crystal_gnn/mlruns/
+
+# LOCO scheduler runtime state (power-cut resume; regenerate by rerunning)
+crystal_gnn/.loco_scheduler_state.json
+crystal_gnn/.loco_scheduler.lock
+crystal_gnn/loco_scheduler.log
+crystal_gnn/loco_scheduler_bg.out
+crystal_gnn/loco_scheduler_bg.err

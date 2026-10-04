@@ -316,6 +316,12 @@ def main() -> None:
     ckpt_dir = Path(os.getenv("CHECKPOINT_DIR", "checkpoints")) / run_id
     res_dir = Path(os.getenv("RESULTS_DIR", "results")) / run_id
 
+    # Completion marker for external orchestration (scripts/loco_scheduler.py):
+    # cleared at start and rewritten only after a clean exit from the training
+    # loop, so a crashed or power-cut run never looks "trained".
+    done_marker = ckpt_dir / "TRAIN_DONE"
+    done_marker.unlink(missing_ok=True)
+
     if args.auto_resume and (ckpt_dir / "last.pt").exists() and not args.resume:
         args.resume = str(ckpt_dir / "last.pt")
         print(f"[resume] Automatically resuming from {args.resume}", flush=True)
@@ -653,6 +659,16 @@ def main() -> None:
 
     # MLflow final results logging (Item 7)
     best_ckpt = str(ckpt_dir / "best.pt") if (ckpt_dir / "best.pt").exists() else str(ckpt_dir / "last.pt")
+    # Write the completion marker BEFORE final MLflow logging: training itself
+    # is finished, and a logging failure must not cause a pointless retrain.
+    try:
+        done_marker.write_text(
+            f"run_id={run_id}\nbest_val_mae={best_val_mae}\n"
+            f"finished={time.strftime('%Y-%m-%d %H:%M:%S')}\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:  # pragma: no cover - marker is best-effort
+        print(f"[warn] could not write completion marker: {exc}", flush=True)
     log_final_results(
         val_mae=best_val_mae,
         checkpoint_path=best_ckpt if os.path.exists(best_ckpt) else None,

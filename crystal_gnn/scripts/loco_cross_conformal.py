@@ -276,6 +276,11 @@ def main() -> None:
     p = sub.add_parser("score")
     p.add_argument("--folds", type=str, default="0")
     p.add_argument("--seed", type=int, default=42)
+    # Only used by the train_fold fallback when a checkpoint is missing; scoring
+    # a fold whose best.pt already exists never reads them (subparser must still
+    # define them or main() would crash with AttributeError).
+    p.add_argument("--max-hours", type=float, default=6.0)
+    p.add_argument("--num-workers", type=int, default=2)
 
     p = sub.add_parser("manifest")
     p.add_argument("--folds", type=str, required=True,

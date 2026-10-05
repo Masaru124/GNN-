@@ -356,8 +356,23 @@ def main() -> None:
                 float((0.35 * np.minimum(width / 0.5, 1.0) >= 0.15).mean()), 4),
         }
 
+    def _gate(target: float) -> dict:
+        t = float(np.quantile(pooled_sigma, 1.0 - target))
+        rate = float((pooled_sigma >= t).mean())
+        return {
+            "sigma_gate_eV": round(t, 5),
+            "half_width_eV_at_shipped_q": round(2 * Q_SHIPPED * t, 4),
+            "promote_rate": round(rate, 4),
+            "implied_dft_count": int(round(rate * len(pooled_sigma))),
+            "n": int(len(pooled_sigma)),
+        }
+
     out["routing_thresholds"] = {
-        "rule": "multi_fidelity_orchestrator: promote_to_tier2 if interval_width = 2*q*sigma >= 0.10 eV",
+        "rule": ("multi_fidelity_orchestrator: promote_to_tier2 if sigma = "
+                 "interval_width/(2*q) >= sigma_gate (sigma units, q-invariant; "
+                 "default = 50% promote target 0.09997 eV). Legacy gate was "
+                 "interval_width >= 0.10 eV (sigma >= 0.04876), which fired for "
+                 "99.7% of pooled points at shipped q."),
         "confidence_tiers_note": "predictor.py sigma tiers (<0.15/<0.35) do not depend on q",
         "at_shipped_q": route(Q_SHIPPED),
         "at_shift_aware_q": route(q_shift),
@@ -372,6 +387,12 @@ def main() -> None:
         "sigma_unit_gate": {
             "derivation": "2*q*sigma >= 0.10 at q=1.0254 <=> sigma >= 0.04876 eV; q-invariant",
             "promote_rate_sigma_ge_0.04876": round(float((pooled_sigma >= 0.10 / (2 * Q_SHIPPED)).mean()), 4),
+            "promote_targets": {
+                "30pct": _gate(0.30),
+                "50pct": _gate(0.50),
+                "70pct": _gate(0.70),
+            },
+            "default_target": "50pct (TIER2_SIGMA_GATE_DEFAULT=0.09997 in multi_fidelity_orchestrator)",
         },
         "dft_uq_signal": {
             "current": "uq_signal = min(width/0.5, 1), width = 2*q*sigma; saturates at sigma >= 0.5/(2q)",

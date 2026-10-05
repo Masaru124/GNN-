@@ -1,5 +1,23 @@
 {
-  "method": "SOAP (r_cut=6, n_max=9, l_max=9, sigma=0.5, average=inner, full species union like soap_loco_split) -> count-sketch 512d (seed 42) -> cosine distance to nearest structure in the fold's train indices (i<50000, val excluded). Distance bins = pooled other-fold deciles; per-bin q = 90% quantile of other folds' scores (nested).",
+  "method": "SOAP (r_cut=6, n_max=9, l_max=9, sigma=0.5, average=inner, full species union like soap_loco_split) -> count-sketch 512d (seed 42) -> cosine distance to nearest structure in the fold's OWN train split (splits[c]['train'] with i<50000; val and the fold's own test cluster excluded \u2014 never the production train, where folds 1-9 sit in-sample; see own_train_distance_audit). Distance bins = pooled other-fold deciles; per-bin q = 90% quantile of other folds' scores (nested).",
+  "serving_artifacts": {
+    "path": "crystal_gnn\\data\\cache\\shift_aware_q_artifacts.npz",
+    "n_species": 80,
+    "soap_dim": 2595600,
+    "deployment_bin_q": [
+      1.2827,
+      1.3729,
+      1.4513,
+      1.5494,
+      1.7158,
+      1.6613,
+      1.7179,
+      1.8805,
+      1.9526,
+      2.4529
+    ],
+    "fit": "pooled (non-nested) 90% quantile per pooled-distance decile, production-train reference; mirrors shipped-val fit"
+  },
   "n_vectors": 49019,
   "n_test_points_total": 48998,
   "n_test_points_expected": 48998,
@@ -14,6 +32,78 @@
     "7": 0,
     "8": 0,
     "9": 0
+  },
+  "own_train_distance_audit": {
+    "0": {
+      "n_train_own": 37552,
+      "median_d_own_train": 0.0088,
+      "exact_zero_frac_own_train": 0.0003,
+      "median_d_production_train": 0.0088,
+      "exact_zero_frac_production_train": 0.0003
+    },
+    "1": {
+      "n_train_own": 37874,
+      "median_d_own_train": 0.0854,
+      "exact_zero_frac_own_train": 0.0,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.8974
+    },
+    "2": {
+      "n_train_own": 41767,
+      "median_d_own_train": 0.0107,
+      "exact_zero_frac_own_train": 0.002,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.9114
+    },
+    "3": {
+      "n_train_own": 37173,
+      "median_d_own_train": 0.1238,
+      "exact_zero_frac_own_train": 0.0,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.8955
+    },
+    "4": {
+      "n_train_own": 38549,
+      "median_d_own_train": 0.0389,
+      "exact_zero_frac_own_train": 0.0,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.8976
+    },
+    "5": {
+      "n_train_own": 43957,
+      "median_d_own_train": 0.0185,
+      "exact_zero_frac_own_train": 0.0,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.8911
+    },
+    "6": {
+      "n_train_own": 39203,
+      "median_d_own_train": 0.0082,
+      "exact_zero_frac_own_train": 0.0008,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.9051
+    },
+    "7": {
+      "n_train_own": 38554,
+      "median_d_own_train": 0.2302,
+      "exact_zero_frac_own_train": 0.0,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.9003
+    },
+    "8": {
+      "n_train_own": 38164,
+      "median_d_own_train": 0.019,
+      "exact_zero_frac_own_train": 0.0,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.8955
+    },
+    "9": {
+      "n_train_own": 43585,
+      "median_d_own_train": 0.0186,
+      "exact_zero_frac_own_train": 0.0039,
+      "median_d_production_train": 0.0,
+      "exact_zero_frac_production_train": 0.9061
+    }
   },
   "coverage_by_distance_quintile_at_shipped_q": [
     {
@@ -162,13 +252,121 @@
       "8": 1.6882,
       "9": 1.7318
     },
+    "per_fold_cov": {
+      "0": 0.9858,
+      "1": 0.8897,
+      "2": 1.0,
+      "3": 0.8827,
+      "4": 0.8974,
+      "5": 1.0,
+      "6": 0.9571,
+      "7": 0.7511,
+      "8": 0.8546,
+      "9": 1.0
+    },
     "pooled_cov": 0.8961,
     "fold7_cov": 0.7511,
     "median_half_width_eV": 0.1717
+  },
+  "paired_per_fold_vs_global_nested": [
+    {
+      "fold": 0,
+      "n": 7178,
+      "cov_distance_q": 0.9685,
+      "cov_global_nested_lofo": 0.9858,
+      "delta": -0.0173
+    },
+    {
+      "fold": 1,
+      "n": 6898,
+      "cov_distance_q": 0.9024,
+      "cov_global_nested_lofo": 0.8897,
+      "delta": 0.0127
+    },
+    {
+      "fold": 2,
+      "n": 2527,
+      "cov_distance_q": 1.0,
+      "cov_global_nested_lofo": 1.0,
+      "delta": 0.0
+    },
+    {
+      "fold": 3,
+      "n": 7678,
+      "cov_distance_q": 0.912,
+      "cov_global_nested_lofo": 0.8827,
+      "delta": 0.0293
+    },
+    {
+      "fold": 4,
+      "n": 6103,
+      "cov_distance_q": 0.8873,
+      "cov_global_nested_lofo": 0.8974,
+      "delta": -0.0101
+    },
+    {
+      "fold": 5,
+      "n": 101,
+      "cov_distance_q": 1.0,
+      "cov_global_nested_lofo": 1.0,
+      "delta": 0.0
+    },
+    {
+      "fold": 6,
+      "n": 5332,
+      "cov_distance_q": 0.9105,
+      "cov_global_nested_lofo": 0.9571,
+      "delta": -0.0466
+    },
+    {
+      "fold": 7,
+      "n": 6066,
+      "cov_distance_q": 0.8038,
+      "cov_global_nested_lofo": 0.7511,
+      "delta": 0.0527
+    },
+    {
+      "fold": 8,
+      "n": 6604,
+      "cov_distance_q": 0.782,
+      "cov_global_nested_lofo": 0.8546,
+      "delta": -0.0726
+    },
+    {
+      "fold": 9,
+      "n": 511,
+      "cov_distance_q": 1.0,
+      "cov_global_nested_lofo": 1.0,
+      "delta": 0.0
+    }
+  ],
+  "aggregates": {
+    "distance_q": {
+      "min": 0.782,
+      "q1": 0.8911,
+      "median": 0.9113,
+      "q3": 0.9921,
+      "fold7": 0.8038
+    },
+    "global_nested_lofo": {
+      "min": 0.7511,
+      "q1": 0.8845,
+      "median": 0.9272,
+      "q3": 0.9965,
+      "fold7": 0.7511
+    }
+  },
+  "decision_rule": {
+    "rule": "ship as optional shift-aware mode iff min AND Q1 per-fold coverage improve over global nested LOFO q AND median half-width <= 1.03x; otherwise reject (no further iteration)",
+    "improved_min": true,
+    "improved_q1": true,
+    "median_half_width_ratio": 0.9937,
+    "width_within_3pct": true,
+    "outcome": "ship_optional_shift_aware_mode"
   },
   "shipped_q": {
     "pooled_cov": 0.7124,
     "fold7_cov": 0.5547
   },
-  "elapsed_s": 1255.0
+  "elapsed_s": 36.4
 }

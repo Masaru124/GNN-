@@ -17,16 +17,38 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# The interval width is built as 2 * Q_SHIPPED * sigma, so width -> sigma is exact.
+# All uncertainty gates are DEFINED IN SIGMA UNITS (q-invariant): they behave the
+# same regardless of which conformal q (shipped 1.0254 or shift-robust 1.7242)
+# produced the interval.
+Q_SHIPPED = 1.0254
+
+# Tier-2 promote gate in sigma units, derived from target promote rates on the
+# pooled 10-fold LOCO sigmas (n=48,998). DEFAULT = the 50% target.
+#   target 30%: sigma >= 0.12067 eV (half-width 0.2475 eV @ shipped q) -> 30.00% -> 14,700 DFT
+#   target 50%: sigma >= 0.09997 eV (half-width 0.2050 eV @ shipped q) -> 50.00% -> 24,499 DFT
+#   target 70%: sigma >= 0.08317 eV (half-width 0.1706 eV @ shipped q) -> 70.00% -> 34,298 DFT
+TIER2_SIGMA_GATE_DEFAULT = 0.09997  # 50% promote target (pooled LOCO median sigma)
+TIER2_SIGMA_GATE_TARGETS = {
+    "30pct_promote": 0.12067,
+    "50pct_promote": 0.09997,
+    "70pct_promote": 0.08317,
+}
+
 
 class MultiFidelityOrchestrator:
     """Multi-fidelity expected information-gain decision orchestrator."""
 
     def __init__(
         self,
-        high_uncertainty_threshold: float = 0.10,
+        sigma_threshold: float = TIER2_SIGMA_GATE_DEFAULT,
         boundary_margin: float = 0.40
     ):
-        self.high_uncertainty_threshold = high_uncertainty_threshold
+        # Tier-2 uncertainty gate, sigma units (eV/atom). Promote candidates whose
+        # implied sigma reaches this gate; default targets a 50% promote rate
+        # (24,499 of 48,998 pooled LOCO points), replacing the old width>=0.10 eV
+        # gate (which fired for 99.7% of points at shipped q).
+        self.sigma_threshold = sigma_threshold
         self.boundary_margin = boundary_margin
 
     def decide_next_action(
@@ -48,11 +70,13 @@ class MultiFidelityOrchestrator:
             return "reject"
 
         interval_width = float(uncertainty_high - uncertainty_low)
+        sigma_est = interval_width / (2 * Q_SHIPPED)
         target = target_threshold if target_threshold is not None else -0.20
 
         # Log decision inputs for full audit transparency
         logger.info(
             f"[MultiFidelityOrchestrator] E_f={gnn_prediction:.3f}, UQ_width={interval_width:.3f}, "
+            f"sigma~{sigma_est:.4f} (gate {self.sigma_threshold:.5f}), "
             f"hard_pass={hard_filter_pass}, target={target:.3f}, solar_opt={is_solar_optimal}"
         )
 
@@ -60,8 +84,10 @@ class MultiFidelityOrchestrator:
         if is_solar_optimal or gnn_prediction < -0.20:
             return "promote_to_tier2"
 
-        # 2. Promote candidates near decision boundary or with higher uncertainty
-        if interval_width >= self.high_uncertainty_threshold or abs(gnn_prediction - target) < self.boundary_margin:
+        # 2. Promote candidates near decision boundary or whose implied sigma
+        #    reaches the sigma-unit Tier-2 gate (q-invariant; default = 50%
+        #    promote target on pooled LOCO sigmas)
+        if sigma_est >= self.sigma_threshold or abs(gnn_prediction - target) < self.boundary_margin:
             return "promote_to_tier2"
 
         return "hold_for_more_data"

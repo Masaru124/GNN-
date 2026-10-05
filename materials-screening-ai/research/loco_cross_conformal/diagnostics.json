@@ -384,7 +384,7 @@
     "median_half_width_eV_at_q_pooled": 0.1724
   },
   "routing_thresholds": {
-    "rule": "multi_fidelity_orchestrator: promote_to_tier2 if interval_width = 2*q*sigma >= 0.10 eV",
+    "rule": "multi_fidelity_orchestrator: promote_to_tier2 if sigma = interval_width/(2*q) >= sigma_gate (sigma units, q-invariant; default = 50% promote target 0.09997 eV). Legacy gate was interval_width >= 0.10 eV (sigma >= 0.04876), which fired for 99.7% of pooled points at shipped q.",
     "confidence_tiers_note": "predictor.py sigma tiers (<0.15/<0.35) do not depend on q",
     "at_shipped_q": {
       "q": 1.0254,
@@ -453,7 +453,31 @@
     },
     "sigma_unit_gate": {
       "derivation": "2*q*sigma >= 0.10 at q=1.0254 <=> sigma >= 0.04876 eV; q-invariant",
-      "promote_rate_sigma_ge_0.04876": 0.997
+      "promote_rate_sigma_ge_0.04876": 0.997,
+      "promote_targets": {
+        "30pct": {
+          "sigma_gate_eV": 0.12067,
+          "half_width_eV_at_shipped_q": 0.2475,
+          "promote_rate": 0.3,
+          "implied_dft_count": 14700,
+          "n": 48998
+        },
+        "50pct": {
+          "sigma_gate_eV": 0.09997,
+          "half_width_eV_at_shipped_q": 0.205,
+          "promote_rate": 0.5,
+          "implied_dft_count": 24499,
+          "n": 48998
+        },
+        "70pct": {
+          "sigma_gate_eV": 0.08317,
+          "half_width_eV_at_shipped_q": 0.1706,
+          "promote_rate": 0.7,
+          "implied_dft_count": 34298,
+          "n": 48998
+        }
+      },
+      "default_target": "50pct (TIER2_SIGMA_GATE_DEFAULT=0.09997 in multi_fidelity_orchestrator)"
     },
     "dft_uq_signal": {
       "current": "uq_signal = min(width/0.5, 1), width = 2*q*sigma; saturates at sigma >= 0.5/(2q)",

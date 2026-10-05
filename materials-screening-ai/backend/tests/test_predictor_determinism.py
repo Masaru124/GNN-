@@ -30,6 +30,7 @@ def _make_service(deterministic: bool = True, seed=None, dropout_rate: float = 0
     svc.deterministic = deterministic
     svc.seed = seed
     svc.q_hat_conformal = 0.4954
+    svc.shift_aware = False  # mirrors __init__ (fixture bypasses __init__)
     svc.model = MultiScaleGNN(
         hidden_dim=16,
         num_encoder_layers=1,

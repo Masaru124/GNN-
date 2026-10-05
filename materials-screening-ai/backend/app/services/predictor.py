@@ -154,6 +154,16 @@ def _configure_package_path() -> None:
 _configure_package_path()
 
 
+# Conformal q for the 90% interval (mu ± q·sigma).
+#   default:        1.0254  — calibrated on the production val split (shipped)
+#   shift-robust:   1.7242  — pooled 10-fold LOCO 90% quantile (nested LOCO
+#                   study: per-fold min 0.7773 / Q1 0.8865 / median 0.9252,
+#                   macro 0.9248 at median half-width 0.1724 eV; the nested
+#                   per-fold form spans 1.6178–1.8165)
+Q_SHIPPED_CONFORMAL = 1.0254
+Q_SHIFT_ROBUST = 1.7242
+
+
 class GNNPredictorService:
     _instance = None
     # One reentrant inference lock for all instances: serializes MCDropout
@@ -169,6 +179,8 @@ class GNNPredictorService:
         device: str | None = None,
         deterministic: bool = True,
         seed: int | None = None,
+        shift_robust: bool = False,
+        shift_aware: bool = False,
     ):
         # Deterministic by default: MCDropout layers are always-on by design in the
         # crystal_gnn package (they ignore eval mode), which made every predict() call
@@ -234,7 +246,40 @@ class GNNPredictorService:
         # Previous q=1.0002 was fit on the random structures[:20000] val, 81.4% of
         # whose indices overlap production TRAIN -> contaminated (test 0.8515);
         # legacy 0.4954 -> 0.5103.
-        self.q_hat_conformal = 1.0254
+        #
+        # Calibration mode flag: 'shift-robust' serves the pooled 10-fold LOCO q
+        # (1.7242) instead of the shipped q. DEFAULT STAYS THE SHIPPED VALUE —
+        # opt in via shift_robust=True or env MATSCREEN_SHIFT_ROBUST_Q=1.
+        env_flag = os.environ.get("MATSCREEN_SHIFT_ROBUST_Q", "").strip().lower()
+        self.shift_robust = bool(shift_robust) or env_flag in ("1", "true", "yes", "on")
+        self.q_hat_conformal = Q_SHIFT_ROBUST if self.shift_robust else Q_SHIPPED_CONFORMAL
+        print(f"[GNNPredictorService] calibration mode: "
+              f"{'shift-robust (pooled LOCO q)' if self.shift_robust else 'default (shipped q)'} "
+              f"q={self.q_hat_conformal}")
+
+        # Optional "shift-aware" mode: distance-conditional q per structure
+        # (research/loco_cross_conformal/distance_q.json decision rule: worst-fold
+        # 0.7511 -> 0.8038, Q1 0.8845 -> 0.8911, 0.994x median half-width).
+        # DEFAULT OFF — opt in with shift_aware=True or env MATSCREEN_SHIFT_AWARE_Q=1.
+        # Falls back to self.q_hat_conformal per structure when artifacts/dscribe
+        # are unavailable (see app.services.shift_aware_q).
+        env_aware = os.environ.get("MATSCREEN_SHIFT_AWARE_Q", "").strip().lower()
+        self.shift_aware = bool(shift_aware) or env_aware in ("1", "true", "yes", "on")
+        print(f"[GNNPredictorService] shift-aware distance-conditional q: "
+              f"{'ON' if self.shift_aware else 'off'}")
+
+    def _conformal_q_for(self, structure: Structure) -> float:
+        """q for this structure: shift-aware bin q when enabled, else the mode's q."""
+        if not self.shift_aware:
+            return self.q_hat_conformal
+        try:
+            from app.services.shift_aware_q import compute_shift_aware_q
+            sa = compute_shift_aware_q(structure)
+            if sa is not None:
+                return float(sa["q"])
+        except Exception as exc:  # noqa: BLE001 — never let q lookup break inference
+            print(f"[GNNPredictorService] shift-aware q unavailable, using default: {exc}")
+        return self.q_hat_conformal
 
     def _configure_mc_dropout(self) -> None:
         """Collect MCDropout modules from both models and gate them per self.deterministic."""
@@ -385,8 +430,8 @@ class GNNPredictorService:
             sigma_aleatoric = float(np.sqrt(max(1e-8, var_aleatoric)))
             sigma_epistemic = float(np.sqrt(max(1e-8, var_epistemic)))
 
-            # Conformal 90% Calibrated Interval
-            half_width_conf = self.q_hat_conformal * sigma
+            # Conformal 90% Calibrated Interval (q may be shift-aware per structure)
+            half_width_conf = self._conformal_q_for(structure) * sigma
             conf_lower = float(mu_val - half_width_conf)
             conf_upper = float(mu_val + half_width_conf)
 
@@ -519,7 +564,7 @@ class GNNPredictorService:
                 sigma_aleatoric = float(np.sqrt(max(1e-8, var_aleatoric)))
                 sigma_epistemic = float(np.sqrt(max(1e-8, var_epistemic)))
 
-                half_width_conf = self.q_hat_conformal * sigma
+                half_width_conf = self._conformal_q_for(s) * sigma
                 conf_lower = float(mu_val - half_width_conf)
                 conf_upper = float(mu_val + half_width_conf)
 

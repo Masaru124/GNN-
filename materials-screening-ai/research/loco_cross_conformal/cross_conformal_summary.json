@@ -7,23 +7,33 @@
     1,
     2,
     3,
+    4,
+    5,
+    6,
+    7,
+    8,
     9
   ],
-  "n_folds": 5,
-  "pooled_n": 24792,
-  "pooled_coverage_at_shipped_q": 0.7713,
-  "shift_aware_q": 1.7994,
-  "shift_aware_q_definition": "4-th smallest per-fold 90% quantile (>=80% of folds reach 90%)",
-  "pooled_coverage_at_shift_aware_q": 0.9362,
-  "folds_meeting_90pct_at_shift_aware_q": 4,
+  "n_folds": 10,
+  "pooled_n": 48998,
+  "pooled_coverage_at_shipped_q": 0.7124,
+  "shift_aware_q": 1.8143,
+  "shift_aware_q_definition": "8-th smallest per-fold 90% quantile (>=80% of folds reach 90%)",
+  "pooled_coverage_at_shift_aware_q": 0.9123,
+  "folds_meeting_90pct_at_shift_aware_q": 8,
   "coverage_at_shift_aware_q_per_fold": {
-    "0": 0.9851,
-    "1": 0.9,
+    "0": 0.9858,
+    "1": 0.9027,
     "2": 1.0,
-    "3": 0.8978,
+    "3": 0.9,
+    "4": 0.913,
+    "5": 1.0,
+    "6": 0.9614,
+    "7": 0.7962,
+    "8": 0.8813,
     "9": 1.0
   },
-  "median_half_width_eV_at_shift_aware_q": 0.1958,
+  "median_half_width_eV_at_shift_aware_q": 0.1814,
   "per_fold": [
     {
       "cluster": 0,
@@ -35,11 +45,11 @@
         0.8523,
         0.8684
       ],
-      "q_cross_conformal": 1.6792,
-      "coverage_cross_conformal": 0.9784,
+      "q_cross_conformal": 1.8165,
+      "coverage_cross_conformal": 0.9858,
       "ci95_cross_conformal": [
-        0.9748,
-        0.9815
+        0.9828,
+        0.9883
       ],
       "own_fold_q90": 1.1504
     },
@@ -53,11 +63,11 @@
         0.6673,
         0.6894
       ],
-      "q_cross_conformal": 1.3969,
-      "coverage_cross_conformal": 0.8121,
+      "q_cross_conformal": 1.7155,
+      "coverage_cross_conformal": 0.8897,
       "ci95_cross_conformal": [
-        0.8027,
-        0.8212
+        0.8821,
+        0.8969
       ],
       "own_fold_q90": 1.7994
     },
@@ -71,7 +81,7 @@
         0.9985,
         1.0
       ],
-      "q_cross_conformal": 1.5876,
+      "q_cross_conformal": 1.7619,
       "coverage_cross_conformal": 1.0,
       "ci95_cross_conformal": [
         0.9985,
@@ -89,13 +99,103 @@
         0.6701,
         0.691
       ],
-      "q_cross_conformal": 1.3729,
-      "coverage_cross_conformal": 0.8065,
+      "q_cross_conformal": 1.7077,
+      "coverage_cross_conformal": 0.8827,
       "ci95_cross_conformal": [
-        0.7975,
-        0.8151
+        0.8753,
+        0.8897
       ],
       "own_fold_q90": 1.8143
+    },
+    {
+      "cluster": 4,
+      "n_test": 6103,
+      "test_mae_eV_per_atom": 0.09072663948570514,
+      "median_half_width_eV_at_shipped_q": 0.09900656702667475,
+      "coverage_at_shipped_q_1p0254": 0.667,
+      "ci95_at_shipped_q": [
+        0.6551,
+        0.6788
+      ],
+      "q_cross_conformal": 1.7222,
+      "coverage_cross_conformal": 0.8974,
+      "ci95_cross_conformal": [
+        0.8896,
+        0.9048
+      ],
+      "own_fold_q90": 1.737
+    },
+    {
+      "cluster": 5,
+      "n_test": 101,
+      "test_mae_eV_per_atom": 0.09575911036849317,
+      "median_half_width_eV_at_shipped_q": 1.4208319813728334,
+      "coverage_at_shipped_q_1p0254": 1.0,
+      "ci95_at_shipped_q": [
+        0.9634,
+        1.0
+      ],
+      "q_cross_conformal": 1.7253,
+      "coverage_cross_conformal": 1.0,
+      "ci95_cross_conformal": [
+        0.9634,
+        1.0
+      ],
+      "own_fold_q90": 0.1329
+    },
+    {
+      "cluster": 6,
+      "n_test": 5332,
+      "test_mae_eV_per_atom": 0.06075612183646121,
+      "median_half_width_eV_at_shipped_q": 0.08096535631120205,
+      "coverage_at_shipped_q_1p0254": 0.7764,
+      "ci95_at_shipped_q": [
+        0.7651,
+        0.7874
+      ],
+      "q_cross_conformal": 1.7694,
+      "coverage_cross_conformal": 0.9571,
+      "ci95_cross_conformal": [
+        0.9513,
+        0.9622
+      ],
+      "own_fold_q90": 1.4137
+    },
+    {
+      "cluster": 7,
+      "n_test": 6066,
+      "test_mae_eV_per_atom": 0.12960300411925163,
+      "median_half_width_eV_at_shipped_q": 0.11387541666626931,
+      "coverage_at_shipped_q_1p0254": 0.5547,
+      "ci95_at_shipped_q": [
+        0.5422,
+        0.5672
+      ],
+      "q_cross_conformal": 1.6178,
+      "coverage_cross_conformal": 0.7511,
+      "ci95_cross_conformal": [
+        0.74,
+        0.7618
+      ],
+      "own_fold_q90": 2.4224
+    },
+    {
+      "cluster": 8,
+      "n_test": 6604,
+      "test_mae_eV_per_atom": 0.08178132528281992,
+      "median_half_width_eV_at_shipped_q": 0.08255702224373818,
+      "coverage_at_shipped_q_1p0254": 0.6217,
+      "ci95_at_shipped_q": [
+        0.61,
+        0.6334
+      ],
+      "q_cross_conformal": 1.6882,
+      "coverage_cross_conformal": 0.8546,
+      "ci95_cross_conformal": [
+        0.8459,
+        0.8629
+      ],
+      "own_fold_q90": 1.9139
     },
     {
       "cluster": 9,
@@ -107,7 +207,7 @@
         0.9925,
         1.0
       ],
-      "q_cross_conformal": 1.5385,
+      "q_cross_conformal": 1.7318,
       "coverage_cross_conformal": 1.0,
       "ci95_cross_conformal": [
         0.9925,

@@ -70,7 +70,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
         </div>
 
         <div className="shrink-0">
-          <p className="micro-label">Conformal 90% Bounds (86% LOCO coverage, one held-out cluster n=7178)</p>
+          <p className="micro-label">Conformal 90% Bounds (LOCO 10-fold, nested: 89.6% pooled / 92.2% macro at q_LOFO; 71.2% at shipped q; worst fold 7)</p>
           <p className="mt-0.5 font-mono text-sm font-semibold text-accent">
             [{conformal_90_interval_eV[0]}, {conformal_90_interval_eV[1]}] eV
           </p>

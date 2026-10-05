@@ -302,6 +302,87 @@
       "note": "own-fold 90% quantile per cluster; requires knowing the cluster at prediction time and uses held-out scores"
     }
   },
+  "nested_coverage_at_q_lofo": {
+    "definition": "coverage of fold c at its own leave-one-fold-out q (fitted on the other 9 folds)",
+    "stats": {
+      "min": 0.7511,
+      "q1": 0.8844,
+      "median": 0.9272,
+      "q3": 0.9964,
+      "max": 1.0,
+      "fold7": 0.7511,
+      "argmin": 7
+    },
+    "per_fold": {
+      "0": 0.9858,
+      "1": 0.8897,
+      "2": 1.0,
+      "3": 0.8827,
+      "4": 0.8974,
+      "5": 1.0,
+      "6": 0.9571,
+      "7": 0.7511,
+      "8": 0.8546,
+      "9": 1.0
+    },
+    "pooled": 0.8961,
+    "macro": 0.9218,
+    "median_half_width_eV": 0.1717
+  },
+  "pooled_10fold_q90": {
+    "q_pooled_all_folds": 1.7242,
+    "q_pooled_all_folds_note": "non-nested: fitted on all 10 folds incl. each held-out fold",
+    "per_fold_cov_at_q_pooled": {
+      "min": 0.7773,
+      "q1": 0.8865,
+      "median": 0.9252,
+      "q3": 0.9951,
+      "max": 1.0,
+      "fold7": 0.7773,
+      "argmin": 7
+    },
+    "q_lopo_nested_per_fold": {
+      "0": 1.8165,
+      "1": 1.7155,
+      "2": 1.7619,
+      "3": 1.7077,
+      "4": 1.7222,
+      "5": 1.7253,
+      "6": 1.7694,
+      "7": 1.6178,
+      "8": 1.6882,
+      "9": 1.7318
+    },
+    "q_lopo_spread": [
+      1.6178,
+      1.8165
+    ],
+    "nested_coverage_stats": {
+      "min": 0.7511,
+      "q1": 0.8844,
+      "median": 0.9272,
+      "q3": 0.9964,
+      "max": 1.0,
+      "fold7": 0.7511,
+      "argmin": 7
+    },
+    "nested_coverage_per_fold": {
+      "0": 0.9858,
+      "1": 0.8897,
+      "2": 1.0,
+      "3": 0.8827,
+      "4": 0.8974,
+      "5": 1.0,
+      "6": 0.9571,
+      "7": 0.7511,
+      "8": 0.8546,
+      "9": 1.0
+    },
+    "nested_pooled_cov": 0.8961,
+    "nested_macro_cov": 0.9218,
+    "nested_median_half_width_eV": 0.1717,
+    "median_half_width_eV_at_q_pooled": 0.1724
+  },
   "routing_thresholds": {
     "rule": "multi_fidelity_orchestrator: promote_to_tier2 if interval_width = 2*q*sigma >= 0.10 eV",
     "confidence_tiers_note": "predictor.py sigma tiers (<0.15/<0.35) do not depend on q",
@@ -320,6 +401,65 @@
       "p90_interval_width_eV": 0.6662,
       "uq_signal_mean_width_over_0p5": 0.74,
       "dft_priority_ge_0p15_rate_only_uq": 0.974
+    },
+    "at_pooled_q": {
+      "q": 1.7241509280843914,
+      "promote_rate_width_ge_0p10": 1.0,
+      "median_interval_width_eV": 0.3447,
+      "p90_interval_width_eV": 0.6331,
+      "uq_signal_mean_width_over_0p5": 0.7122,
+      "dft_priority_ge_0p15_rate_only_uq": 0.9585
+    },
+    "promote_curve": {
+      "thresholds_eV": [
+        0.05,
+        0.075,
+        0.1,
+        0.125,
+        0.15,
+        0.175,
+        0.2,
+        0.25,
+        0.3,
+        0.4,
+        0.5
+      ],
+      "at_q_1p0254": [
+        1.0,
+        1.0,
+        0.997,
+        0.9651,
+        0.8414,
+        0.6716,
+        0.5275,
+        0.2901,
+        0.1638,
+        0.0914,
+        0.0757
+      ],
+      "at_pooled_q": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9995,
+        0.9951,
+        0.9793,
+        0.8505,
+        0.651,
+        0.3393,
+        0.1677
+      ]
+    },
+    "sigma_unit_gate": {
+      "derivation": "2*q*sigma >= 0.10 at q=1.0254 <=> sigma >= 0.04876 eV; q-invariant",
+      "promote_rate_sigma_ge_0.04876": 0.997
+    },
+    "dft_uq_signal": {
+      "current": "uq_signal = min(width/0.5, 1), width = 2*q*sigma; saturates at sigma >= 0.5/(2q)",
+      "saturation_frac_at_q_1p0254": 0.0757,
+      "saturation_frac_at_pooled_q": 0.1677,
+      "sigma_unit_equivalent": "min(sigma/0.2438, 1) \u2014 identical to current signal at q=1.0254, invariant to q"
     }
   }
 }

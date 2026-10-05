@@ -17,7 +17,11 @@ from __future__ import annotations
 
 import json
 import math
+import sys
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import numpy as np
 
@@ -77,7 +81,9 @@ def main() -> None:
             "coverage_at_shipped_q_1p0254": round(k / len(s), 4),
             "ci95_at_shipped_q": [round(lo, 4), round(hi, 4)],
             "q_cross_conformal": round(q_cc, 4),
+            "q_cross_conformal_exact": q_cc,
             "coverage_cross_conformal": round(k_cc / len(s), 4),
+            "coverage_cross_conformal_exact": k_cc / len(s),
             "ci95_cross_conformal": [round(lo_cc, 4), round(hi_cc, 4)],
             "own_fold_q90": round(float(np.quantile(s, COVERAGE)), 4),
             "own_fold_q90_exact": float(np.quantile(s, COVERAGE)),
@@ -108,6 +114,19 @@ def main() -> None:
     macro_shift = float(np.mean(list(cov_shift_raw.values())))
     macro_shift_eligible = float(np.mean([cov_shift_raw[c] for c in eligible]))
     lofo_vals = [r["q_cross_conformal"] for r in rows]
+
+    # nested (leave-one-fold-out) headline + pooled 10-fold 90% q
+    nested_exact = {r["cluster"]: r["coverage_cross_conformal_exact"] for r in rows}
+    nested_sorted = np.array([nested_exact[c] for c in sorted(nested_exact)])
+    nested_pooled = float(sum(r["coverage_cross_conformal_exact"] * r["n_test"] for r in rows)
+                          / sum(r["n_test"] for r in rows))
+    nested_hw = float(np.median(np.concatenate(
+        [r["q_cross_conformal"] * sigma[r["cluster"]] for r in rows])))
+    q_pool = float(np.quantile(pooled, COVERAGE))  # non-nested single q over all 10 folds
+    pool_cov = {c: float((scores[c] <= q_pool).mean()) for c in sorted(scores)}
+    pool_sorted = np.array([pool_cov[c] for c in sorted(pool_cov)])
+    pool_hw = float(np.median(q_pool * np.concatenate(
+        [sigma[c] for c in sorted(sigma)])))
     pooled_at_shift = float((pooled <= q_shift).mean())
     med_half_shift = float(q_shift * np.median(np.concatenate([sigma[c] for c in sorted(sigma)])))
 
@@ -126,12 +145,48 @@ def main() -> None:
             "applied to fold c (leave-one-fold-out, nested). shift_aware_q is an "
             "oracle-style k-th smallest OWN-fold quantile, not nested."
         ),
+        "nested_lofo_result": {
+            "role": "PRIMARY RESULT — nested leave-one-fold-out q fitted on the other 9 folds",
+            "q_spread": {
+                "min": round(min(lofo_vals), 4),
+                "median": round(float(np.median(lofo_vals)), 4),
+                "max": round(max(lofo_vals), 4),
+            },
+            "pooled_coverage": round(nested_pooled, 4),
+            "macro_coverage": round(float(nested_sorted.mean()), 4),
+            "per_fold_coverage": {
+                "min": round(float(nested_sorted.min()), 4),
+                "q1": round(float(np.quantile(nested_sorted, 0.25)), 4),
+                "median": round(float(np.median(nested_sorted)), 4),
+                "q3": round(float(np.quantile(nested_sorted, 0.75)), 4),
+                "max": round(float(nested_sorted.max()), 4),
+                "worst_fold": int(min(nested_exact, key=nested_exact.get)),
+            },
+            "median_half_width_eV": round(nested_hw, 4),
+        },
+        "pooled_q90_non_nested": {
+            "q": round(q_pool, 4),
+            "note": "90% quantile of all 10 folds pooled (each held-out fold contributes its own scores — not nested)",
+            "per_fold_coverage": {
+                "min": round(float(pool_sorted.min()), 4),
+                "q1": round(float(np.quantile(pool_sorted, 0.25)), 4),
+                "median": round(float(np.median(pool_sorted)), 4),
+                "q3": round(float(np.quantile(pool_sorted, 0.75)), 4),
+                "max": round(float(pool_sorted.max()), 4),
+            },
+            "macro_coverage": round(float(pool_sorted.mean()), 4),
+            "median_half_width_eV": round(pool_hw, 4),
+        },
         "lofo_q_spread": {
             "min": round(min(lofo_vals), 4),
             "median": round(float(np.median(lofo_vals)), 4),
             "max": round(max(lofo_vals), 4),
         },
         "shift_aware_q": round(q_shift, 4),
+        "shift_aware_q_role": (
+            "NON-NESTED ORACLE (k-th smallest own-fold 90% quantile) — reported only as an "
+            "oracle bound, not cited as a result and not adopted"
+        ),
         "shift_aware_q_exact": q_shift,
         "shift_aware_q_definition": f"{k80}-th smallest per-fold 90% quantile (>=80% of folds reach 90%), full precision",
         "pooled_coverage_at_shift_aware_q": round(pooled_at_shift, 4),
@@ -194,18 +249,22 @@ def main() -> None:
         )
     md += [
         "",
-        f"Pooled coverage at shipped q: **{summary['pooled_coverage_at_shipped_q']:.4f}** (n = {summary['pooled_n']}); "
-        f"macro-average (unweighted over folds) **{macro_ship:.4f}**.",
-        f"Shift-aware q: **{summary['shift_aware_q']:.4f}** ({summary['shift_aware_q_definition']}); "
-        f"pooled coverage {summary['pooled_coverage_at_shift_aware_q']:.4f}, "
-        f"macro-average {macro_shift:.4f}, "
-        f"{n_meeting}/{n_folds} folds at or above 90% (raw, full-precision q; "
-        f"{n_meeting_r4}/{n_folds} at display precision"
-        + (f" — borderline: " + ", ".join(
-            f"cluster {c} = {cov_shift_raw[c]:.5f}" for c in border) if border else "")
-        + f"), {n_meeting_eligible}/{len(eligible)} excluding folds with n < {MIN_N} "
-        f"(cluster {','.join(str(x) for x in summary['folds_excluded_n_lt_500'])}), "
-        f"median half-width {summary['median_half_width_eV_at_shift_aware_q']:.4f} eV.",
+        f"Pooled coverage at shipped q: **{summary['pooled_coverage_at_shipped_q']:.4f}** (n = {summary['pooled_n']}); macro-average (unweighted over folds) **{macro_ship:.4f}**.",
+        f"**Nested (leave-one-fold-out) result** — per-fold q fitted on the other 9 folds only: "
+        f"q spread min {summary['lofo_q_spread']['min']:.4f} (cluster 7), median {summary['lofo_q_spread']['median']:.4f}, "
+        f"max {summary['lofo_q_spread']['max']:.4f} (cluster 0); pooled coverage **{nested_pooled:.4f}**, "
+        f"macro **{float(nested_sorted.mean()):.4f}**; per-fold min {float(nested_sorted.min()):.4f} (cluster {int(min(nested_exact, key=nested_exact.get))}), "
+        f"Q1 {float(np.quantile(nested_sorted, 0.25)):.4f}, median {float(np.median(nested_sorted)):.4f}, "
+        f"Q3 {float(np.quantile(nested_sorted, 0.75)):.4f}, max {float(nested_sorted.max()):.4f}; "
+        f"median half-width **{nested_hw:.4f} eV**.",
+        f"Pooled 10-fold 90% q = **{q_pool:.4f}** (non-nested single q over all 10 folds): "
+        f"per-fold coverage min {float(pool_sorted.min()):.4f} / Q1 {float(np.quantile(pool_sorted, 0.25)):.4f} / "
+        f"median {float(np.median(pool_sorted)):.4f} / Q3 {float(np.quantile(pool_sorted, 0.75)):.4f}, "
+        f"macro {float(pool_sorted.mean()):.4f}, width {pool_hw:.4f} eV; its nested leave-one-fold-out form is exactly the per-fold q above.",
+        f"Oracle only (NOT a result, not adopted): shift-aware own-fold q = {summary['shift_aware_q']:.4f} "
+        f"gives pooled {summary['pooled_coverage_at_shift_aware_q']:.4f} / macro {macro_shift:.4f} "
+        f"({n_meeting}/{n_folds} folds ≥90% raw, {n_meeting_eligible}/{len(eligible)} excl. n<{MIN_N}) "
+        f"at width {summary['median_half_width_eV_at_shift_aware_q']:.4f} eV — a non-nested own-fold statistic.",
         f"Nesting: {summary['q_nesting']}",
         f"LOFO (leave-one-fold-out) q spread: min {summary['lofo_q_spread']['min']:.4f}, "
         f"median {summary['lofo_q_spread']['median']:.4f}, max {summary['lofo_q_spread']['max']:.4f}.",

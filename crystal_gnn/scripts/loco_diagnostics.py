@@ -292,6 +292,57 @@ def main() -> None:
         },
     }
 
+    # ---- (2b) nested per-fold coverage + pooled 10-fold 90% q -----------
+    nested_cov = {c: float((scores[c] <= lofo[c]).mean()) for c in order}
+    nv = np.array([nested_cov[c] for c in order])
+
+    def stats(v: dict) -> dict:
+        a = np.array(list(v.values()))
+        return {
+            "min": round(float(a.min()), 4),
+            "q1": round(float(np.quantile(a, 0.25)), 4),
+            "median": round(float(np.median(a)), 4),
+            "q3": round(float(np.quantile(a, 0.75)), 4),
+            "max": round(float(a.max()), 4),
+            "fold7": round(float(v[7]), 4) if 7 in v else None,
+            "argmin": int(min(v, key=v.get)),
+        }
+
+    out["nested_coverage_at_q_lofo"] = {
+        "definition": "coverage of fold c at its own leave-one-fold-out q (fitted on the other 9 folds)",
+        "stats": stats(nested_cov),
+        "per_fold": {str(c): round(nested_cov[c], 4) for c in order},
+        "pooled": round(float(np.concatenate(
+            [(scores[c] <= lofo[c]) for c in order]).mean()), 4),
+        "macro": round(float(nv.mean()), 4),
+        "median_half_width_eV": round(lofo_hw, 4),
+    }
+
+    # pooled 10-fold 90% q: non-nested (all folds) + nested (other-9 pooled per fold)
+    q_pool = float(np.quantile(pooled, COVERAGE))
+    pool_naive = {c: float((scores[c] <= q_pool).mean()) for c in order}
+    q_lopo, pool_nested = {}, {}
+    for c in order:
+        o = np.concatenate([scores[x] for x in order if x != c])
+        q_lopo[c] = float(np.quantile(o, COVERAGE))
+        pool_nested[c] = float((scores[c] <= q_lopo[c]).mean())
+    lopo_hw = float(np.median(np.concatenate(
+        [q_lopo[c] * sigma[c] for c in order])))
+    out["pooled_10fold_q90"] = {
+        "q_pooled_all_folds": round(q_pool, 4),
+        "q_pooled_all_folds_note": "non-nested: fitted on all 10 folds incl. each held-out fold",
+        "per_fold_cov_at_q_pooled": stats(pool_naive),
+        "q_lopo_nested_per_fold": {str(c): round(q_lopo[c], 4) for c in order},
+        "q_lopo_spread": [round(min(q_lopo.values()), 4), round(max(q_lopo.values()), 4)],
+        "nested_coverage_stats": stats(pool_nested),
+        "nested_coverage_per_fold": {str(c): round(pool_nested[c], 4) for c in order},
+        "nested_pooled_cov": round(float(np.concatenate(
+            [(scores[c] <= q_lopo[c]) for c in order]).mean()), 4),
+        "nested_macro_cov": round(float(np.mean(list(pool_nested.values()))), 4),
+        "nested_median_half_width_eV": round(lopo_hw, 4),
+        "median_half_width_eV_at_q_pooled": round(float(np.median(q_pool * pooled_sigma)), 4),
+    }
+
     # ---- (5) routing / screening thresholds -----------------------------
     def route(q: float) -> dict:
         width = 2 * q * pooled_sigma
@@ -310,6 +361,24 @@ def main() -> None:
         "confidence_tiers_note": "predictor.py sigma tiers (<0.15/<0.35) do not depend on q",
         "at_shipped_q": route(Q_SHIPPED),
         "at_shift_aware_q": route(q_shift),
+        "at_pooled_q": route(q_pool),
+        "promote_curve": {
+            "thresholds_eV": [0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.25, 0.30, 0.40, 0.50],
+            "at_q_1p0254": [round(float((2 * Q_SHIPPED * pooled_sigma >= t).mean()), 4)
+                            for t in [0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.25, 0.30, 0.40, 0.50]],
+            "at_pooled_q": [round(float((2 * q_pool * pooled_sigma >= t).mean()), 4)
+                            for t in [0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.25, 0.30, 0.40, 0.50]],
+        },
+        "sigma_unit_gate": {
+            "derivation": "2*q*sigma >= 0.10 at q=1.0254 <=> sigma >= 0.04876 eV; q-invariant",
+            "promote_rate_sigma_ge_0.04876": round(float((pooled_sigma >= 0.10 / (2 * Q_SHIPPED)).mean()), 4),
+        },
+        "dft_uq_signal": {
+            "current": "uq_signal = min(width/0.5, 1), width = 2*q*sigma; saturates at sigma >= 0.5/(2q)",
+            "saturation_frac_at_q_1p0254": round(float((2 * Q_SHIPPED * pooled_sigma >= 0.5).mean()), 4),
+            "saturation_frac_at_pooled_q": round(float((2 * q_pool * pooled_sigma >= 0.5).mean()), 4),
+            "sigma_unit_equivalent": "min(sigma/0.2438, 1) — identical to current signal at q=1.0254, invariant to q",
+        },
     }
 
     print(json.dumps(out, indent=2))

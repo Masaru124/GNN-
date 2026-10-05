@@ -31,12 +31,45 @@
     "9": 511
   },
   "q_nesting": "q_cross_conformal for fold c = 90% quantile of the OTHER 9 folds' scores applied to fold c (leave-one-fold-out, nested). shift_aware_q is an oracle-style k-th smallest OWN-fold quantile, not nested.",
+  "nested_lofo_result": {
+    "role": "PRIMARY RESULT \u2014 nested leave-one-fold-out q fitted on the other 9 folds",
+    "q_spread": {
+      "min": 1.6178,
+      "median": 1.7237,
+      "max": 1.8165
+    },
+    "pooled_coverage": 0.8961,
+    "macro_coverage": 0.9218,
+    "per_fold_coverage": {
+      "min": 0.7511,
+      "q1": 0.8844,
+      "median": 0.9272,
+      "q3": 0.9964,
+      "max": 1.0,
+      "worst_fold": 7
+    },
+    "median_half_width_eV": 0.1717
+  },
+  "pooled_q90_non_nested": {
+    "q": 1.7242,
+    "note": "90% quantile of all 10 folds pooled (each held-out fold contributes its own scores \u2014 not nested)",
+    "per_fold_coverage": {
+      "min": 0.7773,
+      "q1": 0.8865,
+      "median": 0.9252,
+      "q3": 0.9951,
+      "max": 1.0
+    },
+    "macro_coverage": 0.9248,
+    "median_half_width_eV": 0.1724
+  },
   "lofo_q_spread": {
     "min": 1.6178,
     "median": 1.7237,
     "max": 1.8165
   },
   "shift_aware_q": 1.8143,
+  "shift_aware_q_role": "NON-NESTED ORACLE (k-th smallest own-fold 90% quantile) \u2014 reported only as an oracle bound, not cited as a result and not adopted",
   "shift_aware_q_exact": 1.8143169314327108,
   "shift_aware_q_definition": "8-th smallest per-fold 90% quantile (>=80% of folds reach 90%), full precision",
   "pooled_coverage_at_shift_aware_q": 0.9123,
@@ -76,7 +109,9 @@
         0.8684
       ],
       "q_cross_conformal": 1.8165,
+      "q_cross_conformal_exact": 1.8164571466792219,
       "coverage_cross_conformal": 0.9858,
+      "coverage_cross_conformal_exact": 0.9857899136249652,
       "ci95_cross_conformal": [
         0.9828,
         0.9883
@@ -95,7 +130,9 @@
         0.6894
       ],
       "q_cross_conformal": 1.7155,
+      "q_cross_conformal_exact": 1.715460719194308,
       "coverage_cross_conformal": 0.8897,
+      "coverage_cross_conformal_exact": 0.8896781675848072,
       "ci95_cross_conformal": [
         0.8821,
         0.8969
@@ -114,7 +151,9 @@
         1.0
       ],
       "q_cross_conformal": 1.7619,
+      "q_cross_conformal_exact": 1.7618518847263709,
       "coverage_cross_conformal": 1.0,
+      "coverage_cross_conformal_exact": 1.0,
       "ci95_cross_conformal": [
         0.9985,
         1.0
@@ -133,7 +172,9 @@
         0.691
       ],
       "q_cross_conformal": 1.7077,
+      "q_cross_conformal_exact": 1.7076920353692728,
       "coverage_cross_conformal": 0.8827,
+      "coverage_cross_conformal_exact": 0.8826517322219328,
       "ci95_cross_conformal": [
         0.8753,
         0.8897
@@ -152,7 +193,9 @@
         0.6788
       ],
       "q_cross_conformal": 1.7222,
+      "q_cross_conformal_exact": 1.7221714290099768,
       "coverage_cross_conformal": 0.8974,
+      "coverage_cross_conformal_exact": 0.8974274946747501,
       "ci95_cross_conformal": [
         0.8896,
         0.9048
@@ -171,7 +214,9 @@
         1.0
       ],
       "q_cross_conformal": 1.7253,
+      "q_cross_conformal_exact": 1.7252620678569552,
       "coverage_cross_conformal": 1.0,
+      "coverage_cross_conformal_exact": 1.0,
       "ci95_cross_conformal": [
         0.9634,
         1.0
@@ -190,7 +235,9 @@
         0.7874
       ],
       "q_cross_conformal": 1.7694,
+      "q_cross_conformal_exact": 1.7694128438167487,
       "coverage_cross_conformal": 0.9571,
+      "coverage_cross_conformal_exact": 0.9570517629407351,
       "ci95_cross_conformal": [
         0.9513,
         0.9622
@@ -209,7 +256,9 @@
         0.5672
       ],
       "q_cross_conformal": 1.6178,
+      "q_cross_conformal_exact": 1.617846328893561,
       "coverage_cross_conformal": 0.7511,
+      "coverage_cross_conformal_exact": 0.7510715463237718,
       "ci95_cross_conformal": [
         0.74,
         0.7618
@@ -228,7 +277,9 @@
         0.6334
       ],
       "q_cross_conformal": 1.6882,
+      "q_cross_conformal_exact": 1.6881971293455518,
       "coverage_cross_conformal": 0.8546,
+      "coverage_cross_conformal_exact": 0.854633555420957,
       "ci95_cross_conformal": [
         0.8459,
         0.8629
@@ -247,7 +298,9 @@
         1.0
       ],
       "q_cross_conformal": 1.7318,
+      "q_cross_conformal_exact": 1.7318069853894702,
       "coverage_cross_conformal": 1.0,
+      "coverage_cross_conformal_exact": 1.0,
       "ci95_cross_conformal": [
         0.9925,
         1.0

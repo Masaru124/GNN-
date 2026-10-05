@@ -67,6 +67,6 @@ def healthcheck():
     return {
         "status": "online",
         "system": "MatScreen AI",
-        "model": "MultiScaleGNN A7 + DER + 86% measured on one held-out chemistry cluster (n=7178) Conformal 90%",
+        "model": "MultiScaleGNN A7 + DER + Conformal 90% (LOCO 10-fold, nested: 89.6% pooled / 92.2% macro at q_LOFO; 71.2% at shipped q; worst fold 7)",
         "version": "1.0.0"
     }

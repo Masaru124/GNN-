@@ -287,7 +287,7 @@ export function CandidateTable({
               <th className="p-2.5">Tier 1 GNN E_f</th>
               <th className="p-2.5">E Above Hull</th>
               <th className="p-2.5">Band Gap (unavailable)</th>
-              <th className="p-2.5">Conformal 90% Interval (86% LOCO coverage, one held-out cluster n=7178)</th>
+              <th className="p-2.5">Conformal 90% Interval (LOCO 10-fold, nested: 89.6% pooled / 92.2% macro at q_LOFO; 71.2% at shipped q; worst fold 7)</th>
               <th className="p-2.5">Novelty</th>
               <th className="p-2.5">Cost ($/kg)</th>
               <th className="p-2.5">Bottleneck (Å)</th>

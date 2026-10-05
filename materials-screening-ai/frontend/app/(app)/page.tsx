@@ -102,7 +102,7 @@ export default function Page() {
               before expensive DFT simulations
             </strong>
             . Get predicted formation energy (E_f) coupled with 90% Conformal
-            Calibration intervals (86% LOCO coverage, one held-out cluster n=7178) and Evidential Uncertainty decomposition.
+            Calibration intervals (LOCO 10-fold, nested: 89.6% pooled / 92.2% macro at q_LOFO; 71.2% at shipped q; worst fold 7) and Evidential Uncertainty decomposition.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">

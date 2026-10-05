@@ -1,0 +1,174 @@
+{
+  "method": "SOAP (r_cut=6, n_max=9, l_max=9, sigma=0.5, average=inner, full species union like soap_loco_split) -> count-sketch 512d (seed 42) -> cosine distance to nearest structure in the fold's train indices (i<50000, val excluded). Distance bins = pooled other-fold deciles; per-bin q = 90% quantile of other folds' scores (nested).",
+  "n_vectors": 49019,
+  "n_test_points_total": 48998,
+  "n_test_points_expected": 48998,
+  "missing_per_fold": {
+    "0": 0,
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0
+  },
+  "coverage_by_distance_quintile_at_shipped_q": [
+    {
+      "bin": 0,
+      "d_max": 0.0075,
+      "n": 9800,
+      "coverage_at_shipped_q": 0.8165,
+      "median_score": 0.4574
+    },
+    {
+      "bin": 1,
+      "d_max": 0.0237,
+      "n": 9799,
+      "coverage_at_shipped_q": 0.7696,
+      "median_score": 0.5113
+    },
+    {
+      "bin": 2,
+      "d_max": 0.0609,
+      "n": 9800,
+      "coverage_at_shipped_q": 0.711,
+      "median_score": 0.6029
+    },
+    {
+      "bin": 3,
+      "d_max": 0.1577,
+      "n": 9799,
+      "coverage_at_shipped_q": 0.6746,
+      "median_score": 0.6943
+    },
+    {
+      "bin": 4,
+      "d_max": 0.7007,
+      "n": 9800,
+      "coverage_at_shipped_q": 0.5901,
+      "median_score": 0.8303
+    }
+  ],
+  "median_score_by_distance_quintile": [
+    0.4574,
+    0.5113,
+    0.6029,
+    0.6943,
+    0.8303
+  ],
+  "nested_distance_bin_q": {
+    "pooled_cov": 0.8904,
+    "macro_cov": 0.9166,
+    "per_fold_cov": {
+      "0": 0.9685,
+      "1": 0.9024,
+      "2": 1.0,
+      "3": 0.912,
+      "4": 0.8873,
+      "5": 1.0,
+      "6": 0.9105,
+      "7": 0.8038,
+      "8": 0.782,
+      "9": 1.0
+    },
+    "fold7_cov": 0.8038,
+    "median_half_width_eV": 0.1707,
+    "coverage_by_distance_bin": [
+      {
+        "bin": 0,
+        "n": 5651,
+        "nested_cov": 0.9025,
+        "coverage_at_shipped_q": 0.8261,
+        "median_score": 0.4601
+      },
+      {
+        "bin": 1,
+        "n": 5131,
+        "nested_cov": 0.8963,
+        "coverage_at_shipped_q": 0.8069,
+        "median_score": 0.4551
+      },
+      {
+        "bin": 2,
+        "n": 4888,
+        "nested_cov": 0.8967,
+        "coverage_at_shipped_q": 0.7878,
+        "median_score": 0.4759
+      },
+      {
+        "bin": 3,
+        "n": 4640,
+        "nested_cov": 0.886,
+        "coverage_at_shipped_q": 0.7514,
+        "median_score": 0.5451
+      },
+      {
+        "bin": 4,
+        "n": 4369,
+        "nested_cov": 0.8819,
+        "coverage_at_shipped_q": 0.712,
+        "median_score": 0.5964
+      },
+      {
+        "bin": 5,
+        "n": 3866,
+        "nested_cov": 0.8994,
+        "coverage_at_shipped_q": 0.71,
+        "median_score": 0.6081
+      },
+      {
+        "bin": 6,
+        "n": 4316,
+        "nested_cov": 0.8976,
+        "coverage_at_shipped_q": 0.6869,
+        "median_score": 0.6704
+      },
+      {
+        "bin": 7,
+        "n": 5139,
+        "nested_cov": 0.8986,
+        "coverage_at_shipped_q": 0.6622,
+        "median_score": 0.7135
+      },
+      {
+        "bin": 8,
+        "n": 5202,
+        "nested_cov": 0.9066,
+        "coverage_at_shipped_q": 0.628,
+        "median_score": 0.7579
+      },
+      {
+        "bin": 9,
+        "n": 5796,
+        "nested_cov": 0.8449,
+        "coverage_at_shipped_q": 0.5522,
+        "median_score": 0.9065
+      }
+    ]
+  },
+  "global_nested_q_lofo_same_points": {
+    "per_fold_q": {
+      "0": 1.8165,
+      "1": 1.7155,
+      "2": 1.7619,
+      "3": 1.7077,
+      "4": 1.7222,
+      "5": 1.7253,
+      "6": 1.7694,
+      "7": 1.6178,
+      "8": 1.6882,
+      "9": 1.7318
+    },
+    "pooled_cov": 0.8961,
+    "fold7_cov": 0.7511,
+    "median_half_width_eV": 0.1717
+  },
+  "shipped_q": {
+    "pooled_cov": 0.7124,
+    "fold7_cov": 0.5547
+  },
+  "elapsed_s": 1255.0
+}

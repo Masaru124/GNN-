@@ -452,7 +452,7 @@ def ai_lab_assistant_chat(req: AIChatRequest):
         reply = (
             f"Material Applications Analysis for **{formula}** (*Tier 1 — GNN Conformal Screen*):\n\n"
             f"1. **Thermodynamic Solid-Phase Stability**:\n"
-            f"   • Calculated Formation Energy: **{e_val:.3f} eV/atom** (90% conformal interval, 86% LOCO coverage on one held-out cluster, n=7178): **[{low_val:.3f}, {high_val:.3f}] eV/atom**).\n"
+            f"   • Calculated Formation Energy: **{e_val:.3f} eV/atom** (90% conformal interval, LOCO 10-fold, nested: 89.6% pooled / 92.2% macro at q_LOFO; 71.2% at shipped q; worst fold 7): **[{low_val:.3f}, {high_val:.3f}] eV/atom**).\n"
             f"   • Since $E_f < -0.2$ eV/atom, **{formula}** is thermodynamically favorable and stable against spontaneous decomposition.\n\n"
             f"2. **Target Application Domain**:\n"
             f"   • **Rechargeable Battery Cathode** (Lithium intercalation host) & Solid-State Electrochemical Energy Storage.\n\n"
@@ -471,7 +471,7 @@ def ai_lab_assistant_chat(req: AIChatRequest):
         reply = (
             f"GNN Predictor Tool Call Result for **{formula}** (*Tier 1 — GNN Conformal Screen*):\n"
             f"• Calibrated Formation Energy: **{e_val:.3f} eV/atom**\n"
-            f"• Conformal 90% Confidence Interval (86% LOCO coverage on one held-out cluster, n=7178): **[{low_val:.3f}, {high_val:.3f}] eV/atom**\n"
+            f"• Conformal 90% Confidence Interval (LOCO 10-fold, nested: 89.6% pooled / 92.2% macro at q_LOFO; 71.2% at shipped q; worst fold 7): **[{low_val:.3f}, {high_val:.3f}] eV/atom**\n"
             f"• Evidential Model Uncertainty: **±{std_val:.3f} eV**"
         )
 

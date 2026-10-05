@@ -28,6 +28,7 @@ OUT_CSV = LOCO_DIR / "cross_conformal_per_fold.csv"
 OUT_MD = LOCO_DIR / "cross_conformal_summary.md"
 Q_SHIPPED = 1.0254
 COVERAGE = 0.90
+MIN_N = 500  # folds with fewer test points are excluded from the '>=90% of folds' count
 
 
 def wilson(k: int, n: int, z: float = 1.959963985):
@@ -79,17 +80,34 @@ def main() -> None:
             "coverage_cross_conformal": round(k_cc / len(s), 4),
             "ci95_cross_conformal": [round(lo_cc, 4), round(hi_cc, 4)],
             "own_fold_q90": round(float(np.quantile(s, COVERAGE)), 4),
+            "own_fold_q90_exact": float(np.quantile(s, COVERAGE)),
         })
 
-    # shift-aware q: smallest q that reaches 90% coverage in >= 80% of folds
-    q_needed = sorted(r["own_fold_q90"] for r in rows)
+    # shift-aware q: smallest q that reaches 90% coverage in >= 80% of folds.
+    # Computed at FULL precision (rounding to 4 dp drops fold 3 below 90%);
+    # rounding is applied only when printing.
+    q_needed = sorted(r["own_fold_q90_exact"] for r in rows)
     n_folds = len(q_needed)
     k80 = max(1, math.ceil(0.8 * n_folds))
     q_shift = q_needed[k80 - 1]
     per_fold_shift = {}
+    cov_shift_raw = {}
     for c in sorted(scores):
-        per_fold_shift[str(c)] = round(float((scores[c] <= q_shift).mean()), 4)
-    n_meeting = sum(1 for v in per_fold_shift.values() if v >= COVERAGE)
+        cov_shift_raw[c] = float((scores[c] <= q_shift).mean())
+        per_fold_shift[str(c)] = round(cov_shift_raw[c], 4)
+    n_meeting = sum(1 for v in cov_shift_raw.values() if v >= COVERAGE)
+    n_meeting_r4 = sum(1 for v in cov_shift_raw.values() if round(v, 4) >= COVERAGE)
+    border = sorted(
+        (c for c in cov_shift_raw if COVERAGE > cov_shift_raw[c] >= COVERAGE - 1e-3),
+        key=lambda c: cov_shift_raw[c],
+    )
+    eligible = [c for c in sorted(scores) if len(scores[c]) >= MIN_N]
+    n_meeting_eligible = sum(1 for c in eligible if cov_shift_raw[c] >= COVERAGE)
+    cov_ship_raw = {c: float((scores[c] <= Q_SHIPPED).mean()) for c in sorted(scores)}
+    macro_ship = float(np.mean(list(cov_ship_raw.values())))
+    macro_shift = float(np.mean(list(cov_shift_raw.values())))
+    macro_shift_eligible = float(np.mean([cov_shift_raw[c] for c in eligible]))
+    lofo_vals = [r["q_cross_conformal"] for r in rows]
     pooled_at_shift = float((pooled <= q_shift).mean())
     med_half_shift = float(q_shift * np.median(np.concatenate([sigma[c] for c in sorted(sigma)])))
 
@@ -101,10 +119,31 @@ def main() -> None:
         "n_folds": n_folds,
         "pooled_n": int(len(pooled)),
         "pooled_coverage_at_shipped_q": round(float((pooled <= Q_SHIPPED).mean()), 4),
+        "macro_coverage_at_shipped_q": round(macro_ship, 4),
+        "per_fold_n": {str(c): int(len(scores[c])) for c in sorted(scores)},
+        "q_nesting": (
+            "q_cross_conformal for fold c = 90% quantile of the OTHER 9 folds' scores "
+            "applied to fold c (leave-one-fold-out, nested). shift_aware_q is an "
+            "oracle-style k-th smallest OWN-fold quantile, not nested."
+        ),
+        "lofo_q_spread": {
+            "min": round(min(lofo_vals), 4),
+            "median": round(float(np.median(lofo_vals)), 4),
+            "max": round(max(lofo_vals), 4),
+        },
         "shift_aware_q": round(q_shift, 4),
-        "shift_aware_q_definition": f"{k80}-th smallest per-fold 90% quantile (>=80% of folds reach 90%)",
+        "shift_aware_q_exact": q_shift,
+        "shift_aware_q_definition": f"{k80}-th smallest per-fold 90% quantile (>=80% of folds reach 90%), full precision",
         "pooled_coverage_at_shift_aware_q": round(pooled_at_shift, 4),
+        "macro_coverage_at_shift_aware_q": round(macro_shift, 4),
         "folds_meeting_90pct_at_shift_aware_q": n_meeting,
+        "folds_meeting_90pct_at_shift_aware_q_display_precision": n_meeting_r4,
+        "borderline_folds_below_90pct_within_1e-3": {
+            str(c): round(cov_shift_raw[c], 6) for c in border
+        },
+        "folds_excluded_n_lt_500": [c for c in sorted(scores) if c not in eligible],
+        "folds_meeting_90pct_at_shift_aware_q_excluding_n_lt_500": f"{n_meeting_eligible}/{len(eligible)}",
+        "macro_coverage_at_shift_aware_q_excluding_n_lt_500": round(macro_shift_eligible, 4),
         "coverage_at_shift_aware_q_per_fold": per_fold_shift,
         "median_half_width_eV_at_shift_aware_q": round(med_half_shift, 4),
         "per_fold": rows,
@@ -155,10 +194,21 @@ def main() -> None:
         )
     md += [
         "",
-        f"Pooled coverage at shipped q: **{summary['pooled_coverage_at_shipped_q']:.4f}** (n = {summary['pooled_n']}).",
+        f"Pooled coverage at shipped q: **{summary['pooled_coverage_at_shipped_q']:.4f}** (n = {summary['pooled_n']}); "
+        f"macro-average (unweighted over folds) **{macro_ship:.4f}**.",
         f"Shift-aware q: **{summary['shift_aware_q']:.4f}** ({summary['shift_aware_q_definition']}); "
         f"pooled coverage {summary['pooled_coverage_at_shift_aware_q']:.4f}, "
-        f"{n_meeting}/{n_folds} folds at or above 90%, median half-width {summary['median_half_width_eV_at_shift_aware_q']:.4f} eV.",
+        f"macro-average {macro_shift:.4f}, "
+        f"{n_meeting}/{n_folds} folds at or above 90% (raw, full-precision q; "
+        f"{n_meeting_r4}/{n_folds} at display precision"
+        + (f" — borderline: " + ", ".join(
+            f"cluster {c} = {cov_shift_raw[c]:.5f}" for c in border) if border else "")
+        + f"), {n_meeting_eligible}/{len(eligible)} excluding folds with n < {MIN_N} "
+        f"(cluster {','.join(str(x) for x in summary['folds_excluded_n_lt_500'])}), "
+        f"median half-width {summary['median_half_width_eV_at_shift_aware_q']:.4f} eV.",
+        f"Nesting: {summary['q_nesting']}",
+        f"LOFO (leave-one-fold-out) q spread: min {summary['lofo_q_spread']['min']:.4f}, "
+        f"median {summary['lofo_q_spread']['median']:.4f}, max {summary['lofo_q_spread']['max']:.4f}.",
         "",
         f"Caveat: {summary['caveat']}",
         "",

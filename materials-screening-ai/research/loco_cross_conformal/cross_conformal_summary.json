@@ -17,10 +17,40 @@
   "n_folds": 10,
   "pooled_n": 48998,
   "pooled_coverage_at_shipped_q": 0.7124,
+  "macro_coverage_at_shipped_q": 0.784,
+  "per_fold_n": {
+    "0": 7178,
+    "1": 6898,
+    "2": 2527,
+    "3": 7678,
+    "4": 6103,
+    "5": 101,
+    "6": 5332,
+    "7": 6066,
+    "8": 6604,
+    "9": 511
+  },
+  "q_nesting": "q_cross_conformal for fold c = 90% quantile of the OTHER 9 folds' scores applied to fold c (leave-one-fold-out, nested). shift_aware_q is an oracle-style k-th smallest OWN-fold quantile, not nested.",
+  "lofo_q_spread": {
+    "min": 1.6178,
+    "median": 1.7237,
+    "max": 1.8165
+  },
   "shift_aware_q": 1.8143,
-  "shift_aware_q_definition": "8-th smallest per-fold 90% quantile (>=80% of folds reach 90%)",
+  "shift_aware_q_exact": 1.8143169314327108,
+  "shift_aware_q_definition": "8-th smallest per-fold 90% quantile (>=80% of folds reach 90%), full precision",
   "pooled_coverage_at_shift_aware_q": 0.9123,
-  "folds_meeting_90pct_at_shift_aware_q": 8,
+  "macro_coverage_at_shift_aware_q": 0.934,
+  "folds_meeting_90pct_at_shift_aware_q": 7,
+  "folds_meeting_90pct_at_shift_aware_q_display_precision": 8,
+  "borderline_folds_below_90pct_within_1e-3": {
+    "3": 0.899974
+  },
+  "folds_excluded_n_lt_500": [
+    5
+  ],
+  "folds_meeting_90pct_at_shift_aware_q_excluding_n_lt_500": "6/9",
+  "macro_coverage_at_shift_aware_q_excluding_n_lt_500": 0.9267,
   "coverage_at_shift_aware_q_per_fold": {
     "0": 0.9858,
     "1": 0.9027,
@@ -51,7 +81,8 @@
         0.9828,
         0.9883
       ],
-      "own_fold_q90": 1.1504
+      "own_fold_q90": 1.1504,
+      "own_fold_q90_exact": 1.1504105604798207
     },
     {
       "cluster": 1,
@@ -69,7 +100,8 @@
         0.8821,
         0.8969
       ],
-      "own_fold_q90": 1.7994
+      "own_fold_q90": 1.7994,
+      "own_fold_q90_exact": 1.7993846669222016
     },
     {
       "cluster": 2,
@@ -87,7 +119,8 @@
         0.9985,
         1.0
       ],
-      "own_fold_q90": 0.1413
+      "own_fold_q90": 0.1413,
+      "own_fold_q90_exact": 0.1413244527866455
     },
     {
       "cluster": 3,
@@ -105,7 +138,8 @@
         0.8753,
         0.8897
       ],
-      "own_fold_q90": 1.8143
+      "own_fold_q90": 1.8143,
+      "own_fold_q90_exact": 1.8143169314327108
     },
     {
       "cluster": 4,
@@ -123,7 +157,8 @@
         0.8896,
         0.9048
       ],
-      "own_fold_q90": 1.737
+      "own_fold_q90": 1.737,
+      "own_fold_q90_exact": 1.7369667978354146
     },
     {
       "cluster": 5,
@@ -141,7 +176,8 @@
         0.9634,
         1.0
       ],
-      "own_fold_q90": 0.1329
+      "own_fold_q90": 0.1329,
+      "own_fold_q90_exact": 0.132896400583518
     },
     {
       "cluster": 6,
@@ -159,7 +195,8 @@
         0.9513,
         0.9622
       ],
-      "own_fold_q90": 1.4137
+      "own_fold_q90": 1.4137,
+      "own_fold_q90_exact": 1.4136682582539797
     },
     {
       "cluster": 7,
@@ -177,7 +214,8 @@
         0.74,
         0.7618
       ],
-      "own_fold_q90": 2.4224
+      "own_fold_q90": 2.4224,
+      "own_fold_q90_exact": 2.4223904430826257
     },
     {
       "cluster": 8,
@@ -195,7 +233,8 @@
         0.8459,
         0.8629
       ],
-      "own_fold_q90": 1.9139
+      "own_fold_q90": 1.9139,
+      "own_fold_q90_exact": 1.9138503652358563
     },
     {
       "cluster": 9,
@@ -213,7 +252,8 @@
         0.9925,
         1.0
       ],
-      "own_fold_q90": 0.1767
+      "own_fold_q90": 0.1767,
+      "own_fold_q90_exact": 0.17665334445467062
     }
   ],
   "caveat": "Each fold's model is trained on the other nine clusters only for the folds retrained here; fold 0 is the production checkpoint (also soap_loco fold 0). Folds share an identical wall-clock budget, so their budgets are equal but shorter than the production run."

@@ -1,0 +1,325 @@
+{
+  "nesting": {
+    "definition": "q_c = 90% quantile of scores from the OTHER 9 folds, applied to fold c (verified in loco_report.py:66)",
+    "q_lofo_per_fold": {
+      "0": 1.8165,
+      "1": 1.7155,
+      "2": 1.7619,
+      "3": 1.7077,
+      "4": 1.7222,
+      "5": 1.7253,
+      "6": 1.7694,
+      "7": 1.6178,
+      "8": 1.6882,
+      "9": 1.7318
+    },
+    "q_lofo_min": 1.6178,
+    "q_lofo_median": 1.7237,
+    "q_lofo_max": 1.8165,
+    "q_lofo_argmin": 7,
+    "q_lofo_argmax": 0,
+    "q_own_fold90_spread": [
+      0.1329,
+      2.4224
+    ],
+    "shift_aware_q_is_nested": false,
+    "shift_aware_q_note": "q=1.8143 is the k-th smallest OWN-fold 90% quantile (oracle-style), NOT nested; the nested analogue is the LOFO range above.",
+    "coverage_at_own_lofo_q": {
+      "0": 0.9858,
+      "1": 0.8897,
+      "2": 1.0,
+      "3": 0.8827,
+      "4": 0.8974,
+      "5": 1.0,
+      "6": 0.9571,
+      "7": 0.7511,
+      "8": 0.8546,
+      "9": 1.0
+    },
+    "macro_coverage_at_lofo_q": 0.9218
+  },
+  "coverage": {
+    "per_fold_n": {
+      "0": 7178,
+      "1": 6898,
+      "2": 2527,
+      "3": 7678,
+      "4": 6103,
+      "5": 101,
+      "6": 5332,
+      "7": 6066,
+      "8": 6604,
+      "9": 511
+    },
+    "pooled_coverage_at_shipped_q": 0.7124,
+    "macro_coverage_at_shipped_q": 0.784,
+    "pooled_coverage_at_shift_aware_q": 0.9123,
+    "shift_aware_q_exact": 1.8143169314327108,
+    "macro_coverage_at_shift_aware_q": 0.934,
+    "folds_ge_90_at_shift_aware_q": "7/10",
+    "folds_excluded_n_lt_500": [
+      5
+    ],
+    "folds_ge_90_at_shift_aware_q_excl_n_lt_500": "6/9",
+    "folds_ge_90_at_shipped_q_excl_n_lt_500": "2/9",
+    "macro_coverage_at_shift_aware_q_excl_n_lt_500": 0.9267,
+    "worst_folds_at_shift_aware_q": [
+      {
+        "cluster": 7,
+        "n": 6066,
+        "cov": 0.7962
+      },
+      {
+        "cluster": 8,
+        "n": 6604,
+        "cov": 0.8813
+      },
+      {
+        "cluster": 3,
+        "n": 7678,
+        "cov": 0.9
+      }
+    ]
+  },
+  "fold7": {
+    "composition_fold7": {
+      "n": 6066,
+      "pb_struct_pct": 4.9,
+      "pb_halide_pct": 1.1,
+      "halide_any_pct": 29.6,
+      "class_pct": {
+        "other": 68.9,
+        "halide_other": 28.5,
+        "pb_halide": 1.1,
+        "transition_metal_oxide": 0.6,
+        "alkaline_earth_oxide": 0.4,
+        "other_oxide": 0.4
+      },
+      "top_elements": [
+        "Cs:923",
+        "Se:866",
+        "I:837",
+        "Rb:793",
+        "K:693",
+        "Te:681",
+        "Ba:664",
+        "Br:623"
+      ]
+    },
+    "composition_pooled_other9": {
+      "n": 42932,
+      "class_pct": {
+        "other": 42.5,
+        "transition_metal_oxide": 38.1,
+        "halide_other": 13.7,
+        "other_oxide": 3.7,
+        "alkaline_earth_oxide": 1.7,
+        "pb_halide": 0.3
+      },
+      "top_elements": [
+        "O:22009",
+        "Li:9147",
+        "P:5006",
+        "F:4400",
+        "Mn:4347",
+        "Fe:3627",
+        "V:3561",
+        "Si:3351"
+      ]
+    },
+    "per_fold_error_sigma": {
+      "0": {
+        "mae": 0.0741,
+        "rmse": 0.0985,
+        "median_sigma": 0.1192,
+        "median_err": 0.0585,
+        "mean_ratio_err_over_sigma": 0.5558,
+        "frac_err_le_1sigma": 0.8514,
+        "score_p90": 1.1504,
+        "score_p99": 1.9811,
+        "cov_shipped": 0.8605
+      },
+      "1": {
+        "mae": 0.0789,
+        "rmse": 0.106,
+        "median_sigma": 0.0813,
+        "median_err": 0.0599,
+        "mean_ratio_err_over_sigma": 0.8541,
+        "frac_err_le_1sigma": 0.6686,
+        "score_p90": 1.7994,
+        "score_p99": 3.0759,
+        "cov_shipped": 0.6785
+      },
+      "2": {
+        "mae": 0.0855,
+        "rmse": 0.1106,
+        "median_sigma": 1.2665,
+        "median_err": 0.0699,
+        "mean_ratio_err_over_sigma": 0.0664,
+        "frac_err_le_1sigma": 1.0,
+        "score_p90": 0.1413,
+        "score_p99": 0.2578,
+        "cov_shipped": 1.0
+      },
+      "3": {
+        "mae": 0.0908,
+        "rmse": 0.1229,
+        "median_sigma": 0.103,
+        "median_err": 0.0695,
+        "mean_ratio_err_over_sigma": 0.8555,
+        "frac_err_le_1sigma": 0.6711,
+        "score_p90": 1.8143,
+        "score_p99": 3.2952,
+        "cov_shipped": 0.6806
+      },
+      "4": {
+        "mae": 0.0907,
+        "rmse": 0.1213,
+        "median_sigma": 0.0966,
+        "median_err": 0.0713,
+        "mean_ratio_err_over_sigma": 0.8545,
+        "frac_err_le_1sigma": 0.6585,
+        "score_p90": 1.737,
+        "score_p99": 2.9873,
+        "cov_shipped": 0.667
+      },
+      "5": {
+        "mae": 0.0958,
+        "rmse": 0.1157,
+        "median_sigma": 1.3856,
+        "median_err": 0.0944,
+        "mean_ratio_err_over_sigma": 0.0704,
+        "frac_err_le_1sigma": 1.0,
+        "score_p90": 0.1329,
+        "score_p99": 0.1735,
+        "cov_shipped": 1.0
+      },
+      "6": {
+        "mae": 0.0608,
+        "rmse": 0.0825,
+        "median_sigma": 0.079,
+        "median_err": 0.0466,
+        "mean_ratio_err_over_sigma": 0.6885,
+        "frac_err_le_1sigma": 0.7654,
+        "score_p90": 1.4137,
+        "score_p99": 2.5103,
+        "cov_shipped": 0.7764
+      },
+      "7": {
+        "mae": 0.1296,
+        "rmse": 0.1746,
+        "median_sigma": 0.1111,
+        "median_err": 0.0928,
+        "mean_ratio_err_over_sigma": 1.1304,
+        "frac_err_le_1sigma": 0.543,
+        "score_p90": 2.4224,
+        "score_p99": 3.8201,
+        "cov_shipped": 0.5547
+      },
+      "8": {
+        "mae": 0.0818,
+        "rmse": 0.108,
+        "median_sigma": 0.0805,
+        "median_err": 0.0649,
+        "mean_ratio_err_over_sigma": 0.9339,
+        "frac_err_le_1sigma": 0.6092,
+        "score_p90": 1.9139,
+        "score_p99": 3.1048,
+        "cov_shipped": 0.6217
+      },
+      "9": {
+        "mae": 0.1176,
+        "rmse": 0.174,
+        "median_sigma": 1.3286,
+        "median_err": 0.0862,
+        "mean_ratio_err_over_sigma": 0.0881,
+        "frac_err_le_1sigma": 1.0,
+        "score_p90": 0.1767,
+        "score_p99": 0.5032,
+        "cov_shipped": 1.0
+      }
+    },
+    "fold7_rank_by_mae": 1,
+    "fold7_rank_by_miscoverage_shipped": 1,
+    "verdict_inputs": {
+      "fold7_mae": 0.1296,
+      "median_other_folds_mae": 0.0855,
+      "fold7_median_sigma": 0.1111,
+      "median_other_folds_sigma": 0.103,
+      "fold7_frac_err_le_1sigma": 0.543,
+      "median_other_frac_err_le_1sigma": 0.7654
+    }
+  },
+  "q_variants": {
+    "global_nested_lofo_q": {
+      "per_fold": {
+        "0": 1.8165,
+        "1": 1.7155,
+        "2": 1.7619,
+        "3": 1.7077,
+        "4": 1.7222,
+        "5": 1.7253,
+        "6": 1.7694,
+        "7": 1.6178,
+        "8": 1.6882,
+        "9": 1.7318
+      },
+      "macro_cov": 0.9218,
+      "pooled_cov": 0.8961,
+      "median_half_width_eV": 0.1717
+    },
+    "sigma_binned_nested_q_10bins": {
+      "macro_cov": 0.9225,
+      "per_fold_cov": {
+        "0": 0.9746,
+        "1": 0.892,
+        "2": 1.0,
+        "3": 0.8894,
+        "4": 0.9009,
+        "5": 1.0,
+        "6": 0.9589,
+        "7": 0.7504,
+        "8": 0.8586,
+        "9": 1.0
+      },
+      "pooled_cov": 0.897,
+      "median_half_width_eV": 0.1733
+    },
+    "shift_aware_q_not_nested": {
+      "q": 1.8143,
+      "macro_cov": 0.934,
+      "pooled_cov": 0.9123,
+      "median_half_width_eV": 0.1814
+    },
+    "shipped_q_1p0254": {
+      "macro_cov": 0.784,
+      "pooled_cov": 0.7124,
+      "median_half_width_eV": 0.1025
+    },
+    "cluster_conditional_oracle_not_nested": {
+      "macro_cov": 0.9001,
+      "median_half_width_eV": 0.1662,
+      "note": "own-fold 90% quantile per cluster; requires knowing the cluster at prediction time and uses held-out scores"
+    }
+  },
+  "routing_thresholds": {
+    "rule": "multi_fidelity_orchestrator: promote_to_tier2 if interval_width = 2*q*sigma >= 0.10 eV",
+    "confidence_tiers_note": "predictor.py sigma tiers (<0.15/<0.35) do not depend on q",
+    "at_shipped_q": {
+      "q": 1.0254,
+      "promote_rate_width_ge_0p10": 0.997,
+      "median_interval_width_eV": 0.205,
+      "p90_interval_width_eV": 0.3765,
+      "uq_signal_mean_width_over_0p5": 0.4646,
+      "dft_priority_ge_0p15_rate_only_uq": 0.4511
+    },
+    "at_shift_aware_q": {
+      "q": 1.8143169314327108,
+      "promote_rate_width_ge_0p10": 1.0,
+      "median_interval_width_eV": 0.3628,
+      "p90_interval_width_eV": 0.6662,
+      "uq_signal_mean_width_over_0p5": 0.74,
+      "dft_priority_ge_0p15_rate_only_uq": 0.974
+    }
+  }
+}

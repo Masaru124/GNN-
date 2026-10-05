@@ -15,7 +15,9 @@ Score: `|y - mu| / sigma(DER), model.eval() deterministic forward`. Shipped q = 
 | 8 | 6604 | 0.0818 | 0.0826 | 0.6217 | [0.6100, 0.6334] | 1.6882 | 0.8546 | 0.8813 |
 | 9 | 511 | 0.1176 | 1.3623 | 1.0000 | [0.9925, 1.0000] | 1.7318 | 1.0000 | 1.0000 |
 
-Pooled coverage at shipped q: **0.7124** (n = 48998).
-Shift-aware q: **1.8143** (8-th smallest per-fold 90% quantile (>=80% of folds reach 90%)); pooled coverage 0.9123, 8/10 folds at or above 90%, median half-width 0.1814 eV.
+Pooled coverage at shipped q: **0.7124** (n = 48998); macro-average (unweighted over folds) **0.7840**.
+Shift-aware q: **1.8143** (8-th smallest per-fold 90% quantile (>=80% of folds reach 90%), full precision); pooled coverage 0.9123, macro-average 0.9340, 7/10 folds at or above 90% (raw, full-precision q; 8/10 at display precision — borderline: cluster 3 = 0.89997), 6/9 excluding folds with n < 500 (cluster 5), median half-width 0.1814 eV.
+Nesting: q_cross_conformal for fold c = 90% quantile of the OTHER 9 folds' scores applied to fold c (leave-one-fold-out, nested). shift_aware_q is an oracle-style k-th smallest OWN-fold quantile, not nested.
+LOFO (leave-one-fold-out) q spread: min 1.6178, median 1.7237, max 1.8165.
 
 Caveat: Each fold's model is trained on the other nine clusters only for the folds retrained here; fold 0 is the production checkpoint (also soap_loco fold 0). Folds share an identical wall-clock budget, so their budgets are equal but shorter than the production run.
